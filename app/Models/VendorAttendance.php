@@ -6,14 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SystemSetting extends Model
+class VendorAttendance extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'setting_key',
-        'setting_value',
-        'description',
+        'vendor_id',
+        'market_date',
+        'check_in_time',
+        'check_out_time',
     ];
-}
 
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+}

@@ -56,14 +56,12 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $rules = [
-            'name' => ['required', 'min:3', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'min:8', 'confirmed'],
             'role' => ['required', 'in:customer,vendor'],
         ];
 
         $messages = [
-            'name.required' => 'Name is required.',
             'email.required' => 'Email is required.',
             'email.unique' => 'This email is already registered.',
             'password.required' => 'Password is required.',
@@ -81,11 +79,23 @@ class AuthController extends Controller
         }
 
         $user = new User();
-        $user->name = trim($request->name);
         $user->email = trim($request->email);
         $user->password = Hash::make($request->password);
         $user->role = $request->role;
+        $user->is_active = true;
         $user->save();
+
+        // If role is vendor, create vendor profile
+        if ($request->role === 'vendor') {
+            \App\Models\Vendor::create([
+                'user_id' => $user->id,
+                'business_name' => '',
+                'owner_name' => '',
+                'weekend_pickup_enabled' => true,
+                'weekday_delivery_enabled' => false,
+                'weekend_delivery_enabled' => false,
+            ]);
+        }
 
         Auth::login($user);
 

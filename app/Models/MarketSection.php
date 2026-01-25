@@ -6,14 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SystemSetting extends Model
+class MarketSection extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'setting_key',
-        'setting_value',
+        'section_name',
+        'section_code',
         'description',
     ];
 }
-

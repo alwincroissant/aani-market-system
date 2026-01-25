@@ -6,14 +6,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SystemSetting extends Model
+class ProductCategory extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'setting_key',
-        'setting_value',
-        'description',
+        'category_name',
+        'color_code',
+        'icon_url',
     ];
-}
 
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'category_id');
+    }
+}

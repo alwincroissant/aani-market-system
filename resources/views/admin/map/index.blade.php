@@ -39,18 +39,11 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Market Map Editor</h5>
-                    <form action="{{ route('admin.map.upload') }}" method="POST" enctype="multipart/form-data" class="d-inline">
-                        @csrf
-                        <input type="file" name="map_image" accept="image/*" class="d-none" id="replaceImage" onchange="this.form.submit()">
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('replaceImage').click()">
-                            Replace Image
-                        </button>
-                    </form>
+                <div class="card-header">
+                    <h5 class="mb-0">Market Map Editor</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
+                    <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                         <button class="btn btn-success" id="addStallBtn">
                             <i class="bi bi-plus-circle"></i> Add Stall
                         </button>
@@ -60,7 +53,14 @@
                         <button class="btn btn-danger" id="deleteModeBtn">
                             <i class="bi bi-trash"></i> Delete Mode
                         </button>
-                        <span class="ms-3" id="modeIndicator"></span>
+                        <form action="{{ route('admin.map.upload') }}" method="POST" enctype="multipart/form-data" class="d-inline">
+                            @csrf
+                            <input type="file" name="map_image" accept="image/*" class="d-none" id="replaceImage" onchange="this.form.submit()">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('replaceImage').click()">
+                                Replace Image
+                            </button>
+                        </form>
+                        <span class="ms-1" id="modeIndicator"></span>
                     </div>
                     <div id="map" style="height: 600px; border: 2px solid #ddd; border-radius: 4px;"></div>
                 </div>
@@ -77,6 +77,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="stallForm">
+                    <div class="modal-footer justify-content-between">
+                        <span class="text-muted small">Fill in details and click Save.</span>
+                        <div>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Stall</button>
+                        </div>
+                    </div>
                     <div class="modal-body">
                         <input type="hidden" id="stall_id" name="stall_id">
                         <div class="mb-3">
@@ -144,10 +151,6 @@
                                 <button type="button" class="btn btn-sm btn-outline-secondary" id="clearCoordinates">Clear Coordinates</button>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Stall</button>
                     </div>
                 </form>
             </div>
