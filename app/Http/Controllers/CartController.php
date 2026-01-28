@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
 {
+    /**
+     * Add a product to the authenticated user's cart (session-based).
+     * Requires authentication via route middleware.
+     */
     public function add(Request $request)
     {
         $request->validate([
@@ -76,6 +80,9 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * View the current cart grouped by vendor.
+     */
     public function view()
     {
         $cart = Session::get('cart', []);

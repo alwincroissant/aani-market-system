@@ -71,12 +71,27 @@
                                                     <span class="fw-bold text-primary">₱{{ number_format($product->price_per_unit, 2) }}</span>
                                                     <span class="text-muted small">/ {{ $product->unit_type }}</span>
                                                 </div>
-                                                <div class="input-group">
-                                                    <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))" disabled>
-                                                    <button class="btn btn-primary" onclick="showSignupPrompt()">
-                                                        <i class="bi bi-person-plus"></i> Sign Up to Order
-                                                    </button>
-                                                </div>
+                                                @auth
+                                                    @if(auth()->user()->role === 'customer')
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))">
+                                                            <button class="btn btn-primary" onclick="addToCart({{ $product->id }})">
+                                                                <i class="bi bi-cart-plus"></i> Add to Cart
+                                                            </button>
+                                                        </div>
+                                                    @else
+                                                        <div class="alert alert-info p-2 small mt-2">
+                                                            Only customer accounts can place orders.
+                                                        </div>
+                                                    @endif
+                                                @else
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))" disabled>
+                                                        <button class="btn btn-primary" onclick="showSignupPrompt()">
+                                                            <i class="bi bi-person-plus"></i> Sign Up to Order
+                                                        </button>
+                                                    </div>
+                                                @endauth
                                             </div>
                                         </div>
                                     </div>

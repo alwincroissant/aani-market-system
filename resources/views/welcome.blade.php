@@ -20,10 +20,68 @@
 </div>
 @endif
 
-<div class="row mb-4">
+<div class="row mb-5">
     <div class="col-12">
-        <h1 class="mb-4">AANI Market</h1>
-        <p class="lead text-muted">Fresh local produce and artisanal goods from your community</p>
+        <div class="hero-banner p-4 p-md-5 mb-3 rounded-4 position-relative overflow-hidden">
+            <div class="row align-items-center">
+                <div class="col-md-7">
+                    <h1 class="display-5 fw-bold text-dark mb-3">
+                        Your neighborhood wet market, <span class="text-primary">online.</span>
+                    </h1>
+                    <p class="lead text-muted mb-4">
+                        Shop fresh seafood, meat, fruits, vegetables, and native favorites from trusted AANI vendors.
+                        Explore the market map, browse stalls like you do on-site, and enjoy the convenience of ordering online.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('shop.index') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-bag"></i> Start shopping
+                        </a>
+                        <button class="btn btn-outline-secondary btn-lg" onclick="document.getElementById('market-map-section').scrollIntoView({behavior: 'smooth'})">
+                            <i class="bi bi-map"></i> Explore market map
+                        </button>
+                    </div>
+                    <div class="mt-4 d-flex flex-wrap gap-3 small text-muted">
+                        <div><i class="bi bi-check2-circle text-success me-1"></i> Verified wet market vendors</div>
+                        <div><i class="bi bi-check2-circle text-success me-1"></i> Pickup & delivery options</div>
+                        <div><i class="bi bi-check2-circle text-success me-1"></i> One cart across multiple stalls</div>
+                    </div>
+                </div>
+                <div class="col-md-5 d-none d-md-block">
+                    <div class="hero-visual position-relative">
+                        <div class="hero-card shadow-sm rounded-4 bg-white p-3 mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:40px;height:40px;">
+                                    <i class="bi bi-basket text-primary"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">Today’s wet market basket</div>
+                                    <small class="text-muted">Build your catch-of-the-day from different stalls</small>
+                                </div>
+                            </div>
+                            <ul class="list-unstyled small mb-0">
+                                <li class="d-flex justify-content-between mb-1">
+                                    <span>🥬 Organic greens (Stall VEG-12)</span>
+                                    <span class="text-muted">₱180</span>
+                                </li>
+                                <li class="d-flex justify-content-between mb-1">
+                                    <span>🥚 Free-range eggs (Stall FD-04)</span>
+                                    <span class="text-muted">₱140</span>
+                                </li>
+                                <li class="d-flex justify-content-between">
+                                    <span>🌿 Herbs bundle (Stall PLT-07)</span>
+                                    <span class="text-muted">₱95</span>
+                                </li>
+                            </ul>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between small">
+                                <span>Estimated total</span>
+                                <span class="fw-bold text-primary">₱415</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -56,12 +114,18 @@
     <div class="col-md-4 mb-3">
         <div class="card h-100 text-center">
             <div class="card-body">
-                <i class="bi bi-basket fs-1 text-warning mb-3"></i>
-                <h5>Shop Online</h5>
-                <p class="text-muted">Order from multiple vendors</p>
-                <a href="{{ route('shop.index') }}" class="btn btn-warning">
-                    <i class="bi bi-arrow-right"></i> Start Shopping
-                </a>
+                <i class="bi bi-person-circle fs-1 text-warning mb-3"></i>
+                <h5>Sign In to Order</h5>
+                <p class="text-muted">Create an account or login to manage your cart and place orders.</p>
+                @auth
+                    <a href="{{ route('cart.view') }}" class="btn btn-warning">
+                        <i class="bi bi-cart"></i> View My Cart
+                    </a>
+                @else
+                    <a href="{{ route('auth.login') }}" class="btn btn-warning me-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                @endauth
             </div>
         </div>
     </div>
@@ -189,6 +253,47 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    .hero-banner {
+        background: radial-gradient(circle at top left, #e3f2fd 0, #fdfbff 45%, #fff8e1 100%);
+        border: 1px solid rgba(15, 118, 110, 0.06);
+    }
+    .hero-card {
+        border-radius: 1.25rem;
+    }
+    .card {
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+    }
+    .card:hover {
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+        transform: translateY(-2px);
+        transition: all 0.18s ease-out;
+    }
+    .card .card-body {
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, #ffffff 60%, #fcfcff 100%);
+    }
+    .hero-banner .btn-primary {
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+    }
+    #market-map-section .card {
+        border-radius: 1.25rem;
+    }
+    .hero-visual .hero-pill {
+        z-index: 2;
+    }
+    @media (max-width: 991.98px) {
+        /* On smaller screens, avoid overlapping by stacking the pill below the basket card */
+        .hero-visual .hero-pill {
+            position: static !important;
+            margin-top: 0.75rem;
+            margin-right: 0;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

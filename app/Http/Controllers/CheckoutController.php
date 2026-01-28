@@ -8,12 +8,22 @@ use Illuminate\Support\Facades\Session;
 
 class CheckoutController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $cart = Session::get('cart', []);
         
         if (empty($cart)) {
             return redirect()->route('cart.view')->with('error', 'Your cart is empty');
+        }
+
+        // If specific items were selected from the cart, filter to those only
+        $selectedKeys = $request->input('selected_items', []);
+        if (!empty($selectedKeys)) {
+            $cart = array_intersect_key($cart, array_flip($selectedKeys));
+        }
+
+        if (empty($cart)) {
+            return redirect()->route('cart.view')->with('error', 'Please select at least one item to checkout.');
         }
 
         // Group cart items by vendor
@@ -74,6 +84,39 @@ class CheckoutController extends Controller
             $orderNumbers = [];
 
             foreach ($groupedCart as $vendorId => $items) {
+                // Validate selected delivery type against vendor capabilities
+                $vendor = DB::table('vendors')
+                    ->where('id', $vendorId)
+                    ->whereNull('deleted_at')
+                    ->select(
+                        'id',
+                        'business_name',
+                        'weekend_pickup_enabled',
+                        'weekday_delivery_enabled',
+                        'weekend_delivery_enabled'
+                    )
+                    ->first();
+
+                if (!$vendor) {
+                    throw new \Exception('Vendor not found for checkout.');
+                }
+
+                $deliveryType = $request->input("delivery_type_{$vendorId}");
+                $allowedTypes = [];
+                if ($vendor->weekend_pickup_enabled) {
+                    $allowedTypes[] = 'weekend_pickup';
+                }
+                if ($vendor->weekday_delivery_enabled) {
+                    $allowedTypes[] = 'weekday_delivery';
+                }
+                if ($vendor->weekend_delivery_enabled) {
+                    $allowedTypes[] = 'weekend_delivery';
+                }
+
+                if (empty($allowedTypes) || !in_array($deliveryType, $allowedTypes, true)) {
+                    throw new \Exception('Invalid delivery option selected for vendor: ' . $vendor->business_name);
+                }
+
                 // Calculate vendor subtotal
                 $vendorSubtotal = 0;
                 foreach ($items as $item) {
@@ -93,7 +136,7 @@ class CheckoutController extends Controller
                     'order_reference' => $orderNumber,
                     'customer_id' => $customer,
                     'order_date' => now(),
-                    'fulfillment_type' => $request->input("delivery_type_{$vendorId}", 'weekend_pickup'),
+                    'fulfillment_type' => $deliveryType ?? 'weekend_pickup',
                     'order_status' => 'pending',
                     'delivery_address' => $request->delivery_notes,
                     'notes' => $request->delivery_notes,

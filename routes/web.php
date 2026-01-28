@@ -19,24 +19,26 @@ Route::get('/shop/{vendor_id}', [ShopController::class, 'show'])->name('shop.sho
 Route::get('/product/{product_id}', [ShopController::class, 'product'])->name('shop.product');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('auth.register');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('auth.login');
+Route::get('/vendor/register', [AuthController::class, 'showVendorRegister'])->name('vendor.register');
 
 Route::post('/user/register', [AuthController::class, 'register'])->name('user.register');
 Route::post('signin', [AuthController::class, 'postSignin'])->name('user.signin');
-
-// Cart Routes (Public - can be used by guests)
-Route::get('/cart', [CartController::class, 'view'])->name('cart.view');
-Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');
-Route::put('/cart/update', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
-
-// Checkout Routes
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
-Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::post('/vendor/register', [AuthController::class, 'registerVendor'])->name('vendor.register.submit');
 
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
     Route::get('logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Cart Routes (authenticated users only)
+    Route::get('/cart', [CartController::class, 'view'])->name('cart.view');
+    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+    Route::put('/cart/update', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+
+    // Checkout Routes (authenticated users only)
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     
     // Admin Routes Group
     Route::middleware(['role:administrator'])->prefix('admin')->name('admin.')->group(function () {

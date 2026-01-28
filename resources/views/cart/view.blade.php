@@ -10,73 +10,86 @@
         @if($groupedCart->count() > 0)
             <div class="row">
                 <div class="col-lg-8">
-                    @foreach($groupedCart as $vendorId => $items)
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    {{ $items->first()->vendor_name }}
-                                    @if(isset($vendorServices[$vendorId]))
-                                        <div class="float-end">
-                                            @if($vendorServices[$vendorId]->weekend_pickup_enabled)
-                                                <span class="badge bg-success me-1">🏪 Pickup</span>
-                                            @endif
-                                            @if($vendorServices[$vendorId]->weekday_delivery_enabled)
-                                                <span class="badge bg-info me-1">🚚 Weekday Delivery</span>
-                                            @endif
-                                            @if($vendorServices[$vendorId]->weekend_delivery_enabled)
-                                                <span class="badge bg-primary">🚚 Weekend Delivery</span>
-                                            @endif
-                                        </div>
-                                    @endif
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Product</th>
-                                                <th>Price</th>
-                                                <th>Quantity</th>
-                                                <th>Total</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($items as $cartKey => $item)
+                    <form action="{{ route('checkout.index') }}" method="GET" id="cartCheckoutForm">
+                        @foreach($groupedCart as $vendorId => $items)
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        {{ $items->first()->vendor_name }}
+                                        @if(isset($vendorServices[$vendorId]))
+                                            <div class="float-end">
+                                                @if($vendorServices[$vendorId]->weekend_pickup_enabled)
+                                                    <span class="badge bg-success me-1">🏪 Pickup</span>
+                                                @endif
+                                                @if($vendorServices[$vendorId]->weekday_delivery_enabled)
+                                                    <span class="badge bg-info me-1">🚚 Weekday Delivery</span>
+                                                @endif
+                                                @if($vendorServices[$vendorId]->weekend_delivery_enabled)
+                                                    <span class="badge bg-primary">🚚 Weekend Delivery</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <thead>
                                                 <tr>
-                                                    <td>{{ $item['product_name'] }}</td>
-                                                    <td>₱{{ number_format($item['price_per_unit'], 2) }}</td>
-                                                    <td>
-                                                        <input type="number" 
-                                                               class="form-control form-control-sm" 
-                                                               style="width: 80px;"
-                                                               value="{{ $item['quantity'] }}" 
-                                                               min="1" 
-                                                               max="99"
-                                                               onchange="updateCartItem('{{ $item['product_id'] }}', '{{ $item['vendor_id'] }}', this.value)">
-                                                    </td>
-                                                    <td>₱{{ number_format($item['price_per_unit'] * $item['quantity'], 2) }}</td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-danger" onclick="removeFromCart('{{ $item['product_id'] }}', '{{ $item['vendor_id'] }}')">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </td>
+                                                    <th style="width: 40px;">
+                                                        <input type="checkbox" class="form-check-input" checked onclick="toggleVendorSelection({{ $vendorId }}, this.checked)">
+                                                    </th>
+                                                    <th>Product</th>
+                                                    <th>Price</th>
+                                                    <th>Quantity</th>
+                                                    <th>Total</th>
+                                                    <th>Action</th>
                                                 </tr>
-                                            @endforeach
-                                        </tbody>
-                                        <tfoot>
-                                            <tr class="table-primary">
-                                                <th colspan="3">Vendor Subtotal</th>
-                                                <th>₱{{ number_format($items->sum(function($item) { return $item['price_per_unit'] * $item['quantity']; }), 2) }}</th>
-                                                <th></th>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($items as $cartKey => $item)
+                                                    <tr>
+                                                        <td>
+                                                            <input type="checkbox"
+                                                                   class="form-check-input cart-item-checkbox vendor-{{ $vendorId }}"
+                                                                   name="selected_items[]"
+                                                                   value="{{ $cartKey }}"
+                                                                   checked
+                                                                   onchange="recalculateSelectedTotals()">
+                                                        </td>
+                                                        <td>{{ $item['product_name'] }}</td>
+                                                        <td>₱{{ number_format($item['price_per_unit'], 2) }}</td>
+                                                        <td>
+                                                            <input type="number" 
+                                                                   class="form-control form-control-sm" 
+                                                                   style="width: 80px;"
+                                                                   value="{{ $item['quantity'] }}" 
+                                                                   min="1" 
+                                                                   max="99"
+                                                                   onchange="updateCartItem('{{ $item['product_id'] }}', '{{ $item['vendor_id'] }}', this.value)">
+                                                        </td>
+                                                        <td>₱{{ number_format($item['price_per_unit'] * $item['quantity'], 2) }}</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-danger" type="button" onclick="removeFromCart('{{ $item['product_id'] }}', '{{ $item['vendor_id'] }}')">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="table-primary">
+                                                    <th colspan="4">Vendor Subtotal</th>
+                                                    <th>₱{{ number_format($items->sum(function($item) { return $item['price_per_unit'] * $item['quantity']; }), 2) }}</th>
+                                                    <th></th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </form>
                 </div>
                 
                 <div class="col-lg-4">
@@ -86,35 +99,41 @@
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Subtotal:</span>
-                                <strong>₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                    return $vendorItems->sum(function($item) { 
-                                        return $item['price_per_unit'] * $item['quantity']; 
-                                    }); 
-                                }), 2) }}</strong>
+                                <span>Subtotal (selected):</span>
+                                <strong id="selectedSubtotal">
+                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
+                                        return $vendorItems->sum(function($item) { 
+                                            return $item['price_per_unit'] * $item['quantity']; 
+                                        }); 
+                                    }), 2) }}
+                                </strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Market Fee (5%):</span>
-                                <strong>₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                    return $vendorItems->sum(function($item) { 
-                                        return $item['price_per_unit'] * $item['quantity']; 
-                                    }); 
-                                }) * 0.05, 2) }}</strong>
+                                <strong id="selectedMarketFee">
+                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
+                                        return $vendorItems->sum(function($item) { 
+                                            return $item['price_per_unit'] * $item['quantity']; 
+                                        }); 
+                                    }) * 0.05, 2) }}
+                                </strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
-                                <span><strong>Total:</strong></span>
-                                <strong class="text-primary">₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                    return $vendorItems->sum(function($item) { 
-                                        return $item['price_per_unit'] * $item['quantity']; 
-                                    }); 
-                                }) * 1.05, 2) }}</strong>
+                                <span><strong>Total (selected):</strong></span>
+                                <strong class="text-primary" id="selectedTotal">
+                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
+                                        return $vendorItems->sum(function($item) { 
+                                            return $item['price_per_unit'] * $item['quantity']; 
+                                        }); 
+                                    }) * 1.05, 2) }}
+                                </strong>
                             </div>
                             
                             <div class="d-grid gap-2">
-                                <a href="{{ route('checkout.index') }}" class="btn btn-primary">
-                                    Proceed to Checkout
-                                </a>
+                                <button type="submit" form="cartCheckoutForm" class="btn btn-primary">
+                                    Proceed to Checkout (selected)
+                                </button>
                                 <a href="{{ route('home') }}" class="btn btn-outline-secondary">
                                     Continue Shopping
                                 </a>

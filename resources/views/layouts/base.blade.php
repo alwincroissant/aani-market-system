@@ -9,67 +9,144 @@
     @stack('styles')
 </head>
 <body class="pt-5 {{ request()->is('admin*') ? 'admin-theme' : '' }}">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('home') }}">AANI Market</a>
+            <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
+                <span class="fw-bold">AANI Market</span>
+                <span class="ms-2 text-muted small d-none d-sm-inline">Wet Market Online</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     @auth
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('home') }}">Home</a>
-                        </li>
-                        @if(auth()->user()->role === 'vendor')
+                        @php
+                            $navCart = session('cart', []);
+                            $navCartCount = collect($navCart)->sum('quantity');
+                            $navCartTotal = collect($navCart)->sum(function ($item) {
+                                return $item['price_per_unit'] * $item['quantity'];
+                            });
+                            $role = auth()->user()->role;
+                        @endphp
+                        {{-- Customer navigation --}}
+                        @if($role === 'customer')
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('products.index') }}">My Products</a>
+                                <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('home') }}#market-map-section">Market map</a>
                             </li>
                         @endif
-                        @if(auth()->user()->role === 'administrator')
+
+                        {{-- Vendor navigation --}}
+                        @if($role === 'vendor')
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="vendorDropdown" role="button" data-bs-toggle="dropdown">
+                                    Vendor
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('products.index') }}">
+                                        <i class="bi bi-box-seam"></i> My products
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('home') }}">
+                                        <i class="bi bi-eye"></i> View customer site
+                                    </a></li>
+                                </ul>
+                            </li>
+                        @endif
+
+                        {{-- Admin navigation --}}
+                        @if($role === 'administrator')
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                                    Admin Panel
+                                    Admin
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}">
                                         <i class="bi bi-speedometer2"></i> Dashboard
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">
-                                        <i class="bi bi-people"></i> User Management
+                                        <i class="bi bi-people"></i> User management
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.map.index') }}">
-                                        <i class="bi bi-map"></i> Map Management
+                                        <i class="bi bi-map"></i> Market map & stalls
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.reports.sales') }}">
-                                        <i class="bi bi-graph-up"></i> Sales Report
+                                        <i class="bi bi-graph-up"></i> Sales report
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
-                                        <i class="bi bi-calendar-check"></i> Attendance Report
+                                        <i class="bi bi-calendar-check"></i> Attendance report
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('home', ['view_site' => 1]) }}">
-                                        <i class="bi bi-eye"></i> View Site
+                                        <i class="bi bi-eye"></i> View customer site
                                     </a></li>
                                 </ul>
                             </li>
                         @endif
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('logout') }}">Logout</a>
+                        {{-- Cart dropdown for authenticated users --}}
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="cartDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-cart"></i>
+                                @if($navCartCount > 0)
+                                    <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
+                                        {{ $navCartCount }}
+                                    </span>
+                                @endif
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cartDropdown" style="min-width: 280px;">
+                                @if($navCartCount === 0)
+                                    <li class="dropdown-item text-muted small">Your cart is empty</li>
+                                @else
+                                    @foreach(array_slice($navCart, 0, 5) as $item)
+                                        <li class="dropdown-item small d-flex justify-content-between">
+                                            <div>
+                                                <div class="fw-semibold">{{ $item['product_name'] }}</div>
+                                                <div class="text-muted">
+                                                    x{{ $item['quantity'] }} @ ₱{{ number_format($item['price_per_unit'], 2) }}
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                ₱{{ number_format($item['price_per_unit'] * $item['quantity'], 2) }}
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="dropdown-item d-flex justify-content-between small">
+                                        <span>Total</span>
+                                        <strong>₱{{ number_format($navCartTotal, 2) }}</strong>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-center" href="{{ route('cart.view') }}">
+                                            View full cart & checkout
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" href="{{ route('logout') }}">Sign out</a>
                         </li>
                     @else
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('home') }}">Home</a>
+                            <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('shop.index') }}">Browse Shops</a>
+                            <a class="nav-link" href="{{ route('home') }}#market-map-section">Market map</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('auth.login') }}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('auth.register') }}">Register</a>
+                            <a class="nav-link" href="{{ route('auth.register') }}">Sign up</a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-outline-success btn-sm" href="{{ route('vendor.register') }}">
+                                <i class="bi bi-shop"></i> Become a vendor
+                            </a>
                         </li>
                     @endauth
                 </ul>

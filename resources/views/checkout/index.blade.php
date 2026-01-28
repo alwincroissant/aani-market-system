@@ -60,7 +60,7 @@
                                                             <input class="form-check-input" type="radio" 
                                                                    name="delivery_type_{{ $vendorId }}" 
                                                                    id="pickup_{{ $vendorId }}" 
-                                                                   value="pickup" required>
+                                                                   value="weekend_pickup" required>
                                                             <label class="form-check-label" for="pickup_{{ $vendorId }}">
                                                                 🏪 Weekend Pickup
                                                             </label>
