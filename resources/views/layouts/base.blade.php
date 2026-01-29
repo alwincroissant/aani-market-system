@@ -15,144 +15,112 @@
                 <span class="fw-bold">AANI Market</span>
                 <span class="ms-2 text-muted small d-none d-sm-inline">Wet Market Online</span>
             </a>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav me-auto">
+                    @guest
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('home') }}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('shop.index') }}">Browse Shops</a>
+                        </li>
+                    @endguest
+                    
                     @auth
-                        @php
-                            $navCart = session('cart', []);
-                            $navCartCount = collect($navCart)->sum('quantity');
-                            $navCartTotal = collect($navCart)->sum(function ($item) {
-                                return $item['price_per_unit'] * $item['quantity'];
-                            });
-                            $role = auth()->user()->role;
-                        @endphp
-                        {{-- Customer navigation --}}
-                        @if($role === 'customer')
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('home') }}#market-map-section">Market map</a>
-                            </li>
-                        @endif
-
-                        {{-- Vendor navigation --}}
-                        @if($role === 'vendor')
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="vendorDropdown" role="button" data-bs-toggle="dropdown">
-                                    Vendor
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('products.index') }}">
-                                        <i class="bi bi-box-seam"></i> My products
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('home') }}">
-                                        <i class="bi bi-eye"></i> View customer site
-                                    </a></li>
-                                </ul>
-                            </li>
-                        @endif
-
-                        {{-- Admin navigation --}}
-                        @if($role === 'administrator')
+                        @if(auth()->user()->role === 'administrator')
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                                    Admin
+                                    <i class="bi bi-gear"></i> Admin
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}">
-                                        <i class="bi bi-speedometer2"></i> Dashboard
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">
-                                        <i class="bi bi-people"></i> User management
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.map.index') }}">
-                                        <i class="bi bi-map"></i> Market map & stalls
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.reports.sales') }}">
-                                        <i class="bi bi-graph-up"></i> Sales report
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
-                                        <i class="bi bi-calendar-check"></i> Attendance report
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('home', ['view_site' => 1]) }}">
-                                        <i class="bi bi-eye"></i> View customer site
-                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Users</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.vendors.index') }}">Vendors</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.products.index') }}">Products</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}">Orders</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.map.index') }}">Market Map</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.reports.sales') }}">Reports</a></li>
                                 </ul>
                             </li>
+                        @elseif(auth()->user()->role === 'vendor')
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="vendorDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-shop"></i> Vendor
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.products.index') }}">My Products</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.orders.index') }}">Orders</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.attendance.index') }}">Attendance</a></li>
+                                </ul>
+                            </li>
+                        @else
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('home') }}">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('shop.index') }}">Browse Shops</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('cart.view') }}">My Cart</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('customer.orders.index') }}">My Orders</a>
+                            </li>
                         @endif
-                        {{-- Cart dropdown for authenticated users --}}
-                        <li class="nav-item dropdown me-2">
-                            <a class="nav-link dropdown-toggle position-relative" href="#" id="cartDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-cart"></i>
-                                @if($navCartCount > 0)
-                                    <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
-                                        {{ $navCartCount }}
-                                    </span>
-                                @endif
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cartDropdown" style="min-width: 280px;">
-                                @if($navCartCount === 0)
-                                    <li class="dropdown-item text-muted small">Your cart is empty</li>
-                                @else
-                                    @foreach(array_slice($navCart, 0, 5) as $item)
-                                        <li class="dropdown-item small d-flex justify-content-between">
-                                            <div>
-                                                <div class="fw-semibold">{{ $item['product_name'] }}</div>
-                                                <div class="text-muted">
-                                                    x{{ $item['quantity'] }} @ ₱{{ number_format($item['price_per_unit'], 2) }}
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                ₱{{ number_format($item['price_per_unit'] * $item['quantity'], 2) }}
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li class="dropdown-item d-flex justify-content-between small">
-                                        <span>Total</span>
-                                        <strong>₱{{ number_format($navCartTotal, 2) }}</strong>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item text-center" href="{{ route('cart.view') }}">
-                                            View full cart & checkout
-                                        </a>
-                                    </li>
-                                @endif
-                            </ul>
-                        </li>
-                        <li class="nav-item ms-2">
-                            <a class="nav-link" href="{{ route('logout') }}">Sign out</a>
-                        </li>
-                    @else
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('home') }}#market-map-section">Market map</a>
-                        </li>
+                    @endauth
+                </ul>
+                
+                <ul class="navbar-nav">
+                    @guest
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('auth.login') }}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('auth.register') }}">Sign up</a>
+                            <a class="nav-link" href="{{ route('auth.register') }}">Register</a>
                         </li>
-                        <li class="nav-item ms-lg-2">
-                            <a class="btn btn-outline-success btn-sm" href="{{ route('vendor.register') }}">
-                                <i class="bi bi-shop"></i> Become a vendor
+                    @endguest
+                    
+                    @auth
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> {{ auth()->user()->email }}
                             </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ route('profile.index') }}">My Profile</a></li>
+                                <li><a class="dropdown-item" href="{{ route('profile.addresses') }}">Delivery Addresses</a></li>
+                                <li><a class="dropdown-item" href="{{ route('profile.orders') }}">Order History</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ route('logout') }}">Logout</a></li>
+                            </ul>
                         </li>
                     @endauth
                 </ul>
             </div>
         </div>
     </nav>
+
+    @auth
+        @if(auth()->user()->role === 'customer')
+            <div class="position-fixed" style="top: 80px; right: 20px; z-index: 1000;">
+                <a href="{{ route('cart.view') }}" class="btn btn-primary rounded-circle p-3 shadow-lg d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.49.402H5a.5.5 0 0 1-.49-.402L3.61 3.5H1.5a.5.5 0 0 1-.5-.5zM3.14 4l.7 4H13.16l.7-4H3.14zM5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                    </svg>
+                    @if(Session::get('cart'))
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ collect(Session::get('cart'))->sum('quantity') }}
+                        </span>
+                    @endif
+                </a>
+            </div>
+        @endif
+    @endauth
 
     <div class="container mt-4">
         @include('layouts.flash-messages')

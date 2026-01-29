@@ -190,18 +190,15 @@ function addToCart(productId) {
             `;
             document.body.appendChild(alert);
             
+            // Update cart badge in navbar
+            updateCartBadge();
+            
             // Remove alert after 3 seconds
             setTimeout(() => {
                 if (alert.parentNode) {
                     alert.parentNode.removeChild(alert);
                 }
             }, 3000);
-            
-            // Reset quantity to 1
-            quantityInput.value = 1;
-            
-            // Update cart summary
-            updateCartSummary();
         } else {
             // Show error message
             const alert = document.createElement('div');
@@ -213,12 +210,11 @@ function addToCart(productId) {
             `;
             document.body.appendChild(alert);
             
-            // Remove alert after 3 seconds
             setTimeout(() => {
                 if (alert.parentNode) {
                     alert.parentNode.removeChild(alert);
                 }
-            }, 3000);
+            }, 5000);
         }
     })
     .catch(error => {
@@ -233,7 +229,6 @@ function addToCart(productId) {
         `;
         document.body.appendChild(alert);
         
-        // Remove alert after 3 seconds
         setTimeout(() => {
             if (alert.parentNode) {
                 alert.parentNode.removeChild(alert);
@@ -241,37 +236,17 @@ function addToCart(productId) {
         }, 3000);
     });
 }
-            
-            // Update cart summary
-            updateCartSummary();
-            
-            // Remove alert after 3 seconds
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
-        } else {
-            // Show error message
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
-            alert.style.zIndex = '9999';
-            alert.innerHTML = `
-                <strong>Error!</strong> ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alert);
-            
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+
+function updateCartBadge() {
+    fetch('/cart/count')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.querySelector('.navbar .badge.bg-danger');
+            if (badge) {
+                badge.textContent = data.count;
+            }
+        })
+        .catch(error => console.error('Error updating cart badge:', error));
 }
 
 function updateCartSummary() {

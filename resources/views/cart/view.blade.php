@@ -10,12 +10,13 @@
         @if($groupedCart->count() > 0)
             <div class="row">
                 <div class="col-lg-8">
-                    <form action="{{ route('checkout.index') }}" method="GET" id="cartCheckoutForm">
+                    <form action="{{ route('checkout.index') }}" method="POST" id="cartCheckoutForm">
+                        @csrf
                         @foreach($groupedCart as $vendorId => $items)
                             <div class="card mb-4">
                                 <div class="card-header">
                                     <h5 class="mb-0">
-                                        {{ $items->first()->vendor_name }}
+                                        {{ $vendorServices[$vendorId]->business_name }}
                                         @if(isset($vendorServices[$vendorId]))
                                             <div class="float-end">
                                                 @if($vendorServices[$vendorId]->weekend_pickup_enabled)
@@ -37,7 +38,7 @@
                                             <thead>
                                                 <tr>
                                                     <th style="width: 40px;">
-                                                        <input type="checkbox" class="form-check-input" checked onclick="toggleVendorSelection({{ $vendorId }}, this.checked)">
+                                                        <input type="checkbox" class="form-check-input" onclick="toggleVendorSelection({{ $vendorId }}, this.checked)">
                                                     </th>
                                                     <th>Product</th>
                                                     <th>Price</th>
@@ -47,14 +48,26 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($items as $cartKey => $item)
+                                                @foreach($items as $index => $item)
+                                                    @php
+                                                        // Find the actual cart key by matching the item data
+                                                        $cart = Session::get('cart', []);
+                                                        $cartKey = null;
+                                                        foreach ($cart as $key => $cartItem) {
+                                                            if ($cartItem['product_id'] == $item['product_id'] && $cartItem['vendor_id'] == $item['vendor_id']) {
+                                                                $cartKey = $key;
+                                                                break;
+                                                            }
+                                                        }
+                                                    @endphp
                                                     <tr>
                                                         <td>
                                                             <input type="checkbox"
                                                                    class="form-check-input cart-item-checkbox vendor-{{ $vendorId }}"
                                                                    name="selected_items[]"
                                                                    value="{{ $cartKey }}"
-                                                                   checked
+                                                                   data-price="{{ $item['price_per_unit'] }}"
+                                                                   data-quantity="{{ $item['quantity'] }}"
                                                                    onchange="recalculateSelectedTotals()">
                                                         </td>
                                                         <td>{{ $item['product_name'] }}</td>
@@ -100,34 +113,16 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Subtotal (selected):</span>
-                                <strong id="selectedSubtotal">
-                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                        return $vendorItems->sum(function($item) { 
-                                            return $item['price_per_unit'] * $item['quantity']; 
-                                        }); 
-                                    }), 2) }}
-                                </strong>
+                                <strong id="selectedSubtotal">₱0.00</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Market Fee (5%):</span>
-                                <strong id="selectedMarketFee">
-                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                        return $vendorItems->sum(function($item) { 
-                                            return $item['price_per_unit'] * $item['quantity']; 
-                                        }); 
-                                    }) * 0.05, 2) }}
-                                </strong>
+                                <strong id="selectedMarketFee">₱0.00</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
                                 <span><strong>Total (selected):</strong></span>
-                                <strong class="text-primary" id="selectedTotal">
-                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                        return $vendorItems->sum(function($item) { 
-                                            return $item['price_per_unit'] * $item['quantity']; 
-                                        }); 
-                                    }) * 1.05, 2) }}
-                                </strong>
+                                <strong class="text-primary" id="selectedTotal">₱0.00</strong>
                             </div>
                             
                             <div class="d-grid gap-2">
@@ -194,7 +189,26 @@ function updateCartItem(productId, vendorId, quantity) {
 
 function removeFromCart(productId, vendorId) {
     if (confirm('Are you sure you want to remove this item?')) {
-        updateCartItem(productId, vendorId, 0);
+        fetch('/cart/destroy', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                vendor_id: vendorId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
     }
 }
 
@@ -216,5 +230,51 @@ function clearCart() {
         });
     }
 }
+
+function toggleVendorSelection(vendorId, isChecked) {
+    const checkboxes = document.querySelectorAll('.vendor-' + vendorId);
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+    });
+    recalculateSelectedTotals();
+}
+
+function recalculateSelectedTotals() {
+    const selectedCheckboxes = document.querySelectorAll('.cart-item-checkbox:checked');
+    let subtotal = 0;
+    
+    console.log('Selected checkboxes:', selectedCheckboxes.length);
+    
+    selectedCheckboxes.forEach(checkbox => {
+        const price = parseFloat(checkbox.dataset.price);
+        const quantity = parseInt(checkbox.dataset.quantity);
+        subtotal += price * quantity;
+        console.log('Item:', checkbox.value, 'Price:', price, 'Quantity:', quantity);
+    });
+    
+    const marketFee = subtotal * 0.05;
+    const total = subtotal + marketFee;
+    
+    console.log('Calculated totals - Subtotal:', subtotal, 'Market Fee:', marketFee, 'Total:', total);
+    
+    document.getElementById('selectedSubtotal').textContent = '₱' + subtotal.toFixed(2);
+    document.getElementById('selectedMarketFee').textContent = '₱' + marketFee.toFixed(2);
+    document.getElementById('selectedTotal').textContent = '₱' + total.toFixed(2);
+}
+
+// Initialize totals on page load
+document.addEventListener('DOMContentLoaded', function() {
+    recalculateSelectedTotals();
+    
+    // Add form submission debugging
+    document.getElementById('cartCheckoutForm').addEventListener('submit', function(e) {
+        const selectedCheckboxes = document.querySelectorAll('.cart-item-checkbox:checked');
+        console.log('Form submission - Selected items:', selectedCheckboxes.length);
+        
+        selectedCheckboxes.forEach((checkbox, index) => {
+            console.log(`Selected item ${index + 1}:`, checkbox.value);
+        });
+    });
+});
 </script>
 @endpush

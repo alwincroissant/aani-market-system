@@ -10,7 +10,9 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminDashboardController;
-use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\CustomerOrderController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\VendorProfileController;
 
 // Public Routes
 Route::get('/', [MarketMapController::class, 'index'])->name('home')->middleware('redirect.admins');
@@ -33,10 +35,31 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cart', [CartController::class, 'view'])->name('cart.view');
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::put('/cart/update', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/destroy', [CartController::class, 'destroy'])->name('cart.destroy');
     Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+    Route::get('/cart/count', [CartController::class, 'count'])->name('cart.count');
+
+    // Customer Order Routes
+    Route::get('/my-orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');
+    Route::get('/my-orders/{orderReference}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
+
+    // Profile Routes
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/addresses', [ProfileController::class, 'addresses'])->name('profile.addresses');
+    Route::post('/profile/addresses', [ProfileController::class, 'storeAddress'])->name('profile.addresses.store');
+    Route::put('/profile/addresses/{id}', [ProfileController::class, 'updateAddress'])->name('profile.addresses.update');
+    Route::delete('/profile/addresses/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.addresses.delete');
+    Route::get('/profile/orders', [ProfileController::class, 'orders'])->name('profile.orders');
+    Route::post('/profile/change-password', [ProfileController::class, 'changePassword'])->name('profile.change-password');
+
+    // Vendor Profile Routes
+    Route::get('/vendor/profile', [VendorProfileController::class, 'index'])->name('vendor.profile.index');
+    Route::put('/vendor/profile', [VendorProfileController::class, 'update'])->name('vendor.profile.update');
 
     // Checkout Routes (authenticated users only)
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'index'])->name('checkout.index.post');
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     
