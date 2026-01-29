@@ -75,7 +75,7 @@ class CustomerOrderController extends Controller
         $subtotal = $orderItems->sum(function($item) {
             return $item->unit_price * $item->quantity;
         });
-        $marketFee = $subtotal * 0.05;
+        $marketFee = 0; // Removed 5% market fee
         $totalAmount = $subtotal + $marketFee;
 
         return view('customer.orders.show', compact('order', 'orderItems', 'subtotal', 'marketFee', 'totalAmount'));

@@ -42,7 +42,7 @@ class AdminUserController extends Controller
         $rules = [
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'in:administrator,vendor,customer'],
+            'role' => ['required', 'in:administrator,pickup_manager,vendor,customer'],
         ];
 
         $messages = [

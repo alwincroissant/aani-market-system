@@ -37,11 +37,12 @@
                     <div class="col-md-6 mb-3">
                         <div class="card">
                             <div class="card-body">
-                                <h6 class="card-title">Need Help?</h6>
+                                <h6 class="card-title">Pickup Information</h6>
                                 <p class="small text-muted mb-2">
-                                    • Contact us at support@aanimarket.com<br>
-                                    • Call us at +63 912 345 6789<br>
-                                    • Live chat available 9AM-6PM
+                                    • For pickup orders: Pickup code will be available when order is ready<br>
+                                    • Check your order details on weekends for pickup code<br>
+                                    • Pickup location: AANI Weekend Market, Taguig<br>
+                                    • Operating hours: Saturday & Sunday 5:00 AM - 2:00 PM
                                 </p>
                             </div>
                         </div>
@@ -49,11 +50,11 @@
                 </div>
                 
                 <div class="d-flex justify-content-center gap-2 mt-4">
-                    <a href="{{ route('home') }}" class="btn btn-primary">
-                        Continue Shopping
+                    <a href="{{ route('customer.orders.index') }}" class="btn btn-primary">
+                        View My Orders
                     </a>
-                    <a href="{{ route('cart.view') }}" class="btn btn-outline-secondary">
-                        View Cart
+                    <a href="{{ route('home') }}" class="btn btn-outline-secondary">
+                        Continue Shopping
                     </a>
                 </div>
             </div>

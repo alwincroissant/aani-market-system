@@ -38,7 +38,7 @@
                                     <i class="bi bi-gear"></i> Admin
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}">Dashboard</a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Users</a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.vendors.index') }}">Vendors</a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.products.index') }}">Products</a></li>
@@ -46,6 +46,12 @@
                                     <li><a class="dropdown-item" href="{{ route('admin.map.index') }}">Market Map</a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.reports.sales') }}">Reports</a></li>
                                 </ul>
+                            </li>
+                        @elseif(auth()->user()->role === 'pickup_manager')
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('pickup-manager.index') }}">
+                                    <i class="bi bi-qr-code-scan"></i> Pickup Manager
+                                </a>
                             </li>
                         @elseif(auth()->user()->role === 'vendor')
                             <li class="nav-item dropdown">

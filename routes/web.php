@@ -8,6 +8,8 @@ use App\Http\Controllers\VendorProductController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\PickupManagerController;
+use App\Http\Controllers\AdminOrderController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\CustomerOrderController;
@@ -63,6 +65,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     
+    // Pickup Manager Routes
+    Route::middleware(['role:pickup_manager'])->prefix('pickup-manager')->name('pickup-manager.')->group(function () {
+        Route::get('/', [PickupManagerController::class, 'index'])->name('index');
+        Route::post('/verify-pickup-code', [PickupManagerController::class, 'verifyPickupCode'])->name('verifyPickupCode');
+        Route::post('/mark-pickup-used', [PickupManagerController::class, 'markPickupCodeUsed'])->name('markPickupUsed');
+        Route::get('/search-orders', [PickupManagerController::class, 'searchOrders'])->name('searchOrders');
+    });
+    
     // Admin Routes Group
     Route::middleware(['role:administrator'])->prefix('admin')->name('admin.')->group(function () {
         // Dashboard
@@ -70,6 +80,19 @@ Route::middleware(['auth'])->group(function () {
         
         // User Management
         Route::resource('users', AdminUserController::class);
+        
+        // Vendor Management
+        Route::resource('vendors', AdminUserController::class);
+        
+        // Product Management
+        Route::resource('products', VendorProductController::class);
+        
+        // Order Management
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{id}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::put('/orders/{id}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
+        Route::post('/orders/verify-pickup-code', [AdminOrderController::class, 'verifyPickupCode'])->name('orders.verifyPickupCode');
+        Route::post('/orders/mark-pickup-used', [AdminOrderController::class, 'markPickupCodeUsed'])->name('orders.markPickupUsed');
         
         // Map Management
         Route::get('/map', [AdminMapController::class, 'index'])->name('map.index');

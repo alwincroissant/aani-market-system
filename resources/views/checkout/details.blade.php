@@ -30,7 +30,7 @@
                                                     <option value="weekend_pickup">🏪 Weekend Pickup (FREE)</option>
                                                 @endif
                                                 @if($vendorServices[$vendorId]->weekday_delivery_enabled)
-                                                    <option value="weekday_delivery">🚚 Weekday Delivery (₱50.00)</option>
+                                                    <option value="weekday_delivery">🚚 Weekday Delivery (₱150.00)</option>
                                                 @endif
                                                 @if($vendorServices[$vendorId]->weekend_delivery_enabled)
                                                     <option value="weekend_delivery">🚚 Weekend Delivery (₱75.00)</option>
@@ -114,7 +114,7 @@
                         
                         <div class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle"></i> <strong>Please Note:</strong> 
-                            Bring your order reference number when picking up your order.
+                            Bring your pickup code when picking up your order. A unique 6-character pickup code will be generated and will be available when your order is ready for pickup (typically on weekends).
                         </div>
                     </div>
                 </div>
@@ -180,16 +180,20 @@
                     
                     <div class="d-flex justify-content-between mb-2">
                         <strong>Subtotal:</strong>
-                        <strong>₱{{ number_format($subtotal, 2) }}</strong>
+                        <strong id="subtotal">₱{{ number_format($subtotal, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Market Fee (5%):</span>
+                        <span>Market Fee:</span>
                         <span>₱{{ number_format($marketFee, 2) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Delivery Fee:</span>
+                        <span id="deliveryFee">₱0.00</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between">
                         <h5>Total:</h5>
-                        <h5 class="text-primary">₱{{ number_format($total, 2) }}</h5>
+                        <h5 class="text-primary" id="total">₱{{ number_format($total, 2) }}</h5>
                     </div>
                 </div>
             </div>
@@ -280,6 +284,36 @@ function checkDeliveryAvailability() {
     });
 }
 
+// Calculate delivery fees and update totals
+function calculateTotals() {
+    let deliveryFee = 0;
+    const deliverySelects = document.querySelectorAll('select[name^="delivery_type_"]');
+    
+    deliverySelects.forEach(select => {
+        if (select.value === 'weekday_delivery') {
+            deliveryFee += 150;
+        } else if (select.value === 'weekend_delivery') {
+            deliveryFee += 75;
+        }
+        // Weekend pickup is free
+    });
+    
+    // Update delivery fee display
+    const deliveryFeeElement = document.getElementById('deliveryFee');
+    if (deliveryFeeElement) {
+        deliveryFeeElement.textContent = '₱' + deliveryFee.toFixed(2);
+    }
+    
+    // Update total
+    const subtotalElement = document.getElementById('subtotal');
+    const totalElement = document.getElementById('total');
+    if (subtotalElement && totalElement) {
+        const subtotal = parseFloat(subtotalElement.textContent.replace('₱', '').replace(',', ''));
+        const total = subtotal + deliveryFee;
+        totalElement.textContent = '₱' + total.toFixed(2);
+    }
+}
+
 // Toggle delivery/pickup information cards
 function toggleDeliveryInfo() {
     const deliverySelects = document.querySelectorAll('select[name^="delivery_type_"]');
@@ -321,6 +355,9 @@ function toggleDeliveryInfo() {
         paymentMethodCard.classList.remove('d-none');
         orderButtonContainer.classList.remove('d-none');
     }
+    
+    // Calculate totals after toggling
+    calculateTotals();
 }
 
 // Initialize on page load

@@ -53,6 +53,12 @@
                             @if($order->delivery_address)
                                 <p class="mb-1"><strong>Delivery Address:</strong><br>{{ $order->delivery_address }}</p>
                             @endif
+                            @if($order->pickup_code && $order->order_status === 'ready')
+                                <p class="mb-1"><strong>Pickup Code:</strong> <span class="badge bg-success fs-6">{{ $order->pickup_code }}</span></p>
+                                <p class="mb-1 text-muted small"><i class="bi bi-info-circle"></i> Your order is ready for pickup. Bring this code to the AANI Weekend Market.</p>
+                            @elseif($order->pickup_code && $order->order_status === 'confirmed')
+                                <p class="mb-1 text-muted small"><i class="bi bi-clock"></i> Pickup code will be available when your order is ready for pickup.</p>
+                            @endif
                             @if($order->notes)
                                 <p class="mb-1"><strong>Notes:</strong><br>{{ $order->notes }}</p>
                             @endif
@@ -90,9 +96,9 @@
                                     <tr>
                                         <td>{{ $item->product_name }}</td>
                                         <td>{{ $item->business_name }}</td>
-                                        <td>₱{{ number_format($item->price_per_unit, 2) }}</td>
+                                        <td>₱{{ number_format($item->unit_price, 2) }}</td>
                                         <td>{{ $item->quantity }} {{ $item->unit_type }}</td>
-                                        <td>₱{{ number_format($item->price_per_unit * $item->quantity, 2) }}</td>
+                                        <td>₱{{ number_format($item->unit_price * $item->quantity, 2) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -102,7 +108,7 @@
                                     <th>₱{{ number_format($subtotal, 2) }}</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4">Market Fee (5%)</th>
+                                    <th colspan="4">Market Fee</th>
                                     <th>₱{{ number_format($marketFee, 2) }}</th>
                                 </tr>
                                 <tr class="table-success">

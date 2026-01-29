@@ -68,7 +68,7 @@ class CheckoutController extends Controller
         $subtotal = collect($cart)->sum(function($item) {
             return $item['price_per_unit'] * $item['quantity'];
         });
-        $marketFee = $subtotal * 0.05;
+        $marketFee = 0; // Removed 5% market fee
         $total = $subtotal + $marketFee;
 
         // Get customer addresses
@@ -164,8 +164,8 @@ class CheckoutController extends Controller
                     $vendorSubtotal += $item['price_per_unit'] * $item['quantity'];
                 }
 
-                // Calculate market fee (5%)
-                $marketFee = $vendorSubtotal * 0.05;
+                // Calculate market fee (removed - set to 0)
+                $marketFee = 0;
                 $total = $vendorSubtotal + $marketFee;
 
                 // Generate order number
@@ -188,6 +188,26 @@ class CheckoutController extends Controller
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
+                
+                // Generate pickup code for pickup orders
+                $pickupCode = null;
+                if ($deliveryType && strpos($deliveryType, 'pickup') !== false) {
+                    $pickupCode = strtoupper(substr(md5(uniqid()), 0, 6));
+                    
+                    // Store pickup code in separate table
+                    DB::table('pickup_codes')->insert([
+                        'order_id' => $orderId,
+                        'code' => $pickupCode,
+                        'expires_at' => now()->addDays(7), // Expires in 7 days
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    
+                    // Update order with pickup code
+                    DB::table('orders')
+                        ->where('id', $orderId)
+                        ->update(['pickup_code' => $pickupCode]);
+                }
 
                 // Create order items
                 foreach ($items as $item) {
