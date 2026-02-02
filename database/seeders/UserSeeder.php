@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
         $vendorUser = User::firstOrCreate([
             'email' => 'vendor@test.com'
         ], [
-            'name' => 'Test Vendor',
+            //'name' => 'Test Vendor',
             'email' => 'vendor@test.com',
             'password' => Hash::make('password'),
             'role' => 'vendor',
