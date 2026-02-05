@@ -19,6 +19,15 @@ class AdminDashboardController extends Controller
             'occupied_stalls' => DB::table('stalls')->where('status', 'occupied')->count(),
         ];
 
+        // Get count of pending vendors for notification badge
+        $pendingVendorsCount = DB::table('users')
+            ->join('vendors', 'users.id', '=', 'vendors.user_id')
+            ->leftJoin('stall_assignments', 'vendors.id', '=', 'stall_assignments.vendor_id')
+            ->where('users.role', 'vendor')
+            ->where('users.is_active', false)
+            ->whereNull('stall_assignments.vendor_id')
+            ->count();
+
         // Get recent orders (through order_items to get vendor info)
         $recentOrders = DB::table('orders as o')
             ->join('order_items as oi', 'o.id', '=', 'oi.order_id')
@@ -48,6 +57,6 @@ class AdminDashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('admin.dashboard.index', compact('stats', 'recentOrders', 'topVendors'));
+        return view('admin.dashboard.index', compact('stats', 'recentOrders', 'topVendors', 'pendingVendorsCount'));
     }
 }

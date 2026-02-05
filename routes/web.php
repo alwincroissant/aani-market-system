@@ -80,6 +80,9 @@ Route::middleware(['auth'])->group(function () {
         
         // User Management
         Route::resource('users', AdminUserController::class);
+        Route::put('/users/{id}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
+        Route::put('/users/{id}/deactivate', [AdminUserController::class, 'deactivate'])->name('users.deactivate');
+        Route::post('/users/assign-stall', [AdminUserController::class, 'assignStallAndActivate'])->name('users.assign-stall');
         
         // Vendor Management
         Route::resource('vendors', AdminUserController::class);
@@ -96,10 +99,11 @@ Route::middleware(['auth'])->group(function () {
         
         // Map Management
         Route::get('/map', [AdminMapController::class, 'index'])->name('map.index');
-        Route::post('/map/upload', [AdminMapController::class, 'uploadBackground'])->name('map.upload');
-        Route::post('/map/stalls', [AdminMapController::class, 'storeStall'])->name('map.stalls.store');
-        Route::put('/map/stalls/{id}', [AdminMapController::class, 'updateStall'])->name('map.stalls.update');
-        Route::delete('/map/stalls/{id}', [AdminMapController::class, 'deleteStall'])->name('map.stalls.delete');
+        Route::post('/map/upload-background', [AdminMapController::class, 'uploadBackground'])->name('map.uploadBackground');
+        Route::post('/map/stall', [AdminMapController::class, 'storeStall'])->name('map.storeStall');
+        Route::put('/map/stall/{id}', [AdminMapController::class, 'updateStall'])->name('map.updateStall');
+        Route::delete('/map/stall/{id}', [AdminMapController::class, 'deleteStall'])->name('map.deleteStall');
+        Route::get('/map/stalls-data', [AdminMapController::class, 'getStallsData'])->name('map.stalls-data');
         
         // Reports
         Route::get('/reports/sales', [AdminReportController::class, 'sales'])->name('reports.sales');

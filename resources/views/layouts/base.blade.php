@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'AANI Market')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     @stack('styles')
 </head>
 <body class="pt-5 {{ request()->is('admin*') ? 'admin-theme' : '' }}">
@@ -39,7 +40,14 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}">Dashboard</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">Users</a></li>
+                                    <li><a class="dropdown-item position-relative" href="{{ route('admin.users.index') }}">
+                                        Users
+                                        @if(isset($pendingVendorsCount) && $pendingVendorsCount > 0)
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                {{ $pendingVendorsCount }}
+                                            </span>
+                                        @endif
+                                    </a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.vendors.index') }}">Vendors</a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.products.index') }}">Products</a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.orders.index') }}">Orders</a></li>

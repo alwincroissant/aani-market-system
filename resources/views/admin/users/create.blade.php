@@ -66,6 +66,7 @@
                         <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
                             <option value="">Select Role</option>
                             <option value="administrator" {{ old('role') == 'administrator' ? 'selected' : '' }}>Admin</option>
+                            <option value="pickup_manager" {{ old('role') == 'pickup_manager' ? 'selected' : '' }}>Pickup Manager</option>
                             <option value="vendor" {{ old('role') == 'vendor' ? 'selected' : '' }}>Vendor</option>
                             <option value="customer" {{ old('role') == 'customer' ? 'selected' : '' }}>Customer</option>
                         </select>
@@ -74,6 +75,7 @@
                         @enderror
                         <small class="form-text text-muted">
                             <strong>Admin:</strong> Full system access<br>
+                            <strong>Pickup Manager:</strong> Can scan pickup codes and complete orders<br>
                             <strong>Vendor:</strong> Can manage products and view sales<br>
                             <strong>Customer:</strong> Can browse and purchase products
                         </small>

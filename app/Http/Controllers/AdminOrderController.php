@@ -10,7 +10,16 @@ class AdminOrderController extends Controller
 {
     public function index(Request $request)
 {
-        $query = DB::table('orders as o')
+    // Get count of pending vendors for notification badge
+    $pendingVendorsCount = DB::table('users')
+        ->join('vendors', 'users.id', '=', 'vendors.user_id')
+        ->leftJoin('stall_assignments', 'vendors.id', '=', 'stall_assignments.vendor_id')
+        ->where('users.role', 'vendor')
+        ->where('users.is_active', false)
+        ->whereNull('stall_assignments.vendor_id')
+        ->count();
+
+    $query = DB::table('orders as o')
             ->join('customers as c', 'o.customer_id', '=', 'c.id')
             ->join('users as u', 'c.user_id', '=', 'u.id')
             ->leftJoin('order_items as oi', 'o.id', '=', 'oi.order_id')
@@ -91,7 +100,7 @@ class AdminOrderController extends Controller
         $statuses = ['pending', 'confirmed', 'ready', 'completed', 'cancelled'];
         $fulfillmentTypes = ['weekend_pickup', 'weekday_delivery', 'weekend_delivery'];
 
-        return view('admin.orders.index', compact('orders', 'statuses', 'fulfillmentTypes'));
+        return view('admin.orders.index', compact('orders', 'statuses', 'fulfillmentTypes', 'pendingVendorsCount'));
     }
 
     public function show($id)

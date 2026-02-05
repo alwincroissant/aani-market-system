@@ -25,6 +25,15 @@ class AdminMapController extends Controller
         \Log::info('Map Image Path: ' . $mapImage);
         \Log::info('Has Map Image: ' . ($hasMapImage ? 'true' : 'false'));
 
+        // Get count of pending vendors for notification badge
+        $pendingVendorsCount = DB::table('users')
+            ->join('vendors', 'users.id', '=', 'vendors.user_id')
+            ->leftJoin('stall_assignments', 'vendors.id', '=', 'stall_assignments.vendor_id')
+            ->where('users.role', 'vendor')
+            ->where('users.is_active', false)
+            ->whereNull('stall_assignments.vendor_id')
+            ->count();
+
         $stalls = DB::table('stalls as s')
             ->leftJoin('market_sections as ms', 's.section_id', '=', 'ms.id')
             ->leftJoin('stall_assignments as sa', function($join) {
@@ -67,7 +76,7 @@ class AdminMapController extends Controller
             })
             ->get();
 
-        return view('admin.map.index', compact('mapImage', 'hasMapImage', 'stalls', 'sections', 'vendors'));
+        return view('admin.map.index', compact('mapImage', 'hasMapImage', 'stalls', 'sections', 'vendors', 'pendingVendorsCount'));
     }
 
     public function uploadBackground(Request $request)
@@ -323,6 +332,39 @@ class AdminMapController extends Controller
                 'y2' => $stall->y2,
             ]
         ]);
+    }
+
+    public function getStallsData()
+    {
+        $stalls = DB::table('stalls as s')
+            ->leftJoin('market_sections as ms', 's.section_id', '=', 'ms.id')
+            ->leftJoin('stall_assignments as sa', function($join) {
+                $join->on('s.id', '=', 'sa.stall_id')
+                     ->whereNull('sa.end_date');
+            })
+            ->leftJoin('vendors as v', 'sa.vendor_id', '=', 'v.id')
+            ->whereNull('s.deleted_at')
+            ->select(
+                's.id',
+                's.stall_number',
+                's.position_x',
+                's.position_y',
+                's.x1',
+                's.y1', 
+                's.x2',
+                's.y2',
+                's.map_coordinates_json',
+                's.status',
+                's.section_id',
+                'ms.section_name',
+                'ms.section_code',
+                'v.id as vendor_id',
+                'v.business_name'
+            )
+            ->orderBy('s.stall_number')
+            ->get();
+
+        return response()->json($stalls);
     }
 
     public function deleteStall($id)

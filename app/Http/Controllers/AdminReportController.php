@@ -9,6 +9,15 @@ class AdminReportController extends Controller
 {
     public function sales(Request $request)
     {
+        // Get count of pending vendors for notification badge
+        $pendingVendorsCount = DB::table('users')
+            ->join('vendors', 'users.id', '=', 'vendors.user_id')
+            ->leftJoin('stall_assignments', 'vendors.id', '=', 'stall_assignments.vendor_id')
+            ->where('users.role', 'vendor')
+            ->where('users.is_active', false)
+            ->whereNull('stall_assignments.vendor_id')
+            ->count();
+
         $startDate = $request->input('start_date', now()->subDays(30)->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
 
@@ -42,12 +51,22 @@ class AdminReportController extends Controller
             'endDate',
             'totalRevenue',
             'totalMarketFees',
-            'totalGrossSales'
+            'totalGrossSales',
+            'pendingVendorsCount'
         ));
     }
 
     public function attendance(Request $request)
     {
+        // Get count of pending vendors for notification badge
+        $pendingVendorsCount = DB::table('users')
+            ->join('vendors', 'users.id', '=', 'vendors.user_id')
+            ->leftJoin('stall_assignments', 'vendors.id', '=', 'stall_assignments.vendor_id')
+            ->where('users.role', 'vendor')
+            ->where('users.is_active', false)
+            ->whereNull('stall_assignments.vendor_id')
+            ->count();
+
         $marketDate = $request->input('market_date', now()->toDateString());
 
         // Query vendor attendance for the specific date
@@ -78,7 +97,8 @@ class AdminReportController extends Controller
             'attendance',
             'marketDate',
             'allVendors',
-            'absentVendors'
+            'absentVendors',
+            'pendingVendorsCount'
         ));
     }
 }

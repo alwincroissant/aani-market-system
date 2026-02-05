@@ -307,6 +307,153 @@ class SampleDataSeeder extends Seeder
             DB::table('products')->insertOrIgnore($product);
         }
 
+        // Create sample stalls for the market map
+        $stalls = [
+            [
+                'stall_number' => '1A',
+                'section_id' => 1, // Vegetables section
+                'position_x' => 200,
+                'position_y' => 400,
+                'x1' => 150,
+                'y1' => 350,
+                'x2' => 250,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 150, 'y1' => 350, 'x2' => 250, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_number' => '1B',
+                'section_id' => 1, // Vegetables section
+                'position_x' => 300,
+                'position_y' => 400,
+                'x1' => 250,
+                'y1' => 350,
+                'x2' => 350,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 250, 'y1' => 350, 'x2' => 350, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_number' => '2A',
+                'section_id' => 2, // Plant Market section
+                'position_x' => 400,
+                'position_y' => 400,
+                'x1' => 350,
+                'y1' => 350,
+                'x2' => 450,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 350, 'y1' => 350, 'x2' => 450, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_number' => '2B',
+                'section_id' => 2, // Plant Market section
+                'position_x' => 500,
+                'position_y' => 400,
+                'x1' => 450,
+                'y1' => 350,
+                'x2' => 550,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 450, 'y1' => 350, 'x2' => 550, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_number' => '3A',
+                'section_id' => 3, // Meat and Fish section
+                'position_x' => 600,
+                'position_y' => 400,
+                'x1' => 550,
+                'y1' => 350,
+                'x2' => 650,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 550, 'y1' => 350, 'x2' => 650, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_number' => '3B',
+                'section_id' => 3, // Meat and Fish section
+                'position_x' => 700,
+                'position_y' => 400,
+                'x1' => 650,
+                'y1' => 350,
+                'x2' => 750,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 650, 'y1' => 350, 'x2' => 750, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_number' => '4A',
+                'section_id' => 4, // Food Section
+                'position_x' => 800,
+                'position_y' => 400,
+                'x1' => 750,
+                'y1' => 350,
+                'x2' => 850,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 750, 'y1' => 350, 'x2' => 850, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_number' => '4B',
+                'section_id' => 4, // Food Section
+                'position_x' => 900,
+                'position_y' => 400,
+                'x1' => 850,
+                'y1' => 350,
+                'x2' => 950,
+                'y2' => 450,
+                'map_coordinates_json' => json_encode(['x1' => 850, 'y1' => 350, 'x2' => 950, 'y2' => 450]),
+                'status' => 'available',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ];
+
+        foreach ($stalls as $stall) {
+            DB::table('stalls')->insertOrIgnore($stall);
+        }
+
+        // Assign some vendors to stalls for demonstration
+        $stallAssignments = [
+            [
+                'stall_id' => 1, // 1A
+                'vendor_id' => $vendorIds['Meat Master'],
+                'assigned_date' => now()->toDateString(),
+                'end_date' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'stall_id' => 7, // 4A
+                'vendor_id' => $vendorIds['Food Haven'],
+                'assigned_date' => now()->toDateString(),
+                'end_date' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ];
+
+        foreach ($stallAssignments as $assignment) {
+            DB::table('stall_assignments')->insertOrIgnore($assignment);
+        }
+
+        // Update stall statuses for assigned stalls
+        DB::table('stalls')->whereIn('id', [1, 7])->update(['status' => 'occupied']);
+
         $this->command->info('Sample data seeded successfully!');
         $this->command->info('Vendor Login Credentials:');
         $this->command->info('Fresh Farm Produce: freshfarm@example.com / password');

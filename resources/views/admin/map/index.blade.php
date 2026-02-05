@@ -18,7 +18,7 @@
                     <h5>Upload Market Floor Plan</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.map.upload') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('admin.map.uploadBackground') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
                             <label for="map_image" class="form-label">Select Floor Plan Image</label>
@@ -53,7 +53,7 @@
                         <button class="btn btn-danger" id="deleteModeBtn">
                             <i class="bi bi-trash"></i> Delete Mode
                         </button>
-                        <form action="{{ route('admin.map.upload') }}" method="POST" enctype="multipart/form-data" class="d-inline">
+                        <form action="{{ route('admin.map.uploadBackground') }}" method="POST" enctype="multipart/form-data" class="d-inline">
                             @csrf
                             <input type="file" name="map_image" accept="image/*" class="d-none" id="replaceImage" onchange="this.form.submit()">
                             <button type="button" class="btn btn-secondary" onclick="document.getElementById('replaceImage').click()">
