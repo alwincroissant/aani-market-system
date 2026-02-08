@@ -29,6 +29,17 @@ class CustomerOrderController extends Controller
             )
             ->get();
 
+        // Calculate total for each order
+        $orders = $orders->map(function($order) {
+            $orderItems = DB::table('order_items')
+                ->where('order_id', $order->id)
+                ->get();
+            $order->total_amount = $orderItems->sum(function($item) {
+                return $item->unit_price * $item->quantity;
+            });
+            return $order;
+        });
+
         return view('customer.orders.index', compact('orders'));
     }
 

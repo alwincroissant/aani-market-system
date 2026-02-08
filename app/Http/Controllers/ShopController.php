@@ -123,13 +123,25 @@ class ShopController extends Controller
 
         $products = $productQuery->limit(24)->get();
 
+        // For debugging: capture SQL and bindings when app debug is enabled
+        $productQuerySql = null;
+        $productQueryBindings = [];
+        if (config('app.debug')) {
+            try {
+                $productQuerySql = $productQuery->toSql();
+                $productQueryBindings = $productQuery->getBindings();
+            } catch (\Exception $e) {
+                // ignore
+            }
+        }
+
         // Get available categories for filter dropdown
         $categories = DB::table('product_categories')
             ->whereNull('deleted_at')
             ->orderBy('category_name')
             ->get();
 
-        return view('shop.index', compact('featuredVendors', 'products', 'categories'));
+        return view('shop.index', compact('featuredVendors', 'products', 'categories', 'productQuerySql', 'productQueryBindings'));
     }
 
     public function show($vendor_id)

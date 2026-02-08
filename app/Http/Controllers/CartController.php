@@ -129,6 +129,21 @@ class CartController extends Controller
         ]);
     }
 
+    public function summary()
+    {
+        $cart = Session::get('cart', []);
+        $cartCollection = collect($cart);
+        $totalItems = $cartCollection->sum('quantity');
+        $totalAmount = $cartCollection->sum(function ($item) {
+            return $item['price_per_unit'] * $item['quantity'];
+        });
+        
+        return response()->json([
+            'count' => $totalItems,
+            'total' => number_format($totalAmount, 2)
+        ]);
+    }
+
     public function clear()
     {
         Session::forget('cart');

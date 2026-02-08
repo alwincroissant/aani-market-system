@@ -26,14 +26,11 @@
             <div class="card-body">
                 <form method="GET" action="{{ route('shop.index') }}">
                     <div class="row g-3">
-                        <!-- Search -->
                         <div class="col-md-4">
                             <label for="search" class="form-label">Search</label>
                             <input type="text" class="form-control" id="search" name="search" 
                                    value="{{ request('search') }}" placeholder="Search shops or products...">
                         </div>
-                        
-                        <!-- Section Filter -->
                         <div class="col-md-2">
                             <label for="section" class="form-label">Section</label>
                             <select class="form-select" id="section" name="section" disabled>
@@ -41,8 +38,6 @@
                                 <option value="">Not Available</option>
                             </select>
                         </div>
-                        
-                        <!-- Service Filter -->
                         <div class="col-md-2">
                             <label for="service" class="form-label">Service</label>
                             <select class="form-select" id="service" name="service">
@@ -58,36 +53,22 @@
                                 </option>
                             </select>
                         </div>
-                        
-                        <!-- Vendor Sort -->
                         <div class="col-md-2">
                             <label for="sort_by" class="form-label">Sort Featured</label>
                             <select class="form-select" id="sort_by" name="sort_by" disabled>
                                 <option value="">Featured Only</option>
                             </select>
                         </div>
-                        
-                        <!-- Product Sort -->
                         <div class="col-md-2">
                             <label for="product_sort_by" class="form-label">Sort Products</label>
                             <select class="form-select" id="product_sort_by" name="product_sort_by">
-                                <option value="created_at" {{ request('product_sort_by') == 'created_at' ? 'selected' : '' }}>
-                                    Newest First
-                                </option>
-                                <option value="price_low" {{ request('product_sort_by') == 'price_low' ? 'selected' : '' }}>
-                                    Price (Low to High)
-                                </option>
-                                <option value="price_high" {{ request('product_sort_by') == 'price_high' ? 'selected' : '' }}>
-                                    Price (High to Low)
-                                </option>
-                                <option value="name" {{ request('product_sort_by') == 'name' ? 'selected' : '' }}>
-                                    Name (A-Z)
-                                </option>
+                                <option value="created_at" {{ request('product_sort_by') == 'created_at' ? 'selected' : '' }}>Newest First</option>
+                                <option value="price_low" {{ request('product_sort_by') == 'price_low' ? 'selected' : '' }}>Price (Low to High)</option>
+                                <option value="price_high" {{ request('product_sort_by') == 'price_high' ? 'selected' : '' }}>Price (High to Low)</option>
+                                <option value="name" {{ request('product_sort_by') == 'name' ? 'selected' : '' }}>Name (A-Z)</option>
                             </select>
                         </div>
                     </div>
-                    
-                    <!-- Advanced Filters -->
                     <div class="row g-3 mt-2">
                         <div class="col-md-2">
                             <label for="category" class="form-label">Category</label>
@@ -100,19 +81,14 @@
                                 @endforeach
                             </select>
                         </div>
-                        
                         <div class="col-md-2">
                             <label for="price_min" class="form-label">Min Price</label>
-                            <input type="number" class="form-control" id="price_min" name="price_min" 
-                                   value="{{ request('price_min') }}" placeholder="0" min="0" step="0.01">
+                            <input type="number" class="form-control" id="price_min" name="price_min" value="{{ request('price_min') }}" placeholder="0" min="0" step="0.01">
                         </div>
-                        
                         <div class="col-md-2">
                             <label for="price_max" class="form-label">Max Price</label>
-                            <input type="number" class="form-control" id="price_max" name="price_max" 
-                                   value="{{ request('price_max') }}" placeholder="9999" min="0" step="0.01">
+                            <input type="number" class="form-control" id="price_max" name="price_max" value="{{ request('price_max') }}" placeholder="9999" min="0" step="0.01">
                         </div>
-                        
                         <div class="col-md-6 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary me-2">
                                 <i class="bi bi-search"></i> Apply Filters
@@ -123,6 +99,7 @@
                         </div>
                     </div>
                 </form>
+                {{-- Debug block removed --}}
             </div>
         </div>
     </div>
@@ -201,7 +178,18 @@
                                     <span class="fw-bold text-primary">₱{{ number_format($product->price_per_unit, 2) }}</span>
                                     <span class="text-muted small">/ {{ $product->unit_type }}</span>
                                 </div>
-                                <div class="btn-group w-100">
+
+                                <!-- Add To Cart Section -->
+                                <div class="mb-2">
+                                    <div class="input-group mb-2" style="max-width: 120px;">
+                                        <input type="number" id="quantityInput-{{ $product->id }}" class="form-control form-control-sm" value="1" min="1" max="99">
+                                    </div>
+                                    <button type="button" class="btn btn-success btn-sm w-100" onclick="addToCart({{ $product->id }})">
+                                        <i class="bi bi-cart-plus"></i> Add to Cart
+                                    </button>
+                                </div>
+
+                                <div class="d-flex justify-content-between mt-2">
                                     <a href="{{ route('shop.product', $product->id) }}" class="btn btn-outline-primary btn-sm">
                                         <i class="bi bi-eye"></i> View
                                     </a>
@@ -215,6 +203,7 @@
                 </div>
             @endforeach
         </div>
+
         @if($products->count() === 0)
             <div class="alert alert-info">
                 <h5>No Products Found</h5>
@@ -224,3 +213,91 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function addToCart(productId) {
+    const quantity = parseInt(document.getElementById('quantityInput-' + productId).value);
+
+    fetch('/cart/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: quantity
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+            if (data.success) {
+                // in-page slide alert (short)
+                const alertEl = document.createElement('div');
+                alertEl.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
+                alertEl.style.zIndex = '9999';
+                alertEl.innerHTML = `
+                    <strong>Success!</strong> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertEl);
+
+                setTimeout(() => {
+                    if (!alertEl.parentNode) return;
+                    alertEl.classList.add('slide-out');
+                    alertEl.addEventListener('animationend', function handler() {
+                        if (alertEl.parentNode) alertEl.parentNode.removeChild(alertEl);
+                        alertEl.removeEventListener('animationend', handler);
+                    });
+                }, 750);
+
+            try {
+                const badge = document.getElementById('cartCountBadge');
+                let newCount = null;
+                if (badge) {
+                    const current = parseInt(badge.textContent) || 0;
+                    newCount = current + quantity;
+                    console.log('shop.index addToCart local update newCount', newCount);
+                    if (typeof setCartCount === 'function') {
+                        setCartCount(newCount);
+                    } else {
+                        badge.textContent = newCount;
+                    }
+                    try { localStorage.setItem('cart_count', newCount); } catch (e) {}
+                    if (window.cartChannel) window.cartChannel.postMessage({ count: newCount });
+                    document.dispatchEvent(new CustomEvent('cart.add', { detail: { count: newCount } }));
+                } else {
+                    console.log('shop.index addToCart: badge not found, dispatching generic cart.add');
+                    document.dispatchEvent(new Event('cart.add'));
+                }
+            } catch (e) {
+                console.error('shop.index addToCart local update failed', e);
+                document.dispatchEvent(new Event('cart.add'));
+            }
+        } else {
+            const alertEl = document.createElement('div');
+            alertEl.className = 'alert alert-warning alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
+            alertEl.style.zIndex = '9999';
+            alertEl.innerHTML = `
+                <strong>Notice:</strong> ${data.message || 'Could not add item to cart.'}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertEl);
+
+            setTimeout(() => {
+                if (!alertEl.parentNode) return;
+                alertEl.classList.add('slide-out');
+                alertEl.addEventListener('animationend', function handler() {
+                    if (alertEl.parentNode) alertEl.parentNode.removeChild(alertEl);
+                    alertEl.removeEventListener('animationend', handler);
+                });
+            }, 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+</script>
+@endpush

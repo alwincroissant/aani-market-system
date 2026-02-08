@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/cart/destroy', [CartController::class, 'destroy'])->name('cart.destroy');
     Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
     Route::get('/cart/count', [CartController::class, 'count'])->name('cart.count');
+    Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
 
     // Customer Order Routes
     Route::get('/my-orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');

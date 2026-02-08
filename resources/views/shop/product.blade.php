@@ -101,7 +101,7 @@
 <script>
 function showSignupPrompt() {
     const alert = document.createElement('div');
-    alert.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 end-0 m-3';
+    alert.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
     alert.style.zIndex = '9999';
     alert.innerHTML = `
         <strong>Sign Up Required!</strong> Create an account to add items to cart and place orders.
@@ -117,19 +117,21 @@ function showSignupPrompt() {
     `;
     document.body.appendChild(alert);
     
-    // Remove alert after 8 seconds
+            // Remove alert after 8 seconds with slide-out animation
     setTimeout(() => {
-        if (alert.parentNode) {
-            alert.parentNode.removeChild(alert);
-        }
+        if (!alert.parentNode) return;
+        alert.classList.add('slide-out');
+        alert.addEventListener('animationend', function handler() {
+            if (alert.parentNode) alert.parentNode.removeChild(alert);
+            alert.removeEventListener('animationend', handler);
+        });
     }, 8000);
 }
 
 function addToCart(productId) {
     const quantityInput = document.getElementById('quantity');
     const quantity = parseInt(quantityInput.value);
-    
-    // Validate quantity
+
     if (isNaN(quantity) || quantity < 1) {
         quantityInput.value = 1;
         return;
@@ -138,7 +140,7 @@ function addToCart(productId) {
         quantityInput.value = 99;
         return;
     }
-    
+
     fetch('/cart/add', {
         method: 'POST',
         headers: {
@@ -153,44 +155,78 @@ function addToCart(productId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // show popup
             const alert = document.createElement('div');
-            alert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
             alert.style.zIndex = '9999';
             alert.innerHTML = `
                 <strong>Success!</strong> ${data.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.body.appendChild(alert);
-            
+
+            // Remove alert after 750ms (250ms slide-in + 500ms stay) with slide-out animation
             setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
-            
-            // Reset quantity to 1
+                if (!alert.parentNode) return;
+                alert.classList.add('slide-out');
+                alert.addEventListener('animationend', function handler() {
+                    if (alert.parentNode) alert.parentNode.removeChild(alert);
+                    alert.removeEventListener('animationend', handler);
+                });
+            }, 750);
+
+            // reset quantity                                                                       
             quantityInput.value = 1;
+
+            // <-- DISPATCH EVENT TO UPDATE BADGE
+            try {
+                const badge = document.getElementById('cartCountBadge');
+                let newCount = null;
+                if (badge) {
+                    const current = parseInt(badge.textContent) || 0;
+                    newCount = current + quantity;
+                    console.log('shop addToCart local update newCount', newCount);
+                    if (typeof setCartCount === 'function') {
+                        setCartCount(newCount);
+                    } else {
+                        badge.textContent = newCount;
+                    }
+                    try { localStorage.setItem('cart_count', newCount); } catch (e) {}
+                    if (window.cartChannel) window.cartChannel.postMessage({ count: newCount });
+                    document.dispatchEvent(new CustomEvent('cart.add', { detail: { count: newCount } }));
+                } else {
+                    console.log('shop addToCart: badge not found, dispatching generic cart.add');
+                    document.dispatchEvent(new Event('cart.add'));
+                }
+            } catch (e) {
+                console.error('shop addToCart local update failed', e);
+                document.dispatchEvent(new Event('cart.add'));
+            }
         } else {
             const alert = document.createElement('div');
-            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
+            alert.className = 'alert alert-warning alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
             alert.style.zIndex = '9999';
             alert.innerHTML = `
-                <strong>Error!</strong> ${data.message}
+                <strong>Notice:</strong> ${data.message || 'Could not add item to cart.'}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.body.appendChild(alert);
-            
+
+            // Remove alert after 3 seconds with slide-out animation
             setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
+                if (!alert.parentNode) return;
+                alert.classList.add('slide-out');
+                alert.addEventListener('animationend', function handler() {
+                    if (alert.parentNode) alert.parentNode.removeChild(alert);
+                    alert.removeEventListener('animationend', handler);
+                });
             }, 3000);
         }
     })
     .catch(error => {
         console.error('Error:', error);
         const alert = document.createElement('div');
-        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
+        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
         alert.style.zIndex = '9999';
         alert.innerHTML = `
             <strong>Error!</strong> Failed to add item to cart. Please try again.
@@ -198,10 +234,14 @@ function addToCart(productId) {
         `;
         document.body.appendChild(alert);
         
+        // Remove alert after 3 seconds with slide-out animation
         setTimeout(() => {
-            if (alert.parentNode) {
-                alert.parentNode.removeChild(alert);
-            }
+            if (!alert.parentNode) return;
+            alert.classList.add('slide-out');
+            alert.addEventListener('animationend', function handler() {
+                if (alert.parentNode) alert.parentNode.removeChild(alert);
+                alert.removeEventListener('animationend', handler);
+            });
         }, 3000);
     });
 }

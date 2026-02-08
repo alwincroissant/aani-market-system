@@ -109,26 +109,13 @@
         @endif
     </div>
 </div>
-
-<!-- Cart Summary -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
-    <div class="card" style="min-width: 250px;">
-        <div class="card-body">
-            <h6 class="card-title">Cart Summary</h6>
-            <div id="cartSummary">
-                <p class="mb-0">Loading...</p>
-            </div>
-            <a href="{{ route('cart.view') }}" class="btn btn-primary btn-sm w-100 mt-2">View Cart</a>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
 <script>
 function showSignupPrompt() {
     const alert = document.createElement('div');
-    alert.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 end-0 m-3';
+    alert.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
     alert.style.zIndex = '9999';
     alert.innerHTML = `
         <strong>Sign Up Required!</strong> Create an account to add items to cart and place orders.
@@ -144,12 +131,15 @@ function showSignupPrompt() {
     `;
     document.body.appendChild(alert);
     
-    // Remove alert after 8 seconds
+    // Remove alert after 750ms (250ms slide-in + 500ms stay) with slide-out animation
     setTimeout(() => {
-        if (alert.parentNode) {
-            alert.parentNode.removeChild(alert);
-        }
-    }, 8000);
+        if (!alert.parentNode) return;
+        alert.classList.add('slide-out');
+        alert.addEventListener('animationend', function handler() {
+            if (alert.parentNode) alert.parentNode.removeChild(alert);
+            alert.removeEventListener('animationend', handler);
+        });
+    }, 750);
 }
 
 function addToCart(productId) {
@@ -182,7 +172,7 @@ function addToCart(productId) {
         if (data.success) {
             // Show success message
             const alert = document.createElement('div');
-            alert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
             alert.style.zIndex = '9999';
             alert.innerHTML = `
                 <strong>Success!</strong> ${data.message}
@@ -193,16 +183,19 @@ function addToCart(productId) {
             // Update cart badge in navbar
             updateCartBadge();
             
-            // Remove alert after 3 seconds
+            // Remove alert after 750ms (250ms slide-in + 500ms stay) with slide-out animation
             setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
+                if (!alert.parentNode) return;
+                alert.classList.add('slide-out');
+                alert.addEventListener('animationend', function handler() {
+                    if (alert.parentNode) alert.parentNode.removeChild(alert);
+                    alert.removeEventListener('animationend', handler);
+                });
+            }, 750);
         } else {
             // Show error message
             const alert = document.createElement('div');
-            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
+            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
             alert.style.zIndex = '9999';
             alert.innerHTML = `
                 <strong>Error!</strong> ${data.message}
@@ -210,18 +203,22 @@ function addToCart(productId) {
             `;
             document.body.appendChild(alert);
             
+            // Remove alert after 750ms (250ms slide-in + 500ms stay) with slide-out
             setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 5000);
+                if (!alert.parentNode) return;
+                alert.classList.add('slide-out');
+                alert.addEventListener('animationend', function handler() {
+                    if (alert.parentNode) alert.parentNode.removeChild(alert);
+                    alert.removeEventListener('animationend', handler);
+                });
+            }, 750);
         }
     })
     .catch(error => {
         console.error('Error:', error);
         // Show error message
         const alert = document.createElement('div');
-        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
+        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
         alert.style.zIndex = '9999';
         alert.innerHTML = `
             <strong>Error!</strong> Failed to add item to cart. Please try again.
@@ -229,43 +226,74 @@ function addToCart(productId) {
         `;
         document.body.appendChild(alert);
         
+        // Remove alert after 750ms (250ms slide-in + 500ms stay) with slide-out animation
         setTimeout(() => {
-            if (alert.parentNode) {
-                alert.parentNode.removeChild(alert);
-            }
-        }, 3000);
+            if (!alert.parentNode) return;
+            alert.classList.add('slide-out');
+            alert.addEventListener('animationend', function handler() {
+                if (alert.parentNode) alert.parentNode.removeChild(alert);
+                alert.removeEventListener('animationend', handler);
+            });
+        }, 750);
     });
 }
 
 function updateCartBadge() {
-    fetch('/cart/count')
+    fetch('{{ route('cart.count') }}')
         .then(response => response.json())
         .then(data => {
-            const badge = document.querySelector('.navbar .badge.bg-danger');
-            if (badge) {
-                badge.textContent = data.count;
+            try {
+                if (typeof setCartCount === 'function') {
+                    setCartCount(data.count);
+                } else {
+                    const badge = document.getElementById('cartCountBadge') || document.querySelector('.navbar .badge.bg-danger');
+                    if (badge) badge.textContent = data.count;
+                }
+                try { localStorage.setItem('cart_count', data.count); } catch (e) {}
+                if (window.cartChannel) window.cartChannel.postMessage({ count: data.count });
+            } catch (e) {
+                console.error('Error applying cart count:', e);
             }
         })
-        .catch(error => console.error('Error updating cart badge:', error));
+        .catch(error => console.error('Error fetching cart count:', error));
 }
 
 function updateCartSummary() {
-    fetch('/cart/view')
-    .then(response => response.text())
-    .then(html => {
-        // Parse the HTML to extract cart info
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const cartInfo = doc.getElementById('cartInfo');
-        
-        if (cartInfo) {
-            document.getElementById('cartSummary').innerHTML = cartInfo.innerHTML;
+    fetch('{{ route('cart.count') }}')
+    .then(response => response.json())
+    .then(data => {
+        const popup = document.getElementById('cartSummaryPopup');
+        if (popup) {
+            document.getElementById('cartItemCount').textContent = data.count;
+            // Estimate total - fetch full cart if needed
+            fetchCartTotal();
         }
     })
     .catch(error => {
         console.error('Error:', error);
     });
 }
+
+function fetchCartTotal() {
+    // This is a simple estimate; the real total comes from the cart view
+    // For now, we'll just show the count and let users go to cart for exact total
+}
+
+function toggleCartPopup() {
+    const popup = document.getElementById('cartSummaryPopup');
+    if (!popup) return;
+    const isHidden = popup.style.display === 'none' || !popup.style.display;
+    popup.style.display = isHidden ? 'block' : 'none';
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', function(e) {
+    const popup = document.getElementById('cartSummaryPopup');
+    const cartBtn = document.getElementById('liveCartButton');
+    if (popup && cartBtn && !popup.contains(e.target) && !cartBtn.contains(e.target)) {
+        popup.style.display = 'none';
+    }
+});
 
 // Load cart summary on page load
 document.addEventListener('DOMContentLoaded', function() {
