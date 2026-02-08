@@ -367,6 +367,18 @@ class AdminMapController extends Controller
         return response()->json($stalls);
     }
 
+    public function clearAssignments()
+    {
+        try {
+            // Delete all stall assignments
+            DB::table('stall_assignments')->delete();
+            
+            return response()->json(['success' => true, 'message' => 'All vendor assignments cleared successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to clear assignments: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function deleteStall($id)
     {
         $stall = Stall::find($id);

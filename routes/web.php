@@ -104,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/map/stall', [AdminMapController::class, 'storeStall'])->name('map.storeStall');
         Route::put('/map/stall/{id}', [AdminMapController::class, 'updateStall'])->name('map.updateStall');
         Route::delete('/map/stall/{id}', [AdminMapController::class, 'deleteStall'])->name('map.deleteStall');
+        Route::post('/map/clear-assignments', [AdminMapController::class, 'clearAssignments'])->name('map.clear-assignments');
         Route::get('/map/stalls-data', [AdminMapController::class, 'getStallsData'])->name('map.stalls-data');
         
         // Reports

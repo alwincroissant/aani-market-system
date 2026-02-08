@@ -15,14 +15,14 @@ class AdminUserController extends Controller
     public function index(Request $request)
     {
         $query = DB::table('users')
-            ->select('id', 'email', 'role', 'is_active', 'created_at');
+            ->select('users.id', 'users.email', 'users.role', 'users.is_active', 'users.created_at');
 
         // Filter by status (default to active users)
         $status = $request->input('status', 'active');
         if ($status === 'active') {
-            $query->where('is_active', true);
+            $query->where('users.is_active', true);
         } elseif ($status === 'inactive') {
-            $query->where('is_active', false);
+            $query->where('users.is_active', false);
         } elseif ($status === 'pending') {
             // Show inactive vendors who don't have stall assignments
             $query->where('users.role', 'vendor')
@@ -34,16 +34,16 @@ class AdminUserController extends Controller
 
         // Filter by role
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+            $query->where('users.role', $request->role);
         }
 
         // Search by email (since there's no name column)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where('email', 'like', "%{$search}%");
+            $query->where('users.email', 'like', "%{$search}%");
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(10);
+        $users = $query->orderBy('users.created_at', 'desc')->paginate(10);
 
         // Get count of pending vendors for notification badge
         $pendingVendorsCount = DB::table('users')
@@ -292,10 +292,23 @@ class AdminUserController extends Controller
             DB::beginTransaction();
 
             // Get user and vendor
-            $user = User::find($request->user_id);
-            $vendor = Vendor::where('user_id', $request->user_id)->first();
+            $user = DB::table('users')->where('id', $request->user_id)->first();
+            $vendor = DB::table('vendors')->where('user_id', $request->user_id)->first();
+
+            // Debug logging
+            \Log::info('Assign stall attempt:', [
+                'user_id' => $request->user_id,
+                'user_found' => $user ? true : false,
+                'vendor_found' => $vendor ? true : false,
+                'request_data' => $request->all()
+            ]);
 
             if (!$user || !$vendor) {
+                \Log::error('User or vendor not found:', [
+                    'user_id' => $request->user_id,
+                    'user' => $user,
+                    'vendor' => $vendor
+                ]);
                 return response()->json(['success' => false, 'message' => 'User or vendor not found.'], 404);
             }
 
@@ -332,7 +345,7 @@ class AdminUserController extends Controller
                 ]);
             } else {
                 // Assign to existing stall
-                $stall = \App\Models\Stall::where('stall_number', $request->stall_number)
+                $stall = DB::table('stalls')->where('stall_number', $request->stall_number)
                     ->where('section_id', $request->section_id)
                     ->where('status', 'available')
                     ->first();
@@ -342,8 +355,7 @@ class AdminUserController extends Controller
                 }
 
                 // Update stall status
-                $stall->status = 'occupied';
-                $stall->save();
+                DB::table('stalls')->where('id', $stall->id)->update(['status' => 'occupied']);
 
                 // Create stall assignment
                 DB::table('stall_assignments')->insert([
@@ -357,9 +369,16 @@ class AdminUserController extends Controller
             }
 
             // Activate user
-            $user->update(['is_active' => true]);
+            \Log::info('About to activate user:', ['user_id' => $request->user_id, 'vendor_id' => $vendor->id]);
+            DB::table('users')->where('id', $request->user_id)->update(['is_active' => true]);
 
             DB::commit();
+
+            \Log::info('Stall assignment completed successfully:', [
+                'user_id' => $request->user_id,
+                'stall_id' => $stall->id,
+                'stall_number' => $stall->stall_number
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -373,6 +392,16 @@ class AdminUserController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            // Detailed error logging
+            \Log::error('Stall assignment failed:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false, 
                 'message' => 'Failed to assign stall: ' . $e->getMessage()

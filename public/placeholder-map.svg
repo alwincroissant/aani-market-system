@@ -1,0 +1,10 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#f5f5f5"/>
+  <rect x="50" y="50" width="700" height="500" fill="white" stroke="#ddd" stroke-width="2"/>
+  <text x="400" y="300" text-anchor="middle" font-family="Arial" font-size="24" fill="#666">
+    Market Map - Upload Floor Plan
+  </text>
+  <text x="400" y="330" text-anchor="middle" font-family="Arial" font-size="16" fill="#999">
+    Click "Upload Background" to add your market layout
+  </text>
+</svg>

@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Slide-in alert for top-right notifications */
+.slide-alert {
+    transform: translateY(-10px);
+    opacity: 0;
+    animation: slideIn 320ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+.slide-alert.slide-out {
+    animation: slideOut 280ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateY(0);     opacity: 1; }
+    to   { transform: translateY(-20px); opacity: 0; }
+}
+
+/* Small badge bounce to indicate an added item */
+.badge-bounce {
+    animation: badgeBounce 620ms cubic-bezier(.2,.7,.4,1);
+}
+
+@keyframes badgeBounce {
+    0%   { transform: translateY(0); }
+    30%  { transform: translateY(-8px); }
+    60%  { transform: translateY(3px); }
+    100% { transform: translateY(0); }
+}

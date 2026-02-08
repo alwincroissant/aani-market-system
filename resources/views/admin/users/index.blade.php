@@ -102,6 +102,13 @@
                                                             title="Assign Stall & Activate">
                                                         <i class="bi bi-geo-alt"></i>
                                                     </button>
+                                                    <form action="{{ route('admin.users.activate', $user->id) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <button type="submit" class="btn btn-outline-success" title="Activate User (No Stall)" onclick="return confirm('Are you sure you want to activate this user without assigning a stall?')">
+                                                            <i class="bi bi-play-circle"></i>
+                                                        </button>
+                                                    </form>
                                                 @else
                                                     @if($user->is_active)
                                                         <form action="{{ route('admin.users.deactivate', $user->id) }}" method="POST" class="d-inline">
@@ -263,7 +270,12 @@ let currentUserId = null;
 
 // Open stall modal function
 function openStallModal(userId, email) {
+    console.log('=== openStallModal called ===');
+    console.log('Parameters:', {userId, email});
+    
     currentUserId = userId;
+    console.log('Set currentUserId to:', currentUserId);
+    
     document.getElementById('userId').value = userId;
     document.getElementById('vendorEmail').textContent = email;
     
@@ -474,12 +486,29 @@ function showStallPopup(stallData, center) {
 
 // Assign vendor to specific stall
 function assignVendorToStall(stallId, stallNumber, sectionId) {
+    console.log('=== assignVendorToStall called ===');
+    console.log('Parameters:', {stallId, stallNumber, sectionId});
+    
     const userId = currentUserId;
+    console.log('Current userId:', userId);
     
     if (!userId) {
+        console.error('No userId found!');
         alert('No vendor selected. Please try again.');
         return;
     }
+    
+    const requestData = {
+        user_id: userId,
+        stall_number: stallNumber,
+        section_id: sectionId,
+        x1: null, // No coordinates for existing stall
+        y1: null,
+        x2: null,
+        y2: null
+    };
+    
+    console.log('Request data:', requestData);
     
     // Send AJAX request to assign vendor to existing stall
     fetch('{{ route('admin.users.assign-stall') }}', {
@@ -488,19 +517,19 @@ function assignVendorToStall(stallId, stallNumber, sectionId) {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify({
-            user_id: userId,
-            stall_number: stallNumber,
-            section_id: sectionId,
-            x1: null, // No coordinates for existing stall
-            y1: null,
-            x2: null,
-            y2: null
-        })
+        body: JSON.stringify(requestData)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
+            alert('🎯 SUCCESS DETECTED! Stall assignment completed successfully!');
+            console.log('Full response object:', JSON.stringify(data, null, 2));
+            
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('stallAssignmentModal')).hide();
             
@@ -518,12 +547,20 @@ function assignVendorToStall(stallId, stallNumber, sectionId) {
                 window.location.reload();
             }, 1500);
         } else {
-            alert(data.message || 'Failed to assign stall. Please try again.');
+            console.error('❌ Stall assignment FAILED!');
+            console.error('Response object:', JSON.stringify(data, null, 2));
+            console.error('Response type:', typeof data);
+            alert('Failed to assign stall. Response: ' + JSON.stringify(data));
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        console.error('Fetch error in assignVendorToStall:', error);
+        console.error('Error details:', {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText
+        });
+        alert('An error occurred while assigning stall. Please check console for details.');
     });
 }
 
@@ -642,8 +679,24 @@ function assignStallAndActivate() {
             y2: parseFloat(y2)
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Raw response:', response);
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            console.error('HTTP Error:', response.status, response.statusText);
+            alert('HTTP Error: ' + response.status + ' ' + response.statusText);
+            return;
+        }
+        
+        return response.json();
+    })
     .then(data => {
+        console.log('Parsed response data:', data);
+        console.log('Data type:', typeof data);
+        console.log('Data keys:', data ? Object.keys(data) : 'null');
+        
         if (data.success) {
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('stallAssignmentModal')).hide();
