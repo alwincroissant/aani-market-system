@@ -112,6 +112,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/attendance', [AdminReportController::class, 'attendance'])->name('reports.attendance');
     });
     
+    // Vendor Dashboard Routes
+    Route::get('/vendor/dashboard', [VendorDashboardController::class, 'index'])->name('vendor.dashboard');
+    Route::post('/vendor/update-live-status', [VendorDashboardController::class, 'updateLiveStatus'])->name('vendor.update-live-status');
+    Route::post('/vendor/upload-banner', [VendorDashboardController::class, 'uploadBanner'])->name('vendor.upload-banner');
+    
     // Vendor Product Routes
     Route::resource('products', VendorProductController::class);
     Route::get('/products/{id}/restore', [VendorProductController::class, 'restore'])->name('products.restore');

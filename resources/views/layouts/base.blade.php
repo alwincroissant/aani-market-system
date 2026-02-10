@@ -42,11 +42,63 @@
                     
                     @auth
                         @if(auth()->user()->role === 'administrator')
-                            <!-- Admin dropdown omitted for brevity -->
-                        @elseif(auth()->user()->role === 'pickup_manager')
-                            <!-- Pickup Manager link omitted for brevity -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.dashboard.index') }}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.users.index') }}">
+                                    <i class="bi bi-people"></i> Users
+                                    @if($pendingVendorsCount ?? 0 > 0)
+                                        <span class="badge bg-danger ms-1">{{ $pendingVendorsCount }}</span>
+                                    @endif
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.map.index') }}">
+                                    <i class="bi bi-map"></i> Map
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.orders.index') }}">
+                                    <i class="bi bi-cart3"></i> Orders
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('products.index') }}">
+                                    <i class="bi bi-box"></i> Products
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-graph-up"></i> Reports
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('admin.reports.sales') }}">
+                                        <i class="bi bi-cash"></i> Sales Report
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
+                                        <i class="bi bi-calendar-check"></i> Attendance Report
+                                    </a></li>
+                                </ul>
+                            </li>
                         @elseif(auth()->user()->role === 'vendor')
-                            <!-- Vendor dropdown omitted for brevity -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('vendor.dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('products.index') }}">
+                                    <i class="bi bi-box"></i> My Products
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('profile.index') }}">
+                                    <i class="bi bi-shop"></i> Store Profile
+                                </a>
+                            </li>
                         @else
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('home') }}">Home</a>
@@ -80,11 +132,20 @@
                                 <i class="bi bi-person-circle"></i> {{ auth()->user()->email }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ route('profile.index') }}">My Profile</a></li>
-                                <li><a class="dropdown-item" href="{{ route('profile.addresses') }}">Delivery Addresses</a></li>
-                                <li><a class="dropdown-item" href="{{ route('profile.orders') }}">Order History</a></li>
+                                <li><h6 class="dropdown-header">Account</h6></li>
+                                <li><a class="dropdown-item" href="{{ route('profile.index') }}">
+                                    <i class="bi bi-person"></i> My Profile
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('profile.addresses') }}">
+                                    <i class="bi bi-geo-alt"></i> Delivery Addresses
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('profile.orders') }}">
+                                    <i class="bi bi-clock-history"></i> Order History
+                                </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ route('logout') }}">Logout</a></li>
+                                <li><a class="dropdown-item" href="{{ route('logout') }}">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </a></li>
                             </ul>
                         </li>
                     @endauth

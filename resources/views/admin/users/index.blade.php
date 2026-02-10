@@ -540,7 +540,13 @@ function assignVendorToStall(stallId, stallNumber, sectionId) {
                 <i class="bi bi-check-circle"></i> ${data.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-            document.querySelector('.container-fluid').prepend(alertDiv);
+            const container = document.querySelector('.container-fluid') || document.querySelector('.container') || document.body;
+            if (container) {
+                container.prepend(alertDiv);
+            } else {
+                console.error('Container not found, appending to body');
+                document.body.prepend(alertDiv);
+            }
             
             // Reload page after a short delay
             setTimeout(() => {
@@ -647,7 +653,17 @@ document.getElementById('clearStallCoordinates').addEventListener('click', funct
 });
 
 // Assign stall and activate
+let isProcessing = false;
+
 function assignStallAndActivate() {
+    // Prevent multiple submissions
+    if (isProcessing) {
+        console.log('Assignment already in progress...');
+        return;
+    }
+    
+    isProcessing = true;
+    
     const userId = document.getElementById('userId').value;
     const stallNumber = document.getElementById('stallNumber').value;
     const sectionId = document.getElementById('sectionId').value;
@@ -659,15 +675,32 @@ function assignStallAndActivate() {
     // Validation
     if (!stallNumber || !sectionId || !x1 || !y1 || !x2 || !y2) {
         alert('Please fill in all fields and select stall coordinates on map.');
+        isProcessing = false;
         return;
     }
     
     // Send AJAX request
-    fetch('{{ route('admin.users.assign-stall') }}', {
+    const routeUrl = '{{ route('admin.users.assign-stall') }}';
+    console.log('Route URL:', routeUrl);
+    console.log('Request data:', {
+        user_id: userId,
+        stall_number: stallNumber,
+        section_id: sectionId,
+        x1: parseFloat(x1),
+        y1: parseFloat(y1),
+        x2: parseFloat(x2),
+        y2: parseFloat(y2)
+    });
+    
+    // Fallback: try direct URL if route generation fails
+    const fallbackUrl = '/admin/users/assign-stall';
+    const finalUrl = routeUrl.includes('<') ? fallbackUrl : routeUrl;
+    
+    fetch(finalUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify({
             user_id: userId,
@@ -687,6 +720,7 @@ function assignStallAndActivate() {
         if (!response.ok) {
             console.error('HTTP Error:', response.status, response.statusText);
             alert('HTTP Error: ' + response.status + ' ' + response.statusText);
+            isProcessing = false;
             return;
         }
         
@@ -694,10 +728,11 @@ function assignStallAndActivate() {
     })
     .then(data => {
         console.log('Parsed response data:', data);
-        console.log('Data type:', typeof data);
-        console.log('Data keys:', data ? Object.keys(data) : 'null');
         
-        if (data.success) {
+        // Clear any existing alerts first
+        document.querySelectorAll('.alert').forEach(alert => alert.remove());
+        
+        if (data && data.success) {
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('stallAssignmentModal')).hide();
             
@@ -708,19 +743,28 @@ function assignStallAndActivate() {
                 <i class="bi bi-check-circle"></i> ${data.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-            document.querySelector('.container-fluid').prepend(alertDiv);
+            const container = document.querySelector('.container-fluid') || document.querySelector('.container') || document.body;
+            if (container) {
+                container.prepend(alertDiv);
+            } else {
+                console.error('Container not found, appending to body');
+                document.body.prepend(alertDiv);
+            }
             
             // Reload page after a short delay
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
         } else {
-            alert(data.message || 'Failed to assign stall. Please try again.');
+            console.error('Assignment failed:', data);
+            alert(data?.message || 'Failed to assign stall. Please try again.');
+            isProcessing = false;
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        console.error('Fetch error:', error);
+        alert('Network error occurred. Please try again.');
+        isProcessing = false;
     });
 }
 

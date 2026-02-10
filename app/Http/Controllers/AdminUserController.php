@@ -222,6 +222,28 @@ class AdminUserController extends Controller
                 ->with('error', 'User not found.');
         }
 
+        // For vendors, check if they have a stall assignment before activating
+        if ($user->role === 'vendor') {
+            $vendor = DB::table('vendors')
+                ->where('user_id', $user->id)
+                ->first();
+            
+            if (!$vendor) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'Vendor profile not found.');
+            }
+
+            $hasStallAssignment = DB::table('stall_assignments')
+                ->where('vendor_id', $vendor->id)
+                ->whereNull('end_date')
+                ->exists();
+
+            if (!$hasStallAssignment) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'Cannot activate vendor: No stall assigned. Please assign a stall first.');
+            }
+        }
+
         try {
             $user->update(['is_active' => true]);
             
