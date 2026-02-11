@@ -6,16 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'AANI Market')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     @stack('styles')
-    <style>
-        .slide-alert { transform: translateY(-10px); opacity: 0; animation: slideIn 250ms cubic-bezier(.2,.8,.2,1) forwards; }
-        .slide-alert.slide-out { animation: slideOut 250ms cubic-bezier(.2,.8,.2,1) forwards; }
-        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
-        .badge-bounce { animation: badgeBounce 500ms cubic-bezier(.2,.7,.4,1) !important; }
-        @keyframes badgeBounce { 0% { transform: translateY(0) scale(1); } 25% { transform: translateY(-12px) scale(1.1); } 50% { transform: translateY(0) scale(1); } 75% { transform: translateY(-6px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
-    </style>
 </head>
 <body class="pt-5 {{ request()->is('admin*') ? 'admin-theme' : '' }}">
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top">
@@ -24,117 +15,185 @@
                 <span class="fw-bold">AANI Market</span>
                 <span class="ms-2 text-muted small d-none d-sm-inline">Wet Market Online</span>
             </a>
-            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-                                                                                                                    
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    @guest
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('home') }}">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('shop.index') }}">Browse Shops</a>
-                        </li>
-                    @endguest
-                    
+                <ul class="navbar-nav ms-auto align-items-center">
                     @auth
-                        @if(auth()->user()->role === 'administrator')
+                        @php
+                            $navCart = session('cart', []);
+                            $navCartCount = collect($navCart)->sum('quantity');
+                            $navCartTotal = collect($navCart)->sum(function ($item) {
+                                return $item['price_per_unit'] * $item['quantity'];
+                            });
+                            $role = auth()->user()->role;
+                        @endphp
+                        {{-- Customer navigation --}}
+                        @if($role === 'customer')
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.dashboard.index') }}">
-                                    <i class="bi bi-speedometer2"></i> Dashboard
-                                </a>
+                                <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.users.index') }}">
-                                    <i class="bi bi-people"></i> Users
-                                    @if($pendingVendorsCount ?? 0 > 0)
-                                        <span class="badge bg-danger ms-1">{{ $pendingVendorsCount }}</span>
-                                    @endif
+                                <a class="nav-link" href="{{ route('home') }}#market-map-section">Market map</a>
+                            </li>
+                        @endif
+
+                        {{-- Vendor navigation --}}
+                        @if($role === 'vendor')
+                            <!-- Home/Store Link -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('home') }}">
+                                    <i class="bi bi-shop"></i> {{ auth()->user()->vendor->store_name ?? 'My Store' }}
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.map.index') }}">
-                                    <i class="bi bi-map"></i> Map
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.orders.index') }}">
-                                    <i class="bi bi-cart3"></i> Orders
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('products.index') }}">
+                            
+                            <!-- Products Management Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="vendorProductsDropdown" role="button" data-bs-toggle="dropdown">
                                     <i class="bi bi-box"></i> Products
                                 </a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-graph-up"></i> Reports
-                                </a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('admin.reports.sales') }}">
-                                        <i class="bi bi-cash"></i> Sales Report
+                                    <li><a class="dropdown-item" href="{{ route('products.index') }}">
+                                        <i class="bi bi-list"></i> My Products
                                     </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
-                                        <i class="bi bi-calendar-check"></i> Attendance Report
+                                    <li><a class="dropdown-item" href="{{ route('products.create') }}">
+                                        <i class="bi bi-plus-circle"></i> Add New Product
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.reports.products') }}">
+                                        <i class="bi bi-graph-up"></i> Product Performance
                                     </a></li>
                                 </ul>
                             </li>
-                        @elseif(auth()->user()->role === 'vendor')
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('vendor.dashboard') }}">
-                                    <i class="bi bi-speedometer2"></i> Dashboard
+                            
+                            <!-- Reports & Analytics Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="vendorReportsDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-graph-up"></i> Reports
                                 </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('vendor.reports.sales') }}">
+                                        <i class="bi bi-cash"></i> Sales Report
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.reports.orders') }}">
+                                        <i class="bi bi-cart3"></i> Orders Report
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.reports.products') }}">
+                                        <i class="bi bi-box"></i> Products Report
+                                    </a></li>
+                                </ul>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('products.index') }}">
-                                    <i class="bi bi-box"></i> My Products
+                            
+                            <!-- Account Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="vendorAccountDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person-circle"></i> Account
                                 </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('profile.index') }}">
-                                    <i class="bi bi-shop"></i> Store Profile
-                                </a>
-                            </li>
-                        @else
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('home') }}">Home</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('shop.index') }}">Browse Shops</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('cart.view') }}">My Cart</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('customer.orders.index') }}">My Orders</a>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Store Settings</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.settings') }}">
+                                        <i class="bi bi-gear"></i> Store Settings
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('profile.index') }}">
+                                        <i class="bi bi-person"></i> Profile Settings
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('profile.addresses') }}">
+                                        <i class="bi bi-geo-alt"></i> Delivery Addresses
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('profile.orders') }}">
+                                        <i class="bi bi-clock-history"></i> Order History
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="{{ route('logout') }}">
+                                        <i class="bi bi-box-arrow-right"></i> Logout
+                                    </a></li>
+                                </ul>
                             </li>
                         @endif
-                    @endauth
-                </ul>
-                
-                <ul class="navbar-nav">
-                    @guest
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('auth.login') }}">Login</a>
+
+                        {{-- Admin navigation --}}
+                        @if($role === 'administrator')
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}">
+                                        <i class="bi bi-speedometer2"></i> Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">
+                                        <i class="bi bi-people"></i> User management
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.map.index') }}">
+                                        <i class="bi bi-map"></i> Market map & stalls
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.reports.sales') }}">
+                                        <i class="bi bi-graph-up"></i> Sales report
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
+                                        <i class="bi bi-calendar-check"></i> Attendance report
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('home', ['view_site' => 1]) }}">
+                                        <i class="bi bi-eye"></i> View customer site
+                                    </a></li>
+                                </ul>
+                            </li>
+                        @endif
+                        {{-- Cart dropdown for authenticated users --}}
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="cartDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-cart"></i>
+                                @if($navCartCount > 0)
+                                    <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
+                                        {{ $navCartCount }}
+                                    </span>
+                                @endif
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cartDropdown" style="min-width: 280px;">
+                                @if($navCartCount === 0)
+                                    <li class="dropdown-item text-muted small">Your cart is empty</li>
+                                @else
+                                    @foreach(array_slice($navCart, 0, 5) as $item)
+                                        <li class="dropdown-item small d-flex justify-content-between">
+                                            <div>
+                                                <div class="fw-semibold">{{ $item['product_name'] }}</div>
+                                                <div class="text-muted">
+                                                    x{{ $item['quantity'] }} @ ₱{{ number_format($item['price_per_unit'], 2) }}
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                ₱{{ number_format($item['price_per_unit'] * $item['quantity'], 2) }}
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="dropdown-item d-flex justify-content-between small">
+                                        <span>Total</span>
+                                        <strong>₱{{ number_format($navCartTotal, 2) }}</strong>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-center" href="{{ route('cart.view') }}">
+                                            View full cart & checkout
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('auth.register') }}">Register</a>
-                        </li>
-                    @endguest
-                    
-                    @auth
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle"></i> {{ auth()->user()->email }}
+                        
+                        {{-- Account dropdown for customers (non-vendors) --}}
+                        @if(auth()->check() && auth()->user()->role !== 'vendor')
+                        <li class="nav-item dropdown ms-2">
+                            <a class="nav-link dropdown-toggle" href="#" id="customerAccountDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> Account
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><h6 class="dropdown-header">Account</h6></li>
+                                <li><h6 class="dropdown-header">My Account</h6></li>
                                 <li><a class="dropdown-item" href="{{ route('profile.index') }}">
-                                    <i class="bi bi-person"></i> My Profile
+                                    <i class="bi bi-person"></i> Profile Settings
                                 </a></li>
                                 <li><a class="dropdown-item" href="{{ route('profile.addresses') }}">
                                     <i class="bi bi-geo-alt"></i> Delivery Addresses
@@ -143,48 +202,35 @@
                                     <i class="bi bi-clock-history"></i> Order History
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ route('logout') }}">
+                                <li><a class="dropdown-item text-danger" href="{{ route('logout') }}">
                                     <i class="bi bi-box-arrow-right"></i> Logout
                                 </a></li>
                             </ul>
+                        </li>
+                        @endif
+                    @else
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('home') }}#market-map-section">Market map</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('auth.login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('auth.register') }}">Sign up</a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-outline-success btn-sm" href="{{ route('vendor.register') }}">
+                                <i class="bi bi-shop"></i> Become a vendor
+                            </a>
                         </li>
                     @endauth
                 </ul>
             </div>
         </div>
     </nav>
-
-    <!-- Live cart button for customers -->
-    @auth
-        @if(auth()->user()->role === 'customer')
-            <div class="position-fixed" style="top: 80px; right: 20px; z-index: 1000;">
-                <button id="liveCartButton" class="btn btn-primary rounded-circle p-3 shadow-lg d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border: none; cursor: pointer;" onclick="toggleCartPopup()">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.49.402H5a.5.5 0 0 1-.49-.402L3.61 3.5H1.5a.5.5 0 0 1-.5-.5zM3.14 4l.7 4H13.16l.7-4H3.14zM5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                    </svg>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cartCountBadge">
-                        {{ collect(Session::get('cart', []))->sum('quantity') }}
-                    </span>
-                </button>
-                
-                <!-- Cart Popup -->
-                <div id="cartSummaryPopup" class="card position-absolute" style="display: none; top: 70px; right: 0; min-width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                    <div class="card-body p-3">
-                        <h6 class="card-title mb-2">Cart Summary</h6>
-                        <div class="mb-3">
-                            <small class="text-muted">Items in cart:</small>
-                            <p class="mb-1"><strong id="cartItemCount">{{ collect(Session::get('cart', []))->sum('quantity') }}</strong></p>
-                            <small class="text-muted">Total:</small>
-                            <p class="mb-3"><strong id="cartTotalAmount">₱0.00</strong></p>
-                        </div>
-                        <a href="{{ auth()->check() ? route('cart.view') : route('auth.login') }}" class="btn btn-primary btn-sm w-100">
-                            <i class="bi bi-bag"></i> View Full Cart
-                        </a>
-                    </div>
-                </div>
-            </div>
-        @endif
-    @endauth
 
     <div class="container mt-4">
         @include('layouts.flash-messages')
@@ -193,128 +239,49 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
-
-    <!-- Live Cart Update Script -->
-    <script>
-        // Set badge text safely and animate when items are added
-        function animateBadge() {
-            const badge = document.getElementById('cartCountBadge');
-            if (!badge) return;
-            badge.classList.remove('badge-bounce');
-            // Force reflow to restart the animation
-            void badge.offsetWidth;
-            badge.classList.add('badge-bounce');
-            badge.addEventListener('animationend', function cb() {
-                badge.classList.remove('badge-bounce');
-                badge.removeEventListener('animationend', cb);
-            });
-        }
-
-        function setCartCount(count) {
-            const badge = document.getElementById('cartCountBadge');
-            if (!badge) return;
-            const prev = parseInt(badge.textContent) || 0;
-            const newText = typeof count === 'number' ? String(count) : count;
-            badge.textContent = newText;
-            // animate when count increases
-            try {
-                const newVal = parseInt(newText) || 0;
-                if (newVal > prev) animateBadge();
-            } catch (e) {}
-        }
-
-        async function fetchCartCount() {
-            try {
-                const response = await fetch('{{ route("cart.count") }}');
-                const data = await response.json();
-                setCartCount(data.count);
-                // keep a local cache for cross-tab sync
-                try { localStorage.setItem('cart_count', data.count); } catch (e) {}
-            } catch (err) {
-                console.error('Failed to fetch cart count:', err);
-            }
-        }
-
-        // BroadcastChannel for cross-tab realtime updates (fallbacks to storage event)
-        if ('BroadcastChannel' in window) {
-            window.cartChannel = new BroadcastChannel('aani_cart_channel');
-            window.cartChannel.addEventListener('message', (ev) => {
-                console.log('BroadcastChannel message received', ev.data);
-                if (ev && ev.data && typeof ev.data.count !== 'undefined') {
-                    setCartCount(ev.data.count);
-                }
-            });
-        }
-
-        // Listen for storage events from other tabs
-        window.addEventListener('storage', function(e) {
-            console.log('storage event', e.key, e.newValue);
-            if (e.key === 'cart_count') {
-                setCartCount(parseInt(e.newValue) || 0);
-            }
-        });
-
-        // Listen for cart.add events from pages like product/show and update from server
-        document.addEventListener('cart.add', function(e) {
-            console.log('cart.add event received', e && e.detail);
-            // If event provides a count, use it; otherwise fetch from server
-            if (e && e.detail && typeof e.detail.count !== 'undefined') {
-                setCartCount(e.detail.count);
-                try { localStorage.setItem('cart_count', e.detail.count); } catch (err) {}
-                if (window.cartChannel) window.cartChannel.postMessage({ count: e.detail.count });
-            } else {
-                fetchCartCount();
-            }
-        });
-
-        // Initialize badge from local cache then validate with server
-        (function initCartBadge() {
-            try {
-                const cached = parseInt(localStorage.getItem('cart_count'));
-                console.log('initCartBadge cached value', cached);
-                if (!isNaN(cached)) setCartCount(cached);
-            } catch (e) {}
-            // Always sync with server on page load
-            fetchCartCount();
-        })();
-
-        // Toggle cart popup when badge is clicked
-        window.toggleCartPopup = function() {
-            const popup = document.getElementById('cartSummaryPopup');
-            if (!popup) return;
-            const isHidden = popup.style.display === 'none' || !popup.style.display;
-            if (isHidden) {
-                // Fetch cart summary when opening popup
-                fetch('{{ route('cart.summary') }}')
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('cartItemCount').textContent = data.count;
-                        document.getElementById('cartTotalAmount').textContent = '₱' + data.total;
-                        popup.style.display = 'block';
-                    })
-                    .catch(error => {
-                        console.error('Error fetching cart summary:', error);
-                        popup.style.display = 'block';
-                    });
-            } else {
-                popup.style.display = 'none';
-            }
-        };
-
-        // Close popup when clicking outside
-        document.addEventListener('click', function(e) {
-            const popup = document.getElementById('cartSummaryPopup');
-            const cartBtn = document.getElementById('liveCartButton');
-            if (popup && cartBtn && !popup.contains(e.target) && !cartBtn.contains(e.target)) {
-                popup.style.display = 'none';
-            }
-        });
-    </script>
-
     @if(request()->is('admin*'))
         <style>
-            /* Admin theme styles omitted for brevity */
+            :root {
+                --admin-green: #1f7a3e;
+                --admin-green-dark: #155c2f;
+                --admin-green-soft: #e8f3ec;
+            }
+            .admin-theme .navbar {
+                background-color: var(--admin-green-dark) !important;
+            }
+            .admin-theme .btn-primary {
+                background-color: var(--admin-green);
+                border-color: var(--admin-green);
+            }
+            .admin-theme .btn-primary:hover {
+                background-color: var(--admin-green-dark);
+                border-color: var(--admin-green-dark);
+            }
+            .admin-theme .btn-outline-primary {
+                color: var(--admin-green);
+                border-color: var(--admin-green);
+            }
+            .admin-theme .btn-outline-primary:hover {
+                background-color: var(--admin-green);
+                border-color: var(--admin-green);
+            }
+            .admin-theme .card-header {
+                background-color: var(--admin-green-soft);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                font-weight: 600;
+            }
+            .admin-theme .badge.bg-success {
+                background-color: var(--admin-green) !important;
+            }
+            .admin-theme .table thead th {
+                background-color: #f6fbf7;
+            }
+            .admin-theme .stat-card {
+                border: 1px solid rgba(31, 122, 62, 0.15);
+                background: linear-gradient(180deg, #ffffff 0%, #f3faf6 100%);
+            }
         </style>
     @endif
 </body>
 </html>
+

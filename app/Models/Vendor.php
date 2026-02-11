@@ -20,8 +20,6 @@ class Vendor extends Model
         'business_description',
         'logo_url',
         'banner_url',
-        'banner_image',
-        'is_live',
         'weekend_pickup_enabled',
         'weekday_delivery_enabled',
         'weekend_delivery_enabled',

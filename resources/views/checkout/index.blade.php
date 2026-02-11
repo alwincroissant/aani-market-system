@@ -44,7 +44,7 @@
                             <div class="card mb-4">
                                 <div class="card-header">
                                     <h5 class="mb-0">
-                                        {{ $vendorServices[$vendorId]->business_name }}
+                                        {{ $items->first()->vendor_name }}
                                         <small class="text-muted">({{ $items->count() }} items)</small>
                                     </h5>
                                 </div>

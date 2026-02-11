@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('email')->unique()->index();
             $table->string('password');
-            $table->enum('role', ['administrator', 'pickup_manager', 'vendor', 'customer'])->index();
+            $table->enum('role', ['administrator', 'vendor', 'customer'])->index();
             $table->boolean('is_active')->default(true);
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

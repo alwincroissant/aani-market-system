@@ -212,5 +212,45 @@
             </div>
         </div>
     </div>
+    
+    <!-- Top Products Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Top Products Across Market</h5>
+                    <p class="text-muted mb-0 small">Best selling products from all vendors</p>
+                </div>
+                <div class="card-body">
+                    @if($topProducts->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Vendor</th>
+                                        <th>Units Sold</th>
+                                        <th>Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($topProducts as $product)
+                                        <tr>
+                                            <td>{{ $product->product_name }}</td>
+                                            <td>{{ $product->vendor_name }}</td>
+                                            <td>{{ $product->total_sold }}</td>
+                                            <td>₱{{ number_format($product->total_revenue, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted text-center">No product sales data available</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

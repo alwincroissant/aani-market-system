@@ -18,7 +18,7 @@
                     <h5>Upload Market Floor Plan</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.map.uploadBackground') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('admin.map.upload') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
                             <label for="map_image" class="form-label">Select Floor Plan Image</label>
@@ -53,7 +53,7 @@
                         <button class="btn btn-danger" id="deleteModeBtn">
                             <i class="bi bi-trash"></i> Delete Mode
                         </button>
-                        <form action="{{ route('admin.map.uploadBackground') }}" method="POST" enctype="multipart/form-data" class="d-inline">
+                        <form action="{{ route('admin.map.upload') }}" method="POST" enctype="multipart/form-data" class="d-inline">
                             @csrf
                             <input type="file" name="map_image" accept="image/*" class="d-none" id="replaceImage" onchange="this.form.submit()">
                             <button type="button" class="btn btn-secondary" onclick="document.getElementById('replaceImage').click()">
@@ -148,12 +148,7 @@
                                 </div>
                             </div>
                             <div class="mt-2">
-                                <button type="button" class="btn btn-warning" id="clearAssignmentsBtn">
-                            <i class="bi bi-arrow-clockwise"></i> Clear Vendor Assignments
-                        </button>
-                                <button type="button" class="btn btn-sm btn-warning" id="clearAssignmentsBtn">
-                                    <i class="bi bi-arrow-clockwise"></i> Clear Vendor Assignments
-                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearCoordinates">Clear Coordinates</button>
                             </div>
                         </div>
                     </div>
@@ -370,28 +365,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Clear coordinates button
-    document.getElementById('clearAssignmentsBtn').addEventListener('click', function() {
-        if (confirm('Are you sure you want to clear all vendor stall assignments? This will remove all vendors from their stalls.')) {
-            fetch('/admin/map/clear-assignments', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload the page to show updated assignments
-                    location.reload();
-                } else {
-                    alert('Failed to clear assignments: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error clearing assignments:', error);
-                alert('An error occurred while clearing assignments. Please try again.');
-            });
+    document.getElementById('clearCoordinates').addEventListener('click', function() {
+        document.getElementById('x1').value = '';
+        document.getElementById('y1').value = '';
+        document.getElementById('x2').value = '';
+        document.getElementById('y2').value = '';
+        stallPoints = [];
+        
+        // Remove temporary rectangle and markers
+        if (tempRectangle) {
+            map.removeLayer(tempRectangle);
+            tempRectangle = null;
         }
+        
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.CircleMarker && !layer.stallData) {
+                map.removeLayer(layer);
+            }
+        });
     });
     
     function addStallOnClick(e) {
@@ -480,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const formData = new FormData(this);
         const stallId = formData.get('stall_id');
-        const url = stallId ? `/admin/map/stall/${stallId}` : '/admin/map/stall';
+        const url = stallId ? `/admin/map/stalls/${stallId}` : '/admin/map/stalls';
         const method = stallId ? 'PUT' : 'POST';
         
         fetch(url, {
@@ -601,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function deleteStall(id, elements) {
-        fetch(`/admin/map/stall/${id}`, {
+        fetch(`/admin/map/stalls/${id}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',

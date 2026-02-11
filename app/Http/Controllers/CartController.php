@@ -87,9 +87,8 @@ class CartController extends Controller
     {
         $cart = Session::get('cart', []);
         
-        // Convert cart array to collection and group by vendor
-        $cartCollection = collect($cart);
-        $groupedCart = $cartCollection->groupBy('vendor_id');
+        // Group cart items by vendor
+        $groupedCart = collect($cart)->groupBy('vendor_id');
 
         // Get vendor service information for each vendor
         $vendorServices = [];
@@ -111,53 +110,19 @@ class CartController extends Controller
             }
         }
 
-        $totalItems = $cartCollection->sum('quantity');
-        $totalAmount = $cartCollection->sum(function ($item) {
+        $totalItems = collect($cart)->sum('quantity');
+        $totalAmount = collect($cart)->sum(function ($item) {
             return $item['price_per_unit'] * $item['quantity'];
         });
 
         return view('cart.view', compact('groupedCart', 'vendorServices', 'totalItems', 'totalAmount'));
     }
 
-    public function count()
-    {
-        $cart = Session::get('cart', []);
-        $totalItems = collect($cart)->sum('quantity');
-        
-        return response()->json([
-            'count' => $totalItems
-        ]);
-    }
-
-    public function summary()
-    {
-        $cart = Session::get('cart', []);
-        $cartCollection = collect($cart);
-        $totalItems = $cartCollection->sum('quantity');
-        $totalAmount = $cartCollection->sum(function ($item) {
-            return $item['price_per_unit'] * $item['quantity'];
-        });
-        
-        return response()->json([
-            'count' => $totalItems,
-            'total' => number_format($totalAmount, 2)
-        ]);
-    }
-
-    public function clear()
-    {
-        Session::forget('cart');
-        return response()->json([
-            'success' => true,
-            'message' => 'Cart cleared successfully'
-        ]);
-    }
-
     public function update(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|integer|min:1',
-            'vendor_id' => 'required|integer|min:1',
+            'product_id' => 'required',
+            'vendor_id' => 'required',
             'quantity' => 'required|integer|min:0|max:99'
         ]);
 
@@ -167,46 +132,22 @@ class CartController extends Controller
         if ($request->quantity == 0) {
             // Remove item from cart
             unset($cart[$cartKey]);
-            $message = 'Item removed from cart';
         } elseif (isset($cart[$cartKey])) {
             // Update quantity
             $cart[$cartKey]['quantity'] = $request->quantity;
-            $message = 'Cart updated successfully';
         }
 
         Session::put('cart', $cart);
 
         return response()->json([
             'success' => true,
-            'message' => $message,
-            'cart_count' => collect($cart)->sum('quantity')
+            'message' => 'Cart updated'
         ]);
     }
 
-    public function destroy(Request $request)
+    public function clear()
     {
-        $request->validate([
-            'product_id' => 'required|integer|min:1',
-            'vendor_id' => 'required|integer|min:1'
-        ]);
-
-        $cart = Session::get('cart', []);
-        $cartKey = $request->vendor_id . '_' . $request->product_id;
-
-        if (isset($cart[$cartKey])) {
-            unset($cart[$cartKey]);
-            Session::put('cart', $cart);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Item removed from cart',
-                'cart_count' => collect($cart)->sum('quantity')
-            ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Item not found in cart'
-        ], 404);
+        Session::forget('cart');
+        return redirect()->route('cart.view')->with('success', 'Cart cleared');
     }
 }

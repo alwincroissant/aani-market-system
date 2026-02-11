@@ -57,6 +57,16 @@ class AdminDashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('admin.dashboard.index', compact('stats', 'recentOrders', 'topVendors', 'pendingVendorsCount'));
+        // Get top products across the entire market
+        $topProducts = DB::table('order_items as oi')
+            ->join('products as p', 'oi.product_id', '=', 'p.id')
+            ->join('vendors as v', 'oi.vendor_id', '=', 'v.id')
+            ->selectRaw('p.product_name, v.business_name as vendor_name, SUM(oi.quantity) as total_sold, SUM(oi.quantity * oi.unit_price) as total_revenue')
+            ->groupBy('p.id', 'p.product_name', 'v.business_name')
+            ->orderBy('total_sold', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('admin.dashboard.index', compact('stats', 'recentOrders', 'topVendors', 'topProducts', 'pendingVendorsCount'));
     }
 }
