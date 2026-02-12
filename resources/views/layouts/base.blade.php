@@ -22,11 +22,9 @@
                 <ul class="navbar-nav ms-auto align-items-center">
                     @auth
                         @php
-                            $navCart = session('cart', []);
-                            $navCartCount = collect($navCart)->sum('quantity');
-                            $navCartTotal = collect($navCart)->sum(function ($item) {
-                                return $item['price_per_unit'] * $item['quantity'];
-                            });
+                            $navCart = Session::has('cart') ? Session::get('cart') : null;
+                            $navCartCount = $navCart ? $navCart->totalQty : 0;
+                            $navCartTotal = $navCart ? $navCart->totalPrice : 0;
                             $role = auth()->user()->role;
                         @endphp
                         {{-- Customer navigation --}}
@@ -188,11 +186,11 @@
                                 </ul>
                             </li>
                         @endif
-                        {{-- Cart dropdown for authenticated users --}}
+                        {{-- Cart dropdown for customers --}}
                         @if(auth()->check() && auth()->user()->role === 'customer')
                         <li class="nav-item dropdown me-2">
                             <a class="nav-link dropdown-toggle position-relative" href="#" id="cartDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-cart"></i>
+                                <i class="bi bi-cart"></i> My Cart
                                 @if($navCartCount > 0)
                                     <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
                                         {{ $navCartCount }}
@@ -200,22 +198,21 @@
                                 @endif
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cartDropdown" style="min-width: 280px;">
-                                @if($navCartCount === 0)
+                                @if(!$navCart || $navCartCount === 0)
                                     <li class="dropdown-item text-muted small">Your cart is empty</li>
                                 @else
-                                    @foreach(array_slice($navCart, 0, 5) as $item)
+                                    @foreach(array_slice($navCart->items, 0, 5) as $itemId => $item)
                                         <li class="dropdown-item small d-flex justify-content-between">
                                             <div>
-                                                <div class="fw-semibold">{{ $item['product_name'] }}</div>
-                                                <div class="text-muted">
-                                                    x{{ $item['quantity'] }} @ ₱{{ number_format($item['price_per_unit'], 2) }}
-                                                </div>
+                                                <div class="fw-semibold">{{ $item['item']->product_name }}</div>
+                                                <div class="text-muted">Qty: {{ $item['qty'] }} × ₱{{ number_format($item['item']->price_per_unit, 2) }}</div>
                                             </div>
-                                            <div class="text-end">
-                                                ₱{{ number_format($item['price_per_unit'] * $item['quantity'], 2) }}
-                                            </div>
+                                            <span class="text-muted">₱{{ number_format($item['price'], 2) }}</span>
                                         </li>
                                     @endforeach
+                                    @if(count($navCart->items) > 5)
+                                        <li class="dropdown-item text-muted small">...and {{ count($navCart->items) - 5 }} more items</li>
+                                    @endif
                                     <li><hr class="dropdown-divider"></li>
                                     <li class="dropdown-item d-flex justify-content-between small">
                                         <span>Total</span>
@@ -223,13 +220,14 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item text-center" href="{{ route('cart.view') }}">
+                                        <a class="dropdown-item text-center" href="{{ route('getCart') }}">
                                             View full cart & checkout
                                         </a>
                                     </li>
                                 @endif
-                            @endif
+                            </ul>
                         </li>
+                        @endif
                         
                         {{-- Account dropdown for customers (non-vendors) --}}
                         @if(auth()->check() && auth()->user()->role !== 'vendor')
@@ -246,10 +244,10 @@
                                     <i class="bi bi-geo-alt"></i> Delivery Addresses
                                 </a></li>
                                 <li><a class="dropdown-item" href="{{ route('profile.orders') }}">
-                                    <i class="bi bi-clock-history"></i> Order History
+                                    <i class="bi bi-receipt"></i> Order History
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="{{ route('logout') }}">
+                                <li><a class="dropdown-item" href="{{ route('logout') }}">
                                     <i class="bi bi-box-arrow-right"></i> Logout
                                 </a></li>
                             </ul>

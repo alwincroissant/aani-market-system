@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Vendor;
+use Carbon\Carbon;
 
 class VendorOrderController extends Controller
 {
@@ -76,6 +77,12 @@ class VendorOrderController extends Controller
 
         $orders = $query->get();
 
+        // Convert order_date to Carbon objects for formatting
+        $orders = $orders->map(function($order) {
+            $order->order_date = new Carbon($order->order_date);
+            return $order;
+        });
+
         return view('vendor.orders.index', compact('orders'));
     }
 
@@ -101,7 +108,7 @@ class VendorOrderController extends Controller
                 'c.last_name',
                 'c.phone',
                 'u.email',
-                'c.address',
+                'c.delivery_address',
                 'oi.id as item_id',
                 'oi.quantity',
                 'oi.unit_price',
@@ -118,6 +125,14 @@ class VendorOrderController extends Controller
         if ($order->isEmpty()) {
             return redirect()->route('vendor.orders.index')->with('error', 'Order not found or not accessible.');
         }
+
+        // Convert order_date to Carbon object for formatting
+        $order = $order->map(function($item) {
+            if (isset($item->order_date)) {
+                $item->order_date = new Carbon($item->order_date);
+            }
+            return $item;
+        });
 
         return view('vendor.orders.show', compact('order'));
     }
@@ -154,29 +169,51 @@ class VendorOrderController extends Controller
                     'updated_at' => now()
                 ]);
 
-            // Check if all items in this order have the same status
-            $allItems = DB::table('order_items')
+            // Debug: Log the update
+            \Log::info("Updated item {$itemId} to status: {$request->item_status}");
+
+            // Check if all vendor's items in this order have the same status
+            $allVendorItems = DB::table('order_items')
                 ->where('order_id', $orderItem->order_id)
+                ->where('vendor_id', $vendor->id)
                 ->get();
 
-            $allSameStatus = $allItems->every(function ($item) use ($request) {
+            $allSameStatus = $allVendorItems->every(function ($item) use ($request) {
                     return $item->item_status === $request->item_status;
                 });
 
-            // If all items have the same status, update the main order status too
+            \Log::info("All vendor items same status: " . ($allSameStatus ? 'true' : 'false'));
+
+            // If all vendor's items have the same status, check if all items in the order have the same status
             if ($allSameStatus) {
-                DB::table('orders')
-                    ->where('id', $orderItem->order_id)
-                    ->update([
-                        'order_status' => $request->item_status,
-                        'updated_at' => now()
-                    ]);
+                $allOrderItems = DB::table('order_items')
+                    ->where('order_id', $orderItem->order_id)
+                    ->get();
+
+                $allOrderSameStatus = $allOrderItems->every(function ($item) use ($request) {
+                    return $item->item_status === $request->item_status;
+                });
+
+                \Log::info("All order items same status: " . ($allOrderSameStatus ? 'true' : 'false'));
+
+                // If all items in the order have the same status, update the main order status too
+                if ($allOrderSameStatus) {
+                    DB::table('orders')
+                        ->where('id', $orderItem->order_id)
+                        ->update([
+                            'order_status' => $request->item_status,
+                            'updated_at' => now()
+                        ]);
+
+                    \Log::info("Updated main order status to: {$request->item_status}");
+                }
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Order item status updated successfully.',
-                'item_status' => $request->item_status
+                'item_status' => $request->item_status,
+                'order_status_updated' => isset($allOrderSameStatus) && $allOrderSameStatus
             ]);
 
         } catch (\Exception $e) {

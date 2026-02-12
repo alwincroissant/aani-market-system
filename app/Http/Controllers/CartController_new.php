@@ -28,28 +28,11 @@ class CartController extends Controller
     public function getCart()
     {
         if (!Session::has('cart')) {
-            return view('cart.view', ['products' => [], 'totalPrice' => 0]);
+            return view('shop.shopping-cart');
         }
         $oldCart = Session::get('cart');
         $cart = new Cart($oldCart);
-        
-        // Debug: Log cart state
-        \Log::info('Cart state: ' . json_encode([
-            'has_items' => !empty($cart->items),
-            'items_count' => $cart->items ? count($cart->items) : 0,
-            'total_price' => $cart->totalPrice
-        ]));
-        
-        // Load vendor relationships for cart items
-        if ($cart->items) {
-            foreach ($cart->items as $itemId => $item) {
-                if (isset($item['item']) && $item['item']->vendor_id) {
-                    $item['item']->vendor = \App\Models\Vendor::find($item['item']->vendor_id);
-                }
-            }
-        }
-        
-        return view('cart.view', ['products' => $cart->items, 'totalPrice' => $cart->totalPrice]);
+        return view('shop.shopping-cart', ['products' => $cart->items, 'totalPrice' => $cart->totalPrice]);
     }
 
     public function getReduceByOne($id)

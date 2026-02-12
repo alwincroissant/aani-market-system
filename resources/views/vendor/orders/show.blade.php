@@ -18,6 +18,11 @@
             $orderData = $order->first();
         @endphp
 
+        <!-- Debug: Show order count -->
+        <div class="alert alert-info">
+            Order items found: {{ $order->count() }}
+        </div>
+
         <!-- Order Summary -->
         <div class="card mb-4">
             <div class="card-header">
@@ -41,10 +46,11 @@
                         <p><strong>Status:</strong> 
                             <span class="badge bg-{{ 
                                 $orderData->order_status === 'pending' ? 'warning' : 
-                                $orderData->order_status === 'confirmed' ? 'info' : 
-                                $orderData->order_status === 'ready' ? 'primary' : 
-                                $orderData->order_status === 'completed' ? 'success' : 
-                                $orderData->order_status === 'cancelled' ? 'danger' : 'secondary' 
+                                ($orderData->order_status === 'confirmed' ? 'info' : 
+                                ($orderData->order_status === 'ready' ? 'primary' : 
+                                ($orderData->order_status === 'completed' ? 'success' : 
+                                ($orderData->order_status === 'cancelled' ? 'danger' : 'secondary'
+                                ))))
                             }}">
                                 {{ ucfirst($orderData->order_status) }}
                             </span>
@@ -149,10 +155,6 @@
                 @endif
             </div>
         </div>
-    @else
-        <div class="alert alert-danger">
-            Order not found or not accessible.
-        </div>
     @endif
 </div>
 
@@ -170,12 +172,18 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const itemId = this.dataset.itemId;
             const notes = document.querySelector(`.vendor-notes[data-item-id="${itemId}"]`).value;
-            updateVendorNotes(itemId, notes);
+            const status = document.querySelector(`.item-status[data-item-id="${itemId}"]`).value;
+            
+            // Update both status and notes
+            updateItemAndNotes(itemId, status, notes);
         });
     });
 });
 
-function updateItemStatus(itemId, status) {
+function updateItemAndNotes(itemId, status, notes) {
+    console.log('Updating item and notes:', itemId, status, notes);
+    
+    // First update status
     fetch(`{{ route('vendor.orders.items.update-status', ':itemId') }}`.replace(':itemId', itemId), {
         method: 'PUT',
         headers: {
@@ -186,20 +194,88 @@ function updateItemStatus(itemId, status) {
             item_status: status
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Status update response:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Status update data:', data);
         if (data.success) {
-            showToast('Status updated successfully', 'success');
+            // Then update notes
+            fetch(`{{ route('vendor.orders.items.update-notes', ':itemId') }}`.replace(':itemId', itemId), {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    vendor_notes: notes
+                })
+            })
+            .then(response => {
+                console.log('Notes update response:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Notes update data:', data);
+                if (data.success) {
+                    showToast('Status and notes updated successfully', 'success');
+                } else {
+                    showToast('Status updated but failed to update notes: ' + data.message, 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating notes:', error);
+                showToast('Status updated but failed to update notes', 'warning');
+            });
         } else {
             showToast('Failed to update status: ' + data.message, 'error');
         }
     })
     .catch(error => {
+        console.error('Error updating status:', error);
+        showToast('Error updating status', 'error');
+    });
+}
+
+function updateItemStatus(itemId, status) {
+    console.log('Updating item status:', itemId, status);
+    
+    fetch(`{{ route('vendor.orders.items.update-status', ':itemId') }}`.replace(':itemId', itemId), {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            item_status: status
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            let message = 'Status updated successfully';
+            if (data.order_status_updated) {
+                message = 'Status and main order updated successfully';
+            }
+            showToast(message, 'success');
+        } else {
+            showToast('Failed to update status: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating status:', error);
         showToast('Error updating status', 'error');
     });
 }
 
 function updateVendorNotes(itemId, notes) {
+    console.log('Updating vendor notes:', itemId, notes);
+    
     fetch(`{{ route('vendor.orders.items.update-notes', ':itemId') }}`.replace(':itemId', itemId), {
         method: 'PUT',
         headers: {
@@ -210,8 +286,12 @@ function updateVendorNotes(itemId, notes) {
             vendor_notes: notes
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Notes response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Notes response data:', data);
         if (data.success) {
             showToast('Notes updated successfully', 'success');
         } else {
@@ -219,6 +299,7 @@ function updateVendorNotes(itemId, notes) {
         }
     })
     .catch(error => {
+        console.error('Error updating notes:', error);
         showToast('Error updating notes', 'error');
     });
 }

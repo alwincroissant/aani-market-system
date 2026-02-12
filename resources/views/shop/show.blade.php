@@ -118,7 +118,7 @@
             <div id="cartSummary">
                 <p class="mb-0">Loading...</p>
             </div>
-            <a href="{{ route('cart.view') }}" class="btn btn-primary btn-sm w-100 mt-2">View Cart</a>
+            <a href="{{ route('getCart') }}" class="btn btn-primary btn-sm w-100 mt-2">View Cart</a>
         </div>
     </div>
 </div>
@@ -156,145 +156,7 @@ function addToCart(productId) {
     const quantityInput = document.getElementById(`quantity_${productId}`);
     const quantity = parseInt(quantityInput.value);
     
-    // Validate quantity
-    if (isNaN(quantity) || quantity < 1) {
-        quantityInput.value = 1;
-        return;
-    }
-    if (quantity > 99) {
-        quantityInput.value = 99;
-        return;
-    }
-    
-    fetch('/cart/add', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            product_id: productId,
-            quantity: quantity
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
-            alert.style.zIndex = '9999';
-            alert.innerHTML = `
-                <strong>Success!</strong> ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alert);
-            
-            // Remove alert after 3 seconds
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
-            
-            // Reset quantity to 1
-            quantityInput.value = 1;
-            
-            // Update cart summary
-            updateCartSummary();
-        } else {
-            // Show error message
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
-            alert.style.zIndex = '9999';
-            alert.innerHTML = `
-                <strong>Error!</strong> ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alert);
-            
-            // Remove alert after 3 seconds
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Show error message
-        const alert = document.createElement('div');
-        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
-        alert.style.zIndex = '9999';
-        alert.innerHTML = `
-            <strong>Error!</strong> Failed to add item to cart. Please try again.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.body.appendChild(alert);
-        
-        // Remove alert after 3 seconds
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.parentNode.removeChild(alert);
-            }
-        }, 3000);
-    });
+    window.location.href = `/cart/add/${productId}`;
 }
-            
-            // Update cart summary
-            updateCartSummary();
-            
-            // Remove alert after 3 seconds
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
-        } else {
-            // Show error message
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
-            alert.style.zIndex = '9999';
-            alert.innerHTML = `
-                <strong>Error!</strong> ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alert);
-            
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 3000);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-
-function updateCartSummary() {
-    fetch('/cart/view')
-    .then(response => response.text())
-    .then(html => {
-        // Parse the HTML to extract cart info
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const cartInfo = doc.getElementById('cartInfo');
-        
-        if (cartInfo) {
-            document.getElementById('cartSummary').innerHTML = cartInfo.innerHTML;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-
-// Load cart summary on page load
-document.addEventListener('DOMContentLoaded', function() {
-    updateCartSummary();
-});
 </script>
 @endpush

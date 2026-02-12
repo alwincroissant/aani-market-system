@@ -5,170 +5,190 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Carbon\Carbon;
 
 class CheckoutController extends Controller
 {
     public function index(Request $request)
     {
-        $cart = Session::get('cart', []);
+        if (!Session::has('cart')) {
+            return redirect()->route('getCart')->with('error', 'Your cart is empty');
+        }
         
-        if (empty($cart)) {
-            return redirect()->route('cart.view')->with('error', 'Your cart is empty');
+        $oldCart = Session::get('cart');
+        $cart = new \App\Cart($oldCart);
+        
+        if (empty($cart->items)) {
+            return redirect()->route('getCart')->with('error', 'Your cart is empty');
         }
 
-        // If specific items were selected from the cart, filter to those only
-        $selectedKeys = $request->input('selected_items', []);
-        if (!empty($selectedKeys)) {
-            $cart = array_intersect_key($cart, array_flip($selectedKeys));
+        // Get selected items from request
+        $selectedItems = $request->input('selected_items');
+        if ($selectedItems) {
+            $selectedItems = json_decode($selectedItems, true);
+            // Filter cart items to only include selected ones
+            $filteredItems = [];
+            foreach ($selectedItems as $itemId) {
+                if (isset($cart->items[$itemId])) {
+                    $filteredItems[$itemId] = $cart->items[$itemId];
+                }
+            }
+            $cart->items = $filteredItems;
+            
+            // Recalculate totals
+            $cart->totalQty = 0;
+            $cart->totalPrice = 0;
+            foreach ($cart->items as $item) {
+                $cart->totalQty += $item['qty'];
+                $cart->totalPrice += $item['price'];
+            }
         }
 
-        if (empty($cart)) {
-            return redirect()->route('cart.view')->with('error', 'Please select at least one item to checkout.');
+        if (empty($cart->items)) {
+            return redirect()->route('getCart')->with('error', 'Please select at least one item to checkout.');
         }
 
         // Group cart items by vendor
-        $groupedCart = collect($cart)->groupBy('vendor_id');
+        $groupedCart = [];
+        foreach ($cart->items as $itemId => $item) {
+            $vendorId = $item['item']->vendor_id;
+            if (!isset($groupedCart[$vendorId])) {
+                $groupedCart[$vendorId] = [];
+            }
+            $groupedCart[$vendorId][$itemId] = $item;
+        }
 
-        // Get vendor service information for each vendor
-        $vendorServices = [];
+        // Get vendor information for each vendor
+        $vendorInfo = [];
         foreach ($groupedCart as $vendorId => $items) {
             $vendor = DB::table('vendors')
-                ->where('id', $vendorId)
-                ->whereNull('deleted_at')
+                ->join('users', 'vendors.user_id', '=', 'users.id')
+                ->where('vendors.id', $vendorId)
+                ->whereNull('vendors.deleted_at')
                 ->select(
-                    'id',
-                    'business_name',
-                    'weekend_pickup_enabled',
-                    'weekday_delivery_enabled',
-                    'weekend_delivery_enabled'
+                    'vendors.id',
+                    'vendors.business_name',
+                    'vendors.weekend_pickup_enabled',
+                    'vendors.weekday_delivery_enabled',
+                    'vendors.weekend_delivery_enabled'
                 )
                 ->first();
 
             if ($vendor) {
-                $vendorServices[$vendorId] = $vendor;
+                $vendorInfo[$vendorId] = $vendor;
             }
         }
 
-        return view('checkout.index', compact('groupedCart', 'vendorServices'));
-    }
-
-    public function process(Request $request)
-    {
-        $cart = Session::get('cart', []);
-        
-        if (empty($cart)) {
-            return redirect()->route('cart.view')->with('error', 'Your cart is empty');
+        // Ensure customer record exists
+        $customer = auth()->user()->customer;
+        if (!$customer) {
+            // Create customer record if it doesn't exist
+            $customer = \App\Models\Customer::create([
+                'user_id' => auth()->id(),
+                'first_name' => auth()->user()->name ?? 'First Name',
+                'last_name' => 'Last Name',
+                'phone' => '',
+                'delivery_address' => '',
+            ]);
+        } else {
+            // Update customer record if first_name or last_name are empty
+            if (empty($customer->first_name) || empty($customer->last_name)) {
+                $nameParts = explode(' ', auth()->user()->name ?? 'First Name Last Name', 2);
+                $customer->first_name = $customer->first_name ?: ($nameParts[0] ?? 'First Name');
+                $customer->last_name = $customer->last_name ?: ($nameParts[1] ?? 'Last Name');
+                $customer->save();
+            }
         }
 
+        // Get customer addresses
+        $addresses = DB::table('customer_addresses')
+            ->where('customer_id', $customer->id)
+            ->orderBy('is_default', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('checkout.index', [
+            'groupedCart' => $groupedCart,
+            'vendorInfo' => $vendorInfo,
+            'totalPrice' => $cart->totalPrice,
+            'addresses' => $addresses
+        ]);
+    }
+
+    public function postCheckout(Request $request)
+    {
+        if (!Session::has('cart')) {
+            return redirect()->route('getCart')->with('error', 'Your cart is empty');
+        }
+        
+        $oldCart = Session::get('cart');
+        $cart = new \App\Cart($oldCart);
+        
         $request->validate([
             'customer_name' => 'required|string|max:255',
-            'customer_email' => 'required|email|max:255',
             'customer_phone' => 'required|string|max:20',
             'delivery_notes' => 'nullable|string|max:1000'
         ]);
-
+        
+        // If customer name is empty, use the authenticated user's name
+        $customerName = $request->customer_name ?: auth()->user()->name;
+        $customerPhone = $request->customer_phone ?: auth()->user()->customer->phone;
+        
         try {
             DB::beginTransaction();
-
-            // Create customer record first
-            $customer = DB::table('customers')->insertGetId([
-                'first_name' => explode(' ', $request->customer_name)[0],
-                'last_name' => implode(' ', array_slice(explode(' ', $request->customer_name), 1)),
-                'phone' => $request->customer_phone,
+            
+            // Group cart items by vendor for processing
+            $groupedCart = [];
+            foreach ($cart->items as $itemId => $item) {
+                $vendorId = $item['item']->vendor_id;
+                if (!isset($groupedCart[$vendorId])) {
+                    $groupedCart[$vendorId] = [];
+                }
+                $groupedCart[$vendorId][$itemId] = $item;
+            }
+            
+            // Create order
+            $orderId = DB::table('orders')->insertGetId([
+                'order_reference' => 'ORD-' . strtoupper(uniqid()),
+                'customer_id' => auth()->user()->customer->id,
+                'order_date' => now(),
+                'fulfillment_type' => 'weekend_pickup',
+                'order_status' => 'pending',
                 'delivery_address' => $request->delivery_notes,
+                'notes' => $request->delivery_notes,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
-
-            $groupedCart = collect($cart)->groupBy('vendor_id');
-            $orderNumbers = [];
-
-            foreach ($groupedCart as $vendorId => $items) {
-                // Validate selected delivery type against vendor capabilities
-                $vendor = DB::table('vendors')
-                    ->where('id', $vendorId)
-                    ->whereNull('deleted_at')
-                    ->select(
-                        'id',
-                        'business_name',
-                        'weekend_pickup_enabled',
-                        'weekday_delivery_enabled',
-                        'weekend_delivery_enabled'
-                    )
-                    ->first();
-
-                if (!$vendor) {
-                    throw new \Exception('Vendor not found for checkout.');
-                }
-
-                $deliveryType = $request->input("delivery_type_{$vendorId}");
-                $allowedTypes = [];
-                if ($vendor->weekend_pickup_enabled) {
-                    $allowedTypes[] = 'weekend_pickup';
-                }
-                if ($vendor->weekday_delivery_enabled) {
-                    $allowedTypes[] = 'weekday_delivery';
-                }
-                if ($vendor->weekend_delivery_enabled) {
-                    $allowedTypes[] = 'weekend_delivery';
-                }
-
-                if (empty($allowedTypes) || !in_array($deliveryType, $allowedTypes, true)) {
-                    throw new \Exception('Invalid delivery option selected for vendor: ' . $vendor->business_name);
-                }
-
-                // Calculate vendor subtotal
-                $vendorSubtotal = 0;
-                foreach ($items as $item) {
-                    $vendorSubtotal += $item['price_per_unit'] * $item['quantity'];
-                }
-
-                // Calculate market fee (5%)
-                $marketFee = $vendorSubtotal * 0.05;
-                $total = $vendorSubtotal + $marketFee;
-
-                // Generate order number
-                $orderNumber = 'ORD-' . strtoupper(uniqid());
-                $orderNumbers[] = $orderNumber;
-
-                // Create order record
-                $orderId = DB::table('orders')->insertGetId([
-                    'order_reference' => $orderNumber,
-                    'customer_id' => $customer,
-                    'order_date' => now(),
-                    'fulfillment_type' => $deliveryType ?? 'weekend_pickup',
-                    'order_status' => 'pending',
-                    'delivery_address' => $request->delivery_notes,
-                    'notes' => $request->delivery_notes,
+            
+            // Save order items with vendor information
+            foreach ($cart->items as $itemId => $item) {
+                DB::table('order_items')->insert([
+                    'order_id' => $orderId,
+                    'vendor_id' => $item['item']->vendor_id,
+                    'product_id' => $itemId,
+                    'quantity' => $item['qty'],
+                    'unit_price' => $item['item']->price_per_unit,
+                    'item_status' => 'pending',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
-
-                // Create order items
-                foreach ($items as $item) {
-                    DB::table('order_items')->insert([
-                        'order_id' => $orderId,
-                        'vendor_id' => $vendorId,
-                        'product_id' => $item['product_id'],
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['price_per_unit'],
-                        'item_status' => 'pending',
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
-                }
             }
-
+            
             DB::commit();
-
+            
             // Clear cart
             Session::forget('cart');
-
-            return redirect()->route('checkout.success')->with('success', 'Order placed successfully! Order numbers: ' . implode(', ', $orderNumbers));
-
+            
+            return redirect()->route('home')->with('success', 'Order placed successfully!');
+            
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to place order. Please try again.');
+            
+            // Log the error for debugging
+            \Log::error('Order placement failed: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return redirect()->back()->with('error', 'Order placement failed. Please try again. Error: ' . $e->getMessage());
         }
     }
 

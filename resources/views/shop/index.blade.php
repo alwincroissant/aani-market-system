@@ -218,86 +218,8 @@
 <script>
 function addToCart(productId) {
     const quantity = parseInt(document.getElementById('quantityInput-' + productId).value);
-
-    fetch('/cart/add', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            product_id: productId,
-            quantity: quantity
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-            if (data.success) {
-                // in-page slide alert (short)
-                const alertEl = document.createElement('div');
-                alertEl.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
-                alertEl.style.zIndex = '9999';
-                alertEl.innerHTML = `
-                    <strong>Success!</strong> ${data.message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.body.appendChild(alertEl);
-
-                setTimeout(() => {
-                    if (!alertEl.parentNode) return;
-                    alertEl.classList.add('slide-out');
-                    alertEl.addEventListener('animationend', function handler() {
-                        if (alertEl.parentNode) alertEl.parentNode.removeChild(alertEl);
-                        alertEl.removeEventListener('animationend', handler);
-                    });
-                }, 750);
-
-            try {
-                const badge = document.getElementById('cartCountBadge');
-                let newCount = null;
-                if (badge) {
-                    const current = parseInt(badge.textContent) || 0;
-                    newCount = current + quantity;
-                    console.log('shop.index addToCart local update newCount', newCount);
-                    if (typeof setCartCount === 'function') {
-                        setCartCount(newCount);
-                    } else {
-                        badge.textContent = newCount;
-                    }
-                    try { localStorage.setItem('cart_count', newCount); } catch (e) {}
-                    if (window.cartChannel) window.cartChannel.postMessage({ count: newCount });
-                    document.dispatchEvent(new CustomEvent('cart.add', { detail: { count: newCount } }));
-                } else {
-                    console.log('shop.index addToCart: badge not found, dispatching generic cart.add');
-                    document.dispatchEvent(new Event('cart.add'));
-                }
-            } catch (e) {
-                console.error('shop.index addToCart local update failed', e);
-                document.dispatchEvent(new Event('cart.add'));
-            }
-        } else {
-            const alertEl = document.createElement('div');
-            alertEl.className = 'alert alert-warning alert-dismissible fade show position-fixed top-0 end-0 m-3 slide-alert';
-            alertEl.style.zIndex = '9999';
-            alertEl.innerHTML = `
-                <strong>Notice:</strong> ${data.message || 'Could not add item to cart.'}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alertEl);
-
-            setTimeout(() => {
-                if (!alertEl.parentNode) return;
-                alertEl.classList.add('slide-out');
-                alertEl.addEventListener('animationend', function handler() {
-                    if (alertEl.parentNode) alertEl.parentNode.removeChild(alertEl);
-                    alertEl.removeEventListener('animationend', handler);
-                });
-            }, 3000);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+    
+    window.location.href = `/cart/add/${productId}`;
 }
 </script>
 @endpush

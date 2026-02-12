@@ -118,7 +118,7 @@
                 <h5>Sign In to Order</h5>
                 <p class="text-muted">Create an account or login to manage your cart and place orders.</p>
                 @auth
-                    <a href="{{ route('cart.view') }}" class="btn btn-warning">
+                    <a href="{{ route('getCart') }}" class="btn btn-warning">
                         <i class="bi bi-cart"></i> View My Cart
                     </a>
                 @else

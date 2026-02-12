@@ -7,89 +7,84 @@
     <div class="col-12">
         <h2 class="mb-4">Shopping Cart</h2>
         
-        @if($groupedCart->count() > 0)
+        @if($products && count($products) > 0)
             <div class="row">
                 <div class="col-lg-8">
-                    <form action="{{ route('checkout.index') }}" method="GET" id="cartCheckoutForm">
-                        @foreach($groupedCart as $vendorId => $items)
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5 class="mb-0">
-                                        {{ $items->first()->vendor_name }}
-                                        @if(isset($vendorServices[$vendorId]))
-                                            <div class="float-end">
-                                                @if($vendorServices[$vendorId]->weekend_pickup_enabled)
-                                                    <span class="badge bg-success me-1">🏪 Pickup</span>
-                                                @endif
-                                                @if($vendorServices[$vendorId]->weekday_delivery_enabled)
-                                                    <span class="badge bg-info me-1">🚚 Weekday Delivery</span>
-                                                @endif
-                                                @if($vendorServices[$vendorId]->weekend_delivery_enabled)
-                                                    <span class="badge bg-primary">🚚 Weekend Delivery</span>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table">
-                                            <thead>
-                                                <tr>
-                                                    <th style="width: 40px;">
-                                                        <input type="checkbox" class="form-check-input" checked onclick="toggleVendorSelection({{ $vendorId }}, this.checked)">
-                                                    </th>
-                                                    <th>Product</th>
-                                                    <th>Price</th>
-                                                    <th>Quantity</th>
-                                                    <th>Total</th>
-                                                    <th>Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($items as $cartKey => $item)
-                                                    <tr>
-                                                        <td>
-                                                            <input type="checkbox"
-                                                                   class="form-check-input cart-item-checkbox vendor-{{ $vendorId }}"
-                                                                   name="selected_items[]"
-                                                                   value="{{ $cartKey }}"
-                                                                   checked
-                                                                   onchange="recalculateSelectedTotals()">
-                                                        </td>
-                                                        <td>{{ $item['product_name'] }}</td>
-                                                        <td>₱{{ number_format($item['price_per_unit'], 2) }}</td>
-                                                        <td>
-                                                            <input type="number" 
-                                                                   class="form-control form-control-sm" 
-                                                                   style="width: 80px;"
-                                                                   value="{{ $item['quantity'] }}" 
-                                                                   min="1" 
-                                                                   max="99"
-                                                                   onchange="updateCartItem('{{ $item['product_id'] }}', '{{ $item['vendor_id'] }}', this.value)">
-                                                        </td>
-                                                        <td>₱{{ number_format($item['price_per_unit'] * $item['quantity'], 2) }}</td>
-                                                        <td>
-                                                            <button class="btn btn-sm btn-danger" type="button" onclick="removeFromCart('{{ $item['product_id'] }}', '{{ $item['vendor_id'] }}')">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                            <tfoot>
-                                                <tr class="table-primary">
-                                                    <th colspan="4">Vendor Subtotal</th>
-                                                    <th>₱{{ number_format($items->sum(function($item) { return $item['price_per_unit'] * $item['quantity']; }), 2) }}</th>
-                                                    <th></th>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;">
+                                                <input type="checkbox" class="form-check-input" id="selectAll" checked>
+                                            </th>
+                                            <th>Product</th>
+                                            <th>Shop</th>
+                                            <th>Price</th>
+                                            <th>Quantity</th>
+                                            <th>Total</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($products as $itemId => $item)
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input item-checkbox" 
+                                                           data-item-id="{{ $itemId }}" 
+                                                           data-price="{{ $item['price'] }}"
+                                                           checked>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="{{ $item['item']->product_image_url ?? '/images/default-product.jpg' }}" 
+                                                             alt="{{ $item['item']->product_name }}" 
+                                                             class="img-thumbnail me-3" 
+                                                             style="width: 60px; height: 60px; object-fit: cover;">
+                                                        <div>
+                                                            <div class="fw-semibold">{{ $item['item']->product_name }}</div>
+                                                            <small class="text-muted">{{ $item['item']->unit_type }}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        @if($item['item']->vendor)
+                                                            <span class="badge bg-info">{{ $item['item']->vendor->business_name }}</span>
+                                                        @else
+                                                            <span class="text-muted">Unknown Shop</span>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                                <td>₱{{ number_format($item['item']->price_per_unit, 2) }}</td>
+                                                <td>
+                                                    <div class="input-group" style="width: 120px;">
+                                                        <a href="{{ route('reduceByOne', $itemId) }}" class="btn btn-outline-secondary btn-sm">
+                                                            <i class="bi bi-dash"></i>
+                                                        </a>
+                                                        <input type="text" 
+                                                               class="form-control text-center" 
+                                                               value="{{ $item['qty'] }}" 
+                                                               readonly>
+                                                        <a href="{{ route('addToCart', $itemId) }}" class="btn btn-outline-secondary btn-sm">
+                                                            <i class="bi bi-plus"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                                <td>₱{{ number_format($item['price'], 2) }}</td>
+                                                <td>
+                                                    <a href="{{ route('removeItem', $itemId) }}" class="btn btn-sm btn-danger">
+                                                        <i class="bi bi-trash"></i> Remove
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
-                        @endforeach
-                    </form>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="col-lg-4">
@@ -100,46 +95,25 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Subtotal (selected):</span>
-                                <strong id="selectedSubtotal">
-                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                        return $vendorItems->sum(function($item) { 
-                                            return $item['price_per_unit'] * $item['quantity']; 
-                                        }); 
-                                    }), 2) }}
-                                </strong>
+                                <strong id="selectedSubtotal">₱{{ number_format($totalPrice, 2) }}</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Market Fee (5%):</span>
-                                <strong id="selectedMarketFee">
-                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                        return $vendorItems->sum(function($item) { 
-                                            return $item['price_per_unit'] * $item['quantity']; 
-                                        }); 
-                                    }) * 0.05, 2) }}
-                                </strong>
+                                <span>Shipping (Weekday Delivery):</span>
+                                <strong>₱50.00</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
-                                <span><strong>Total (selected):</strong></span>
-                                <strong class="text-primary" id="selectedTotal">
-                                    ₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-                                        return $vendorItems->sum(function($item) { 
-                                            return $item['price_per_unit'] * $item['quantity']; 
-                                        }); 
-                                    }) * 1.05, 2) }}
-                                </strong>
+                                <span><strong>Total:</strong></span>
+                                <strong class="text-primary" id="selectedTotal">₱{{ number_format($totalPrice + 50, 2) }}</strong>
                             </div>
                             
                             <div class="d-grid gap-2">
-                                <button type="submit" form="cartCheckoutForm" class="btn btn-primary">
+                                <button type="button" class="btn btn-primary" onclick="proceedToCheckout()">
                                     Proceed to Checkout (selected)
                                 </button>
                                 <a href="{{ route('home') }}" class="btn btn-outline-secondary">
                                     Continue Shopping
                                 </a>
-                                <button class="btn btn-outline-danger" onclick="clearCart()">
-                                    Clear Cart
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -155,66 +129,96 @@
     </div>
 </div>
 
-<!-- Hidden div for cart info (used by shop page) -->
-<div id="cartInfo" class="d-none">
-    <p class="mb-0"><strong>{{ $groupedCart->sum('quantity') }}</strong> items</p>
-    <p class="mb-0">₱{{ number_format($groupedCart->sum(function($vendorItems) { 
-        return $vendorItems->sum(function($item) { 
-            return $item['price_per_unit'] * $item['quantity']; 
-        }); 
-    }), 2) }}</p>
-</div>
-@endsection
-
 @push('scripts')
 <script>
-function updateCartItem(productId, vendorId, quantity) {
-    fetch('/cart/update', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            product_id: productId,
-            vendor_id: vendorId,
-            quantity: parseInt(quantity)
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const selectedSubtotal = document.getElementById('selectedSubtotal');
+    const selectedTotal = document.getElementById('selectedTotal');
 
-function removeFromCart(productId, vendorId) {
-    if (confirm('Are you sure you want to remove this item?')) {
-        updateCartItem(productId, vendorId, 0);
-    }
-}
-
-function clearCart() {
-    if (confirm('Are you sure you want to clear your entire cart?')) {
-        fetch('/cart/clear', {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    function updateTotals() {
+        let subtotal = 0;
+        
+        itemCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                subtotal += parseFloat(checkbox.dataset.price);
             }
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
         });
+        
+        // Calculate shipping based on delivery options
+        let shipping = 0;
+        // For now, default to ₱50 shipping (weekday delivery)
+        // This will be updated when delivery options are selected in checkout
+        shipping = 50.00;
+        
+        const total = subtotal + shipping;
+        
+        selectedSubtotal.textContent = `₱${subtotal.toFixed(2)}`;
+        selectedTotal.textContent = `₱${total.toFixed(2)}`;
     }
+
+    // Select all functionality
+    selectAllCheckbox.addEventListener('change', function() {
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateTotals();
+    });
+
+    // Individual item checkboxes
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Update select all checkbox state
+            const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
+            const someChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
+            
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = someChecked && !allChecked;
+            
+            updateTotals();
+        });
+    });
+
+    // Initial totals
+    updateTotals();
+});
+
+function proceedToCheckout() {
+    const selectedItems = [];
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+    
+    if (itemCheckboxes.length === 0) {
+        alert('Please select at least one item to checkout.');
+        return;
+    }
+    
+    itemCheckboxes.forEach(checkbox => {
+        selectedItems.push(checkbox.dataset.itemId);
+    });
+    
+    // Create form and submit with selected items
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route('checkout.index') }}';
+    
+    // Add CSRF token
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    form.appendChild(csrfInput);
+    
+    // Add selected items
+    const itemsInput = document.createElement('input');
+    itemsInput.type = 'hidden';
+    itemsInput.name = 'selected_items';
+    itemsInput.value = JSON.stringify(selectedItems);
+    form.appendChild(itemsInput);
+    
+    document.body.appendChild(form);
+    form.submit();
 }
 </script>
 @endpush
+@endsection

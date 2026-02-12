@@ -34,7 +34,6 @@
                 <div class="card-body">
                     <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        @method('PUT')
                         
                         <div class="row">
                             <div class="col-md-6">
