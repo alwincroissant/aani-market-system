@@ -32,6 +32,11 @@
                         {{-- Customer navigation --}}
                         @if($role === 'customer')
                             <li class="nav-item">
+                                <a class="nav-link" href="{{ route('home') }}">
+                                    <i class="bi bi-house"></i> Home
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
                             </li>
                             <li class="nav-item">
@@ -43,8 +48,8 @@
                         @if($role === 'vendor')
                             <!-- Home/Store Link -->
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('home') }}">
-                                    <i class="bi bi-shop"></i> {{ auth()->user()->vendor->store_name ?? 'My Store' }}
+                                <a class="nav-link" href="{{ route('vendor.dashboard') }}">
+                                    <i class="bi bi-house"></i> Home
                                 </a>
                             </li>
                             
@@ -63,6 +68,21 @@
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('vendor.reports.products') }}">
                                         <i class="bi bi-graph-up"></i> Product Performance
+                                    </a></li>
+                                </ul>
+                            </li>
+                            
+                            <!-- Orders Management Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="vendorOrdersDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-cart3"></i> Orders
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('vendor.orders.index') }}">
+                                        <i class="bi bi-list"></i> View Orders
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.reports.orders') }}">
+                                        <i class="bi bi-graph-up"></i> Orders Report
                                     </a></li>
                                 </ul>
                             </li>
@@ -112,6 +132,32 @@
                             </li>
                         @endif
 
+                        {{-- Pickup Manager navigation --}}
+                        @if($role === 'pickup_manager')
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('home') }}">
+                                    <i class="bi bi-house"></i> Home
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="pickupManagerDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-qr-code"></i> Pickup Management
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('home') }}">
+                                        <i class="bi bi-house"></i> Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('home') }}#market-map-section">
+                                        <i class="bi bi-map"></i> Market Map
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
+                                        <i class="bi bi-calendar-check"></i> Attendance Report
+                                    </a></li>
+                                </ul>
+                            </li>
+                        @endif
+
                         {{-- Admin navigation --}}
                         @if($role === 'administrator')
                             <li class="nav-item dropdown">
@@ -143,6 +189,7 @@
                             </li>
                         @endif
                         {{-- Cart dropdown for authenticated users --}}
+                        @if(auth()->check() && auth()->user()->role === 'customer')
                         <li class="nav-item dropdown me-2">
                             <a class="nav-link dropdown-toggle position-relative" href="#" id="cartDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-cart"></i>
@@ -181,7 +228,7 @@
                                         </a>
                                     </li>
                                 @endif
-                            </ul>
+                            @endif
                         </li>
                         
                         {{-- Account dropdown for customers (non-vendors) --}}
@@ -209,6 +256,12 @@
                         </li>
                         @endif
                     @else
+                        {{-- Unauthenticated user navigation --}}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('home') }}">
+                                <i class="bi bi-house"></i> Home
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('shop.index') }}">Shop</a>
                         </li>

@@ -36,25 +36,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Cart Routes (authenticated users only)
     Route::get('/cart', [CartController::class, 'view'])->name('cart.view');
-    Route::get('/cart/add', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::put('/cart/update', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Checkout Routes
-    |--------------------------------------------------------------------------
-    */
+    // Checkout Routes (authenticated users only)
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Routes
-    |--------------------------------------------------------------------------
-    */
-
     // Admin Routes Group
     Route::middleware(['role:administrator'])->prefix('admin')->name('admin.')->group(function () {
         // Dashboard
@@ -113,5 +103,4 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile/addresses', [ProfileController::class, 'addresses'])->name('profile.addresses');
     Route::post('/profile/addresses', [ProfileController::class, 'storeAddress'])->name('profile.addresses.store');
     Route::get('/profile/orders', [ProfileController::class, 'orders'])->name('profile.orders');
-});
 });
