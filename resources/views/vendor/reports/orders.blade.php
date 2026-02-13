@@ -71,13 +71,19 @@
                                     <td>{{ $order->order_reference }}</td>
                                     <td>{{ $order->created_at->format('M d, Y H:i') }}</td>
                                     <td>
-                                        <span class="badge bg-{{ 
-                                            $order->order_status === 'pending' ? 'warning' : 
-                                            $order->order_status === 'confirmed' ? 'info' : 
-                                            $order->order_status === 'ready' ? 'primary' : 
-                                            $order->order_status === 'completed' ? 'success' : 
-                                            $order->order_status === 'cancelled' ? 'danger' : 'secondary' 
-                                        }}">
+                                        @php
+                                            $badgeClass = 'secondary';
+                                            if ($order->order_status === 'pending') $badgeClass = 'warning';
+                                            elseif ($order->order_status === 'confirmed') $badgeClass = 'info';
+                                            elseif ($order->order_status === 'ready') $badgeClass = 'primary';
+                                            elseif ($order->order_status === 'preparing') $badgeClass = 'secondary';
+                                            elseif ($order->order_status === 'awaiting_rider') $badgeClass = 'warning';
+                                            elseif ($order->order_status === 'out_for_delivery') $badgeClass = 'info';
+                                            elseif ($order->order_status === 'delivered') $badgeClass = 'success';
+                                            elseif ($order->order_status === 'completed') $badgeClass = 'success';
+                                            elseif ($order->order_status === 'cancelled') $badgeClass = 'danger';
+                                        @endphp
+                                        <span class="badge bg-{{ $badgeClass }}">
                                             {{ ucfirst($order->order_status) }}
                                         </span>
                                     </td>
@@ -111,10 +117,78 @@
     </div>
 </div>
 
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading order details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function viewOrderDetails(orderId) {
-    // Placeholder for order details modal
-    alert('Order details functionality coming soon for Order #' + orderId);
+    // Show loading state
+    const contentDiv = document.getElementById('orderDetailsContent');
+    contentDiv.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading order details...</p>
+        </div>
+    `;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+    modal.show();
+    
+    // Fetch order details
+    fetch(`/vendor/orders/${orderId}`)
+        .then(response => response.text())
+        .then(html => {
+            // Parse the HTML response to extract the order details
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Find the order details section
+            const orderDetails = doc.querySelector('.card.mb-4');
+            if (orderDetails) {
+                contentDiv.innerHTML = orderDetails.innerHTML;
+            } else {
+                contentDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Order details not found.
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching order details:', error);
+            contentDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Failed to load order details. Please try again.
+                </div>
+            `;
+        });
 }
 </script>
 @endsection

@@ -109,8 +109,8 @@
                                 <tr>
                                     <td>{{ \Carbon\Carbon::parse($sale->date)->format('M d, Y') }}</td>
                                     <td>₱{{ number_format($sale->total, 2) }}</td>
-                                    <td>{{ $sale->order_count ?? 0 }}</td>
-                                    <td>₱{{ number_format($sale->total / max($sale->order_count ?? 1, 1), 2) }}</td>
+                                    <td>{{ $sale->order_count }}</td>
+                                    <td>₱{{ number_format($sale->total / max($sale->order_count, 1), 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

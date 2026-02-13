@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Vendor;
+use Carbon\Carbon;
 use App\Models\Order;
 use App\Models\Product;
 
@@ -23,15 +24,29 @@ class VendorReportController extends Controller
         $startDate = $request->get('start_date', now()->subDays(30)->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
 
+        // Debug: Log vendor info and date range
+        \Log::info('Sales Report Debug:', [
+            'vendor_id' => $vendor->id,
+            'vendor_name' => $vendor->business_name,
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+
         // Get vendor's sales data
         $sales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total')
+            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count')
             ->groupBy('date')
             ->orderBy('date', 'desc')
             ->get();
+
+        // Debug: Log query results
+        \Log::info('Sales Query Results:', [
+            'sales_count' => $sales->count(),
+            'sales_data' => $sales->toArray()
+        ]);
 
         // Calculate totals
         $totalSales = $sales->sum('total');
@@ -75,6 +90,12 @@ class VendorReportController extends Controller
             ->select('orders.*', 'order_items.item_status')
             ->orderBy('orders.created_at', 'desc')
             ->get();
+
+        // Convert created_at to Carbon objects for formatting
+        $orders = $orders->map(function($order) {
+            $order->created_at = new Carbon($order->created_at);
+            return $order;
+        });
 
         return view('vendor.reports.orders', compact('orders'));
     }

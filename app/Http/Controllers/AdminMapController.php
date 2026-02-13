@@ -339,4 +339,36 @@ class AdminMapController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Stall deleted successfully.']);
     }
+
+    public function getStallsData()
+    {
+        $stalls = DB::table('stalls as s')
+            ->leftJoin('market_sections as ms', 's.section_id', '=', 'ms.id')
+            ->leftJoin('stall_assignments as sa', function($join) {
+                $join->on('s.id', '=', 'sa.stall_id')
+                     ->whereNull('sa.end_date');
+            })
+            ->leftJoin('vendors as v', 'sa.vendor_id', '=', 'v.id')
+            ->whereNull('s.deleted_at')
+            ->select(
+                's.id',
+                's.stall_number',
+                's.position_x',
+                's.position_y',
+                's.x1',
+                's.y1', 
+                's.x2',
+                's.y2',
+                's.map_coordinates_json',
+                's.status',
+                's.section_id',
+                'ms.section_name',
+                'ms.section_code',
+                'v.id as vendor_id',
+                'v.business_name'
+            )
+            ->get();
+
+        return response()->json($stalls);
+    }
 }

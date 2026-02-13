@@ -41,7 +41,6 @@ class VendorOrderController extends Controller
                 'c.last_name',
                 'c.phone',
                 'u.email',
-                'oi.item_status',
                 DB::raw('COUNT(oi.id) as item_count'),
                 DB::raw('SUM(oi.quantity * oi.unit_price) as total_amount')
             )
@@ -60,8 +59,7 @@ class VendorOrderController extends Controller
                 'c.first_name',
                 'c.last_name',
                 'c.phone',
-                'u.email',
-                'oi.item_status'
+                'u.email'
             );
 
         // Apply filters
@@ -146,7 +144,7 @@ class VendorOrderController extends Controller
         }
 
         $request->validate([
-            'item_status' => 'required|in:pending,confirmed,ready,completed,cancelled'
+            'item_status' => 'required|in:pending,confirmed,ready,completed,cancelled,preparing,awaiting_rider,out_for_delivery,delivered'
         ]);
 
         // Verify this order item belongs to the vendor
@@ -172,48 +170,21 @@ class VendorOrderController extends Controller
             // Debug: Log the update
             \Log::info("Updated item {$itemId} to status: {$request->item_status}");
 
-            // Check if all vendor's items in this order have the same status
-            $allVendorItems = DB::table('order_items')
-                ->where('order_id', $orderItem->order_id)
-                ->where('vendor_id', $vendor->id)
-                ->get();
+            // Always update the main order status to match the item status
+            DB::table('orders')
+                ->where('id', $orderItem->order_id)
+                ->update([
+                    'order_status' => $request->item_status,
+                    'updated_at' => now()
+                ]);
 
-            $allSameStatus = $allVendorItems->every(function ($item) use ($request) {
-                    return $item->item_status === $request->item_status;
-                });
-
-            \Log::info("All vendor items same status: " . ($allSameStatus ? 'true' : 'false'));
-
-            // If all vendor's items have the same status, check if all items in the order have the same status
-            if ($allSameStatus) {
-                $allOrderItems = DB::table('order_items')
-                    ->where('order_id', $orderItem->order_id)
-                    ->get();
-
-                $allOrderSameStatus = $allOrderItems->every(function ($item) use ($request) {
-                    return $item->item_status === $request->item_status;
-                });
-
-                \Log::info("All order items same status: " . ($allOrderSameStatus ? 'true' : 'false'));
-
-                // If all items in the order have the same status, update the main order status too
-                if ($allOrderSameStatus) {
-                    DB::table('orders')
-                        ->where('id', $orderItem->order_id)
-                        ->update([
-                            'order_status' => $request->item_status,
-                            'updated_at' => now()
-                        ]);
-
-                    \Log::info("Updated main order status to: {$request->item_status}");
-                }
-            }
+            \Log::info("Updated main order {$orderItem->order_id} status to: {$request->item_status}");
 
             return response()->json([
                 'success' => true,
                 'message' => 'Order item status updated successfully.',
                 'item_status' => $request->item_status,
-                'order_status_updated' => isset($allOrderSameStatus) && $allOrderSameStatus
+                'order_status_updated' => true
             ]);
 
         } catch (\Exception $e) {

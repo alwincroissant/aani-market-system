@@ -85,9 +85,13 @@
                                             $order->order_status === 'pending' ? 'warning' : 
                                             ($order->order_status === 'confirmed' ? 'info' : 
                                             ($order->order_status === 'ready' ? 'primary' : 
+                                            ($order->order_status === 'preparing' ? 'secondary' : 
+                                            ($order->order_status === 'awaiting_rider' ? 'warning' : 
+                                            ($order->order_status === 'out_for_delivery' ? 'info' : 
+                                            ($order->order_status === 'delivered' ? 'success' : 
                                             ($order->order_status === 'completed' ? 'success' : 
                                             ($order->order_status === 'cancelled' ? 'danger' : 'secondary'
-                                        ))))
+                                            )))))))
                                         }}">
                                             {{ ucfirst($order->order_status) }}
                                         </span>

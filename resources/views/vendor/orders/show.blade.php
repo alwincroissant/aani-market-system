@@ -110,7 +110,11 @@
                                         <select class="form-select form-select-sm item-status" data-item-id="{{ $item->item_id }}">
                                             <option value="pending" {{ $item->item_status === 'pending' ? 'selected' : '' }}>Pending</option>
                                             <option value="confirmed" {{ $item->item_status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                            <option value="ready" {{ $item->item_status === 'ready' ? 'selected' : '' }}>Ready</option>
+                                            <option value="ready" {{ $item->item_status === 'ready' ? 'selected' : '' }}>Ready for Pickup</option>
+                                            <option value="preparing" {{ $item->item_status === 'preparing' ? 'selected' : '' }}>Preparing</option>
+                                            <option value="awaiting_rider" {{ $item->item_status === 'awaiting_rider' ? 'selected' : '' }}>Awaiting Rider</option>
+                                            <option value="out_for_delivery" {{ $item->item_status === 'out_for_delivery' ? 'selected' : '' }}>Out for Delivery</option>
+                                            <option value="delivered" {{ $item->item_status === 'delivered' ? 'selected' : '' }}>Delivered</option>
                                             <option value="completed" {{ $item->item_status === 'completed' ? 'selected' : '' }}>Completed</option>
                                             <option value="cancelled" {{ $item->item_status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                                         </select>
@@ -260,7 +264,7 @@ function updateItemStatus(itemId, status) {
         if (data.success) {
             let message = 'Status updated successfully';
             if (data.order_status_updated) {
-                message = 'Status and main order updated successfully';
+                message = 'Status and order updated successfully';
             }
             showToast(message, 'success');
         } else {
