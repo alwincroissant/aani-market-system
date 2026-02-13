@@ -5,24 +5,54 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        <!-- Vendor Header -->
-        <div class="card mb-4">
+        <!-- Vendor Header with Banner -->
+        <div class="card mb-4 overflow-hidden">
+            {{-- Vendor Banner --}}
+            @if($vendor->banner_url)
+                <div style="height: 200px; overflow: hidden;">
+                    <img src="{{ asset('storage/' . $vendor->banner_url) }}" alt="{{ $vendor->business_name }} Banner" class="w-100" style="height: 200px; object-fit: cover;">
+                </div>
+            @else
+                <div class="bg-primary d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="bi bi-shop text-white" style="font-size: 5rem;"></i>
+                </div>
+            @endif
+            
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-2">
-                        @if($vendor->logo_url)
-                            <img src="{{ asset($vendor->logo_url) }}" alt="{{ $vendor->business_name }}" class="img-fluid rounded">
-                        @else
-                            <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="height: 100px;">
-                                <i class="bi bi-shop text-white fs-2"></i>
-                            </div>
-                        @endif
-                    </div>
+                    @if($vendor->logo_url)
+                        <img src="{{ asset('storage/' . $vendor->logo_url) }}" 
+                            alt="{{ $vendor->business_name }}" 
+                            class="img-fluid rounded">
+                    @else
+                        <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="height: 100px;">
+                            <i class="bi bi-shop text-white fs-2"></i>
+                        </div>
+                    @endif
+                </div>
                     <div class="col-md-10">
                         <h2>{{ $vendor->business_name }}</h2>
-                        @if($vendor->description)
-                            <p class="text-muted">{{ $vendor->description }}</p>
+                        @if($vendor->business_description)
+                            <p class="text-muted">{{ $vendor->business_description }}</p>
                         @endif
+                        
+                        {{-- Additional vendor info --}}
+                        @if($vendor->region || $vendor->business_hours)
+                            <div class="mb-2">
+                                @if($vendor->region)
+                                    <small class="text-muted me-3">
+                                        <i class="bi bi-geo-alt"></i> {{ $vendor->region }}
+                                    </small>
+                                @endif
+                                @if($vendor->business_hours)
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> {{ $vendor->business_hours }}
+                                    </small>
+                                @endif
+                            </div>
+                        @endif
+                        
                         <div class="mt-2">
                             @if($vendor->weekend_pickup_enabled)
                                 <span class="badge bg-success me-2">🏪 Weekend Pickup</span>
@@ -32,6 +62,9 @@
                             @endif
                             @if($vendor->weekend_delivery_enabled)
                                 <span class="badge bg-primary me-2">🚚 Weekend Delivery</span>
+                            @endif
+                            @if($vendor->delivery_available)
+                                <span class="badge bg-warning text-dark me-2">📦 Delivery Available</span>
                             @endif
                         </div>
                     </div>

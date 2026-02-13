@@ -3,8 +3,9 @@
 @section('title', 'Vendor Dashboard')
 
 @section('content')
+
 <div class="container-fluid py-4">
-    <!-- Header Section with Shop Status -->
+    {{-- Header Section with Shop Status --}}
     <div class="row mb-4">
         <div class="col-md-8">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -26,7 +27,7 @@
                         <div>
                             <h6 class="mb-2">Shop Status</h6>
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="shopStatusToggle" 
+                                <input class="form-check-input" type="checkbox" id="shopStatusToggle"
                                     {{ $vendor->is_live ? 'checked' : '' }}>
                                 <label class="form-check-label" for="shopStatusToggle">
                                     <span id="statusText">{{ $vendor->is_live ? 'Open Now' : 'Closed' }}</span>
@@ -42,7 +43,7 @@
         </div>
     </div>
 
-    <!-- Key Metrics Row -->
+    {{-- Key Metrics Row --}}
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card shadow-sm border-0">
@@ -91,9 +92,9 @@
         </div>
     </div>
 
-    <!-- Main Dashboard Grid -->
+    {{-- Main Dashboard Grid --}}
     <div class="row">
-        <!-- Business Insights Chart (2/3 width) -->
+        {{-- Business Insights Chart (2/3 width) --}}
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-0 pt-4">
@@ -106,7 +107,7 @@
             </div>
         </div>
 
-        <!-- Top Products (1/3 width) -->
+        {{-- Top Products (1/3 width) --}}
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-0 pt-4">
@@ -115,19 +116,31 @@
                 </div>
                 <div class="card-body">
                     <div id="topProductsList">
-                        <!-- Top products will be loaded via AJAX -->
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                        @if($topProducts && $topProducts->count() > 0)
+                            <div class="list-group list-group-flush">
+                                @foreach($topProducts as $product)
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ $product->product_name }}</h6>
+                                            <small class="text-muted">Category: {{ $product->category_id ?? 'General' }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-primary rounded-pill">{{ $product->total_sold }} sold</span>
+                                            <div class="small text-muted">₱{{ number_format($product->total_revenue, 2) }}</div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                        </div>
+                        @else
+                            <p class="text-muted text-center py-3">No sales data available yet</p>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions Row -->
+    {{-- Quick Actions Row --}}
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm border-0">
@@ -172,23 +185,31 @@ document.addEventListener('DOMContentLoaded', function() {
     shopStatusToggle.addEventListener('change', function() {
         const isLive = this.checked;
         
+        // Disable toggle during request
+        this.disabled = true;
+        
         fetch('{{ route("vendor.update-live-status") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 is_live: isLive
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status); // Debug log
+            return response.json();
+        })
         .then(data => {
+            console.log('Response data:', data); // Debug log
             if (data.success) {
                 statusText.textContent = isLive ? 'Open Now' : 'Closed';
                 vendorStatus.className = isLive ? 'badge bg-success fs-6' : 'badge bg-secondary fs-6';
-                vendorStatus.innerHTML = isLive ? 
-                    '<i class="bi bi-circle-fill me-1"></i> Store Active' : 
+                vendorStatus.innerHTML = isLive ?
+                    '<i class="bi bi-circle-fill me-1"></i> Store Active' :
                     '<i class="bi bi-circle me-1"></i> Store Closed';
             } else {
                 this.checked = !this.checked;
@@ -199,6 +220,9 @@ document.addEventListener('DOMContentLoaded', function() {
             this.checked = !this.checked;
             console.error('Error:', error);
             alert('Network error occurred. Please try again.');
+        })
+        .finally(() => {
+            this.disabled = false; // Re-enable toggle
         });
     });
 
@@ -248,37 +272,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
-    // Load Top Products
-    loadTopProducts();
 });
-
-function loadTopProducts() {
-    // Use the actual top products data passed from controller
-    const topProductsList = document.getElementById('topProductsList');
-    const topProducts = @json($topProducts);
-    
-    if (topProducts && topProducts.length > 0) {
-        let html = '<div class="list-group list-group-flush">';
-        topProducts.forEach(product => {
-            html += `
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">${product.product_name}</h6>
-                        <small class="text-muted">Category: ${product.category_id || 'General'}</small>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-primary rounded-pill">${product.total_sold} sold</span>
-                        <div class="small text-muted">₱${parseFloat(product.total_revenue).toFixed(2)}</div>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-        topProductsList.innerHTML = html;
-    } else {
-        topProductsList.innerHTML = '<p class="text-muted text-center">No sales data available</p>';
-    }
-}
 </script>
 @endsection

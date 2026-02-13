@@ -28,6 +28,7 @@ class ShopController extends Controller
                 'v.business_name',
                 'v.business_description',
                 'v.logo_url',
+                'v.banner_url', // Added banner_url
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
                 'v.weekend_delivery_enabled',
@@ -40,6 +41,7 @@ class ShopController extends Controller
                 'v.business_name',
                 'v.business_description',
                 'v.logo_url',
+                'v.banner_url', // Added banner_url
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
                 'v.weekend_delivery_enabled'
@@ -153,8 +155,12 @@ class ShopController extends Controller
             ->select(
                 'v.id',
                 'v.business_name',
-                'v.business_description as description',
+                'v.business_description',
                 'v.logo_url',
+                'v.banner_url', // Added banner_url
+                'v.region', // Added region
+                'v.business_hours', // Added business_hours
+                'v.delivery_available', // Added delivery_available
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
                 'v.weekend_delivery_enabled'
@@ -210,6 +216,7 @@ class ShopController extends Controller
                 'v.id as vendor_id',
                 'v.business_name',
                 'v.logo_url',
+                'v.banner_url', // Added banner_url
                 'pc.category_name'
             )
             ->first();
