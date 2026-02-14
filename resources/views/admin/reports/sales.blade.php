@@ -49,6 +49,20 @@
     </div>
 </div>
 
+<!-- Export Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.reports.sales.export-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </a>
+            <a href="{{ route('admin.reports.sales.export-csv', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-csv"></i> Export CSV
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Summary Cards -->
 <div class="row mb-4">
     <div class="col-md-4">

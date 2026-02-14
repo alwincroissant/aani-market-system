@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\Vendor;
 use Carbon\Carbon;
 
@@ -15,8 +16,11 @@ class VendorOrderController extends Controller
         $vendor = Vendor::where('user_id', Auth::id())->first();
         
         if (!$vendor) {
+            Log::warning('Vendor not found for user', ['user_id' => Auth::id()]);
             return redirect()->route('auth.login')->with('error', 'Vendor profile not found.');
         }
+
+        Log::debug('Looking for orders for vendor', ['vendor_id' => $vendor->id]);
 
         // Get vendor's orders with their items only
         $query = DB::table('orders as o')
@@ -24,7 +28,7 @@ class VendorOrderController extends Controller
             ->join('users as u', 'c.user_id', '=', 'u.id')
             ->join('order_items as oi', 'o.id', '=', 'oi.order_id')
             ->where('oi.vendor_id', $vendor->id)
-            ->orderBy('o.order_date', 'desc')
+            ->orderBy('o.created_at', 'desc')
             ->select(
                 'o.id',
                 'o.order_reference',
@@ -41,7 +45,7 @@ class VendorOrderController extends Controller
                 'c.last_name',
                 'c.phone',
                 'u.email',
-                DB::raw('COUNT(oi.id) as item_count'),
+                DB::raw('COUNT(DISTINCT oi.id) as item_count'),
                 DB::raw('SUM(oi.quantity * oi.unit_price) as total_amount')
             )
             ->groupBy(
@@ -67,13 +71,15 @@ class VendorOrderController extends Controller
             $query->where('o.order_status', $request->status);
         }
         if ($request->filled('start_date')) {
-            $query->whereDate('o.order_date', '>=', $request->start_date);
+            $query->whereDate('o.created_at', '>=', $request->start_date);
         }
         if ($request->filled('end_date')) {
-            $query->whereDate('order_date', '<=', $request->end_date);
+            $query->whereDate('o.created_at', '<=', $request->end_date);
         }
 
         $orders = $query->get();
+
+        Log::debug('Orders found', ['count' => $orders->count(), 'data' => $orders->toArray()]);
 
         // Convert order_date to Carbon objects for formatting
         $orders = $orders->map(function($order) {
@@ -168,7 +174,7 @@ class VendorOrderController extends Controller
                 ]);
 
             // Debug: Log the update
-            \Log::info("Updated item {$itemId} to status: {$request->item_status}");
+            Log::info("Updated item {$itemId} to status: {$request->item_status}");
 
             // Always update the main order status to match the item status
             DB::table('orders')
@@ -178,7 +184,7 @@ class VendorOrderController extends Controller
                     'updated_at' => now()
                 ]);
 
-            \Log::info("Updated main order {$orderItem->order_id} status to: {$request->item_status}");
+            Log::info("Updated main order {$orderItem->order_id} status to: {$request->item_status}");
 
             return response()->json([
                 'success' => true,

@@ -48,6 +48,20 @@
         </div>
     </div>
 
+    <!-- Export Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex gap-2">
+                <a href="{{ route('vendor.reports.orders.export-pdf') }}" class="btn btn-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                </a>
+                <a href="{{ route('vendor.reports.orders.export-csv') }}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-csv"></i> Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Orders Table -->
     <div class="card">
         <div class="card-body">
@@ -96,9 +110,9 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary btn-sm" onclick="viewOrderDetails({{ $order->id }})">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
+                                            <a href="{{ route('vendor.orders.show', $order->id) }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

@@ -91,7 +91,7 @@
                                             ($order->order_status === 'delivered' ? 'success' : 
                                             ($order->order_status === 'completed' ? 'success' : 
                                             ($order->order_status === 'cancelled' ? 'danger' : 'secondary'
-                                            )))))))
+                                            ))))))))
                                         }}">
                                             {{ ucfirst($order->order_status) }}
                                         </span>

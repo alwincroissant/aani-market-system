@@ -108,7 +108,7 @@
                                                     @if(auth()->user()->role === 'customer')
                                                         <div class="input-group">
                                                             <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))">
-                                                            <button class="btn btn-primary" onclick="addToCart({{ $product->id }})">
+                                                            <button class="btn btn-primary" data-product-id="{{ $product->id }}">
                                                                 <i class="bi bi-cart-plus"></i> Add to Cart
                                                             </button>
                                                         </div>

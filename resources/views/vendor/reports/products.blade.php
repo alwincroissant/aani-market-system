@@ -53,6 +53,20 @@
         </div>
     </div>
 
+    <!-- Export Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex gap-2">
+                <a href="{{ route('vendor.reports.products.export-pdf') }}" class="btn btn-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                </a>
+                <a href="{{ route('vendor.reports.products.export-csv') }}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-csv"></i> Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Products Table -->
     <div class="card">
         <div class="card-header">

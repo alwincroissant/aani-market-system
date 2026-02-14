@@ -130,6 +130,13 @@
                     <button class="btn btn-danger float-end" onclick="confirmCancelOrder()">
                         <i class="bi bi-x-circle"></i> Cancel Order
                     </button>
+                @elseif(in_array($order->order_status, ['ready', 'preparing', 'awaiting_rider', 'out_for_delivery', 'delivered']))
+                    <form action="{{ route('customer.orders.mark-complete', $order->order_reference) }}" method="POST" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-success float-end" onclick="return confirm('Mark this order as completed?')">
+                            <i class="bi bi-check-circle"></i> Mark as Complete
+                        </button>
+                    </form>
                 @endif
             </div>
         </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,6 +18,7 @@ class VendorProductController extends Controller
             ->first();
 
         if (!$vendor) {
+            Log::warning('Vendor not found for user', ['user_id' => Auth::id()]);
             return redirect()->route('home')->with('error', 'Vendor profile not found.');
         }
 
@@ -37,6 +39,12 @@ class VendorProductController extends Controller
             )
             ->orderBy('p.id', 'DESC')
             ->paginate(10);
+
+        Log::debug('Vendor products loaded', [
+            'vendor_id' => $vendor->id,
+            'products_count' => $products->count(),
+            'total' => $products->total()
+        ]);
 
         return view('product.index', compact('products'));
     }

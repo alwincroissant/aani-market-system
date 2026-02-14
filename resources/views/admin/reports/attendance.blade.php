@@ -46,6 +46,20 @@
     </div>
 </div>
 
+<!-- Export Buttons -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.reports.attendance.export-pdf', ['market_date' => $marketDate]) }}" class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </a>
+            <a href="{{ route('admin.reports.attendance.export-csv', ['market_date' => $marketDate]) }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-csv"></i> Export CSV
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Summary Cards -->
 <div class="row mb-4">
     <div class="col-md-4">
@@ -200,7 +214,7 @@
                     <div class="col-md-8">
                         <div class="progress" style="height: 30px;">
                             <?php $attendanceRate = $allVendors->count() > 0 ? ($attendance->count() / $allVendors->count()) * 100 : 0; ?>
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $attendanceRate }}%">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $attendanceRate }}%;">
                                 {{ number_format($attendanceRate, 1) }}% Attendance Rate
                             </div>
                         </div>

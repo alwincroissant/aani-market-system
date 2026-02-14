@@ -91,4 +91,50 @@ class CustomerOrderController extends Controller
 
         return view('customer.orders.show', compact('order', 'orderItems', 'subtotal', 'marketFee', 'totalAmount'));
     }
+
+    public function markComplete($orderReference)
+    {
+        $customer = DB::table('customers')
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$customer) {
+            return redirect()->route('home')->with('error', 'Customer profile not found.');
+        }
+
+        $order = DB::table('orders')
+            ->where('customer_id', $customer->id)
+            ->where('order_reference', $orderReference)
+            ->first();
+
+        if (!$order) {
+            return redirect()->route('customer.orders.index')->with('error', 'Order not found.');
+        }
+
+        // Check if order is in a completable status
+        $completableStatuses = ['ready', 'preparing', 'awaiting_rider', 'out_for_delivery', 'delivered'];
+        if (!in_array($order->order_status, $completableStatuses)) {
+            return redirect()->route('customer.orders.show', $orderReference)
+                ->with('error', 'This order cannot be marked as complete at this time.');
+        }
+
+        // Update order status to completed
+        DB::table('orders')
+            ->where('id', $order->id)
+            ->update([
+                'order_status' => 'completed',
+                'updated_at' => now()
+            ]);
+
+        // Also update all order items
+        DB::table('order_items')
+            ->where('order_id', $order->id)
+            ->update([
+                'item_status' => 'completed',
+                'updated_at' => now()
+            ]);
+
+        return redirect()->route('customer.orders.show', $orderReference)
+            ->with('success', 'Order marked as completed successfully!');
+    }
 }

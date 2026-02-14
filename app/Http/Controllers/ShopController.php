@@ -157,10 +157,10 @@ class ShopController extends Controller
                 'v.business_name',
                 'v.business_description',
                 'v.logo_url',
-                'v.banner_url', // Added banner_url
-                'v.region', // Added region
-                'v.business_hours', // Added business_hours
-                'v.delivery_available', // Added delivery_available
+                'v.banner_url',
+                'v.region',
+                'v.business_hours',
+                'v.delivery_available',
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
                 'v.weekend_delivery_enabled'

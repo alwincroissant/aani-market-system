@@ -33,7 +33,7 @@
                             <td>{{ $product->id }}</td>
                             <td>{{ $product->product_name }}</td>
                             <td>
-                                <span class="badge" style="background-color: {{ $product->color_code ?? '#6c757d' }}">
+                                <span class="badge" style="background-color: {{ $product->color_code ?? '#6c757d' }};">
                                     {{ $product->category_name }}
                                 </span>
                             </td>
