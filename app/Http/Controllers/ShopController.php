@@ -72,6 +72,10 @@ class ShopController extends Controller
                 'p.unit_type',
                 'p.product_image_url',
                 'p.vendor_id',
+                'p.stock_quantity',
+                'p.minimum_stock',
+                'p.track_stock',
+                'p.allow_backorder',
                 'v.business_name',
                 'pc.category_name'
             );
@@ -184,6 +188,10 @@ class ShopController extends Controller
                 'p.price_per_unit',
                 'p.unit_type',
                 'p.product_image_url',
+                'p.stock_quantity',
+                'p.minimum_stock',
+                'p.track_stock',
+                'p.allow_backorder',
                 'pc.category_name',
                 'pc.color_code'
             )
@@ -213,6 +221,10 @@ class ShopController extends Controller
                 'p.price_per_unit',
                 'p.unit_type',
                 'p.product_image_url',
+                'p.stock_quantity',
+                'p.minimum_stock',
+                'p.track_stock',
+                'p.allow_backorder',
                 'v.id as vendor_id',
                 'v.business_name',
                 'v.logo_url',

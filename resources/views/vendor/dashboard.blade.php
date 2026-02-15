@@ -158,10 +158,17 @@
                             </a>
                         </div>
                         <div class="col-md-3 mb-3">
+                            <a href="{{ route('stock.index') }}" class="btn btn-success w-100">
+                                <i class="bi bi-box-seam me-2"></i>Stock Management
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
                             <a href="{{ route('vendor.reports.sales') }}" class="btn btn-outline-primary w-100">
                                 <i class="bi bi-graph-up me-2"></i>View Reports
                             </a>
                         </div>
+                    </div>
+                    <div class="row mt-3">
                         <div class="col-md-3 mb-3">
                             <a href="{{ route('vendor.settings') }}" class="btn btn-outline-primary w-100">
                                 <i class="bi bi-gear me-2"></i>Store Settings

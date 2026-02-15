@@ -16,6 +16,7 @@ use App\Http\Controllers\VendorReportController;
 use App\Http\Controllers\VendorOrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerOrderController;
+use App\Http\Controllers\StockManagementController;
 
 // Public Routes
 Route::get('/', [MarketMapController::class, 'index'])->name('home');
@@ -143,4 +144,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile/addresses/{id}', [ProfileController::class, 'updateAddress'])->name('profile.addresses.update');
     Route::delete('/profile/addresses/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.addresses.delete');
     Route::get('/profile/orders', [ProfileController::class, 'orders'])->name('profile.orders');
+    
+    // Stock Management Routes
+    Route::get('/stock', [StockManagementController::class, 'index'])->name('stock.index');
+    Route::get('/stock/{product}/edit', [StockManagementController::class, 'edit'])->name('stock.edit');
+    Route::put('/stock/{product}', [StockManagementController::class, 'update'])->name('stock.update');
+    Route::post('/stock/bulk-update', [StockManagementController::class, 'bulkUpdate'])->name('stock.bulk-update');
+    Route::get('/stock/low-stock', [StockManagementController::class, 'lowStockReport'])->name('stock.low-stock');
 });

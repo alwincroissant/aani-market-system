@@ -176,6 +176,27 @@
                             @if($product->description)
                                 <p class="card-text text-muted small">{{ Str::limit($product->description, 60) }}</p>
                             @endif
+                            
+                            <!-- Stock Information -->
+                            @if($product->track_stock)
+                                @php
+                                    $stockStatus = 'In stock';
+                                    $stockClass = 'bg-success';
+                                    if ($product->stock_quantity == 0) {
+                                        $stockStatus = $product->allow_backorder ? 'Backorder' : 'Out of stock';
+                                        $stockClass = $product->allow_backorder ? 'bg-info' : 'bg-danger';
+                                    } elseif ($product->stock_quantity <= $product->minimum_stock) {
+                                        $stockStatus = 'Low stock';
+                                        $stockClass = 'bg-warning';
+                                    }
+                                @endphp
+                                <div class="mb-2">
+                                    <span class="badge {{ $stockClass }}">
+                                        {{ $stockStatus }}: {{ $product->stock_quantity }} available
+                                    </span>
+                                </div>
+                            @endif
+                            
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="fw-bold text-primary">₱{{ number_format($product->price_per_unit, 2) }}</span>
@@ -184,12 +205,34 @@
 
                                 <!-- Add To Cart Section -->
                                 <div class="mb-2">
-                                    <div class="input-group mb-2" style="max-width: 120px;">
-                                        <input type="number" id="quantityInput-{{ $product->id }}" class="form-control form-control-sm" value="1" min="1" max="99">
-                                    </div>
-                                    <button type="button" class="btn btn-success btn-sm w-100" onclick="addToCart({{ $product->id }})">
-                                        <i class="bi bi-cart-plus"></i> Add to Cart
-                                    </button>
+                                    @if($product->track_stock && $product->stock_quantity > 0)
+                                        <div class="input-group mb-2" style="max-width: 120px;">
+                                            <input type="number" id="quantityInput-{{ $product->id }}" class="form-control form-control-sm" value="1" min="1" max="{{ $product->stock_quantity }}">
+                                        </div>
+                                        <button type="button" class="btn btn-success btn-sm w-100" onclick="addToCart({{ $product->id }})">
+                                            <i class="bi bi-cart-plus"></i> Add to Cart
+                                        </button>
+                                    @elseif($product->track_stock && $product->stock_quantity == 0)
+                                        @if($product->allow_backorder)
+                                            <div class="input-group mb-2" style="max-width: 120px;">
+                                                <input type="number" id="quantityInput-{{ $product->id }}" class="form-control form-control-sm" value="1" min="1" max="99">
+                                            </div>
+                                            <button type="button" class="btn btn-info btn-sm w-100" onclick="addToCart({{ $product->id }})">
+                                                <i class="bi bi-clock"></i> Backorder
+                                            </button>
+                                        @else
+                                            <button type="button" class="btn btn-danger btn-sm w-100" disabled>
+                                                <i class="bi bi-x-circle"></i> Out of Stock
+                                            </button>
+                                        @endif
+                                    @else
+                                        <div class="input-group mb-2" style="max-width: 120px;">
+                                            <input type="number" id="quantityInput-{{ $product->id }}" class="form-control form-control-sm" value="1" min="1" max="99">
+                                        </div>
+                                        <button type="button" class="btn btn-success btn-sm w-100" onclick="addToCart({{ $product->id }})">
+                                            <i class="bi bi-cart-plus"></i> Add to Cart
+                                        </button>
+                                    @endif
                                 </div>
 
                                 <div class="d-flex justify-content-between mt-2">
@@ -222,7 +265,7 @@
 function addToCart(productId) {
     const quantity = parseInt(document.getElementById('quantityInput-' + productId).value);
     
-    window.location.href = `/cart/add/${productId}`;
+    window.location.href = `/cart/add/${productId}?quantity=${quantity}`;
 }
 </script>
 @endpush

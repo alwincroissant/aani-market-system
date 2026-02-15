@@ -17,7 +17,7 @@ class Cart
         }
     }
 
-    public function add($item, $id)
+    public function add($item, $id, $quantity = 1)
     {
         $storedItem = ['qty' => 0, 'price' => $item->price_per_unit, 'item' => $item];
         if ($this->items) {
@@ -25,11 +25,11 @@ class Cart
                 $storedItem = $this->items[$id];
             }
         }
-        $storedItem['qty']++;
+        $storedItem['qty'] += $quantity;
         $storedItem['price'] = $item->price_per_unit * $storedItem['qty'];
         $this->items[$id] = $storedItem;
-        $this->totalQty++;
-        $this->totalPrice += $item->price_per_unit;
+        $this->totalQty += $quantity;
+        $this->totalPrice += $item->price_per_unit * $quantity;
     }
 
     public function reduceByOne($id)

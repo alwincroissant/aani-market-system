@@ -99,6 +99,27 @@
                                             @if($product->description)
                                                 <p class="card-text text-muted small">{{ Str::limit($product->description, 80) }}</p>
                                             @endif
+                                            
+                                            <!-- Stock Information -->
+                                            @if($product->track_stock)
+                                                @php
+                                                    $stockStatus = 'In stock';
+                                                    $stockClass = 'bg-success';
+                                                    if ($product->stock_quantity == 0) {
+                                                        $stockStatus = $product->allow_backorder ? 'Backorder' : 'Out of stock';
+                                                        $stockClass = $product->allow_backorder ? 'bg-info' : 'bg-danger';
+                                                    } elseif ($product->stock_quantity <= $product->minimum_stock) {
+                                                        $stockStatus = 'Low stock';
+                                                        $stockClass = 'bg-warning';
+                                                    }
+                                                @endphp
+                                                <div class="mb-2">
+                                                    <span class="badge {{ $stockClass }}">
+                                                        {{ $stockStatus }}: {{ $product->stock_quantity }} available
+                                                    </span>
+                                                </div>
+                                            @endif
+                                            
                                             <div class="mt-auto">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <span class="fw-bold text-primary">₱{{ number_format($product->price_per_unit, 2) }}</span>
@@ -106,12 +127,34 @@
                                                 </div>
                                                 @auth
                                                     @if(auth()->user()->role === 'customer')
-                                                        <div class="input-group">
-                                                            <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))">
-                                                            <button class="btn btn-primary" data-product-id="{{ $product->id }}">
-                                                                <i class="bi bi-cart-plus"></i> Add to Cart
-                                                            </button>
-                                                        </div>
+                                                        @if($product->track_stock && $product->stock_quantity > 0)
+                                                            <div class="input-group">
+                                                                <input type="number" class="form-control" value="1" min="1" max="{{ $product->stock_quantity }}" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min({{ $product->stock_quantity }}, parseInt(this.value) || 1))">
+                                                                <button class="btn btn-primary" onclick="addToCart({{ $product->id }})">
+                                                                    <i class="bi bi-cart-plus"></i> Add to Cart
+                                                                </button>
+                                                            </div>
+                                                        @elseif($product->track_stock && $product->stock_quantity == 0)
+                                                            @if($product->allow_backorder)
+                                                                <div class="input-group">
+                                                                    <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))">
+                                                                    <button class="btn btn-info" onclick="addToCart({{ $product->id }})">
+                                                                        <i class="bi bi-clock"></i> Backorder
+                                                                    </button>
+                                                                </div>
+                                                            @else
+                                                                <button class="btn btn-danger" disabled>
+                                                                    <i class="bi bi-x-circle"></i> Out of Stock
+                                                                </button>
+                                                            @endif
+                                                        @else
+                                                            <div class="input-group">
+                                                                <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))">
+                                                                <button class="btn btn-primary" onclick="addToCart({{ $product->id }})">
+                                                                    <i class="bi bi-cart-plus"></i> Add to Cart
+                                                                </button>
+                                                            </div>
+                                                        @endif
                                                     @else
                                                         <div class="alert alert-info p-2 small mt-2">
                                                             Only customer accounts can place orders.
@@ -119,7 +162,7 @@
                                                     @endif
                                                 @else
                                                     <div class="input-group">
-                                                        <input type="number" class="form-control" value="1" min="1" max="99" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))" disabled>
+                                                        <input type="number" class="form-control" value="1" min="1" max="{{ $product->track_stock ? $product->stock_quantity : 99 }}" id="quantity_{{ $product->id }}" oninput="this.value = Math.max(1, Math.min({{ $product->track_stock ? $product->stock_quantity : 99 }}, parseInt(this.value) || 1))" disabled>
                                                         <button class="btn btn-primary" onclick="showSignupPrompt()">
                                                             <i class="bi bi-person-plus"></i> Sign Up to Order
                                                         </button>
@@ -189,7 +232,7 @@ function addToCart(productId) {
     const quantityInput = document.getElementById(`quantity_${productId}`);
     const quantity = parseInt(quantityInput.value);
     
-    window.location.href = `/cart/add/${productId}`;
+    window.location.href = `/cart/add/${productId}?quantity=${quantity}`;
 }
 </script>
 @endpush

@@ -129,6 +129,9 @@
                     <a href="{{ route('admin.map.index') }}" class="btn btn-outline-success">
                         <i class="bi bi-map"></i> Edit Market Map
                     </a>
+                    <a href="{{ route('stock.index') }}" class="btn btn-success">
+                        <i class="bi bi-box-seam"></i> Stock Management
+                    </a>
                     <a href="{{ route('admin.reports.sales') }}" class="btn btn-outline-primary">
                         <i class="bi bi-graph-up"></i> View Reports
                     </a>

@@ -10,16 +10,31 @@ use App\Models\Product;
 
 class CartController extends Controller
 {
-    public function addToCart($id)
+    public function addToCart(Request $request, $id)
     {
         $product = Product::find($id);
         if (!$product) {
             return redirect()->back()->with('error', 'Product not found');
         }
 
+        // Check stock availability
+        if ($product->track_stock && $product->stock_quantity <= 0 && !$product->allow_backorder) {
+            return redirect()->back()->with('error', 'Product is out of stock');
+        }
+
+        $quantity = $request->get('quantity', 1);
+        
+        // Validate quantity against stock
+        if ($product->track_stock && $product->stock_quantity > 0) {
+            $maxQuantity = $product->stock_quantity;
+            if ($quantity > $maxQuantity) {
+                return redirect()->back()->with('error', "Only {$maxQuantity} items available in stock");
+            }
+        }
+
         $oldCart = Session::has('cart') ? Session::get('cart') : null;
         $cart = new Cart($oldCart);
-        $cart->add($product, $product->id);
+        $cart->add($product, $product->id, $quantity);
 
         Session::put('cart', $cart);
         return redirect()->back()->with('success', 'Product added to cart successfully!');

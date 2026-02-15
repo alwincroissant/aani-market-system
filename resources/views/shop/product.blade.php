@@ -37,6 +37,32 @@
                             <p><span class="badge bg-secondary">{{ $product->category_name }}</span></p>
                         @endif
                         <h4 class="text-primary">₱{{ number_format($product->price_per_unit, 2) }} / {{ $product->unit_type }}</h4>
+                        
+                        <!-- Stock Information -->
+                        @if($product->track_stock)
+                            @php
+                                // Calculate stock status manually since we're using stdClass from DB query
+                                $stockStatus = 'In stock';
+                                $statusClass = 'bg-success';
+                                if ($product->stock_quantity == 0) {
+                                    $stockStatus = $product->allow_backorder ? 'Backorder' : 'Out of stock';
+                                    $statusClass = $product->allow_backorder ? 'bg-info' : 'bg-danger';
+                                } elseif ($product->stock_quantity <= $product->minimum_stock) {
+                                    $stockStatus = 'Low stock';
+                                    $statusClass = 'bg-warning';
+                                }
+                            @endphp
+                            <div class="mt-2">
+                                <span class="badge {{ $statusClass }}">
+                                    {{ $stockStatus }}: {{ $product->stock_quantity }} available
+                                </span>
+                                @if($product->stock_quantity <= $product->minimum_stock && $product->stock_quantity > 0)
+                                    <div class="text-warning small mt-1">
+                                        <i class="bi bi-exclamation-triangle"></i> Only {{ $product->stock_quantity }} left!
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
                         @if($product->description)
                             <div class="mt-3">
                                 <h5>Description</h5>
@@ -46,12 +72,25 @@
                         <div class="mt-4">
                             @auth
                                 @if(auth()->user()->role === 'customer')
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" value="1" min="1" max="99" id="quantity" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))">
-                                        <button class="btn btn-primary" onclick="addToCart({{ $product->id }})">
-                                            <i class="bi bi-cart-plus"></i> Add to Cart
-                                        </button>
-                                    </div>
+                                    @php
+                                        $isInStock = !$product->track_stock || ($product->stock_quantity > 0 || $product->allow_backorder);
+                                    @endphp
+                                    @if($isInStock)
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" id="quantity" oninput="this.value = Math.max(1, Math.min({{ $product->stock_quantity ?: 99 }}, parseInt(this.value) || 1))">
+                                            <button class="btn btn-primary" onclick="addToCart({{ $product->id }})">
+                                                <i class="bi bi-cart-plus"></i> Add to Cart
+                                            </button>
+                                        </div>
+                                    @else
+                                        <div class="alert alert-warning p-2 small mt-2">
+                                            @if($product->allow_backorder)
+                                                <i class="bi bi-clock"></i> Available for backorder
+                                            @else
+                                                <i class="bi bi-x-circle"></i> Out of stock
+                                            @endif
+                                        </div>
+                                    @endif
                                 @else
                                     <div class="alert alert-info p-2 small mt-2">
                                         Only customer accounts can place orders.
@@ -59,7 +98,7 @@
                                 @endif
                             @else
                                 <div class="input-group">
-                                    <input type="number" class="form-control" value="1" min="1" max="99" id="quantity" oninput="this.value = Math.max(1, Math.min(99, parseInt(this.value) || 1))" disabled>
+                                    <input type="number" class="form-control" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" id="quantity" oninput="this.value = Math.max(1, Math.min({{ $product->stock_quantity ?: 99 }}, parseInt(this.value) || 1))" disabled>
                                     <button class="btn btn-primary" onclick="showSignupPrompt()">
                                         <i class="bi bi-person-plus"></i> Sign Up to Order
                                     </button>
@@ -129,7 +168,7 @@ function addToCart(productId) {
     const quantityInput = document.getElementById('quantity');
     const quantity = parseInt(quantityInput.value);
     
-    window.location.href = `/cart/add/${productId}`;
+    window.location.href = `/cart/add/${productId}?quantity=${quantity}`;
 }
 </script>
 @endpush
