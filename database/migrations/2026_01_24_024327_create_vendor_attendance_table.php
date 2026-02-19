@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('check_in_time')->nullable();
             $table->timestamp('check_out_time')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->unique(['vendor_id', 'market_date']);
         });

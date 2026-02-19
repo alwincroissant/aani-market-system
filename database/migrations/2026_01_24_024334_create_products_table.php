@@ -21,6 +21,11 @@ return new class extends Migration
             $table->string('unit_type', 50);
             $table->string('product_image_url', 500)->nullable();
             $table->boolean('is_available')->default(true)->index();
+            $table->integer('stock_quantity')->default(0);
+            $table->integer('minimum_stock')->default(5);
+            $table->boolean('track_stock')->default(true);
+            $table->boolean('allow_backorder')->default(false);
+            $table->text('stock_notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

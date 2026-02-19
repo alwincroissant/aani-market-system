@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('fulfillment_type', ['weekend_pickup', 'weekday_delivery', 'weekend_delivery']);
             $table->enum('order_status', ['pending', 'confirmed', 'ready', 'completed', 'cancelled', 'preparing', 'awaiting_rider', 'out_for_delivery', 'delivered'])->default('pending')->index();
             $table->text('delivery_address')->nullable();
+            $table->string('pickup_code', 8)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });

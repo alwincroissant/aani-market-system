@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('email')->unique()->index();
+            $table->string('profile_picture')->nullable();
+            $table->text('bio')->nullable();
             $table->string('password');
             $table->enum('role', ['administrator', 'vendor', 'customer'])->index();
             $table->boolean('is_active')->default(true);

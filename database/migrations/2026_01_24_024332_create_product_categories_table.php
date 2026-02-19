@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('color_code', 7)->nullable();
             $table->string('icon_url', 500)->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

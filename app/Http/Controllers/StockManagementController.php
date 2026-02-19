@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\ProductCategory;
+use App\Models\StockLog;
 use Illuminate\Support\Facades\Auth;
 
 class StockManagementController extends Controller
@@ -165,7 +166,7 @@ class StockManagementController extends Controller
             ->with('success', "Stock updated for {$updated} products.");
     }
 
-    public function lowStockReport()
+    public function recentChanges(Request $request)
     {
         $user = Auth::user();
         
@@ -174,9 +175,7 @@ class StockManagementController extends Controller
             abort(403, 'Unauthorized access');
         }
         
-        $query = Product::with(['vendor', 'category'])
-            ->whereRaw('stock_quantity > 0 AND stock_quantity <= minimum_stock')
-            ->where('track_stock', true);
+        $query = StockLog::with(['product', 'vendor']);
 
         if ($user->role === 'vendor') {
             // Load vendor relationship
@@ -187,8 +186,8 @@ class StockManagementController extends Controller
             $query->where('vendor_id', $vendor->id);
         }
 
-        $products = $query->orderBy('stock_quantity')->get();
+        $stockLogs = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        return view('stock.low-stock', compact('products'));
+        return view('stock.recent-changes', compact('stockLogs'));
     }
 }

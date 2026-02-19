@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('stall_number', 20)->unique()->index();
             $table->decimal('position_x', 10, 2)->nullable();
             $table->decimal('position_y', 10, 2)->nullable();
+            $table->decimal('x1', 10, 2)->nullable(); // Top-left X
+            $table->decimal('y1', 10, 2)->nullable(); // Top-left Y
+            $table->decimal('x2', 10, 2)->nullable(); // Bottom-right X
+            $table->decimal('y2', 10, 2)->nullable(); // Bottom-right Y
             $table->json('map_coordinates_json')->nullable();
             $table->enum('status', ['available', 'occupied', 'maintenance'])->default('available');
             $table->timestamps();

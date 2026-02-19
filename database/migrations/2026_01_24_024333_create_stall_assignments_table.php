@@ -18,6 +18,7 @@ return new class extends Migration
             $table->date('assigned_date')->index();
             $table->date('end_date')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->index(['vendor_id', 'assigned_date']);
         });

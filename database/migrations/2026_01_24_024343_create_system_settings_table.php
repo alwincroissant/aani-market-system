@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('setting_value');
             $table->text('description')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

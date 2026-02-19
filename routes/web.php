@@ -113,6 +113,10 @@ Route::middleware(['auth'])->group(function () {
     
     // Keep the original products routes for backward compatibility
     Route::resource('products', VendorProductController::class);
+    Route::post('/products/batch-update', [VendorProductController::class, 'batchUpdate'])->name('products.batch-update');
+    Route::post('/products/batch-delete', [VendorProductController::class, 'batchDelete'])->name('products.batch-delete');
+    Route::post('/products/batch-restore', [VendorProductController::class, 'batchRestore'])->name('products.batch-restore');
+    Route::post('/products/batch-force-delete', [VendorProductController::class, 'batchForceDelete'])->name('products.batch-force-delete');
     Route::get('/products/{id}/restore', [VendorProductController::class, 'restore'])->name('products.restore');
     
     // Vendor Report Routes
@@ -147,8 +151,8 @@ Route::middleware(['auth'])->group(function () {
     
     // Stock Management Routes
     Route::get('/stock', [StockManagementController::class, 'index'])->name('stock.index');
+    Route::get('/stock/recent-changes', [StockManagementController::class, 'recentChanges'])->name('stock.recent-changes');
     Route::get('/stock/{product}/edit', [StockManagementController::class, 'edit'])->name('stock.edit');
     Route::put('/stock/{product}', [StockManagementController::class, 'update'])->name('stock.update');
     Route::post('/stock/bulk-update', [StockManagementController::class, 'bulkUpdate'])->name('stock.bulk-update');
-    Route::get('/stock/low-stock', [StockManagementController::class, 'lowStockReport'])->name('stock.low-stock');
 });

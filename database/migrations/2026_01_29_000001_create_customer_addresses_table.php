@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('city');
             $table->string('province');
             $table->string('postal_code')->nullable();
+            $table->string('recipient_name')->nullable();
+            $table->string('recipient_phone')->nullable();
             $table->boolean('is_default')->default(false);
             $table->timestamps();
             

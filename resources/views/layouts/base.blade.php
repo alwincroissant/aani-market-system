@@ -100,9 +100,8 @@
                                     <li><a class="dropdown-item" href="{{ route('vendor.reports.products') }}">
                                         <i class="bi bi-box"></i> Products Report
                                     </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('stock.index') }}">
-                                        <i class="bi bi-box-seam"></i> Stock Management
+                                    <li><a class="dropdown-item" href="{{ route('stock.recent-changes') }}">
+                                        <i class="bi bi-file-earmark-text"></i> Stock Report
                                     </a></li>
                                 </ul>
                             </li>
@@ -182,10 +181,6 @@
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
                                         <i class="bi bi-calendar-check"></i> Attendance report
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('stock.index') }}">
-                                        <i class="bi bi-box-seam"></i> Stock Management
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('home', ['view_site' => 1]) }}">
