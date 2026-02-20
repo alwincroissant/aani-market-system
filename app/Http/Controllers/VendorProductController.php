@@ -108,26 +108,34 @@ class VendorProductController extends Controller
 
     public function store(Request $request)
     {
+        // Convert checkboxes to booleans BEFORE validation runs,
+        // because browsers send "on" for checked boxes (not true/false)
+        $request->merge([
+            'is_available' => $request->has('is_available') ? true : false,
+            'track_stock'  => $request->has('track_stock')  ? true : false,
+        ]);
+
         $rules = [
-            'product_name' => ['required', 'min:3', 'max:255'],
-            'description' => ['nullable', 'max:1000'],
-            'price_per_unit' => ['required', 'numeric', 'min:0'],
-            'unit_type' => ['required', 'in:kg,g,piece,bundle,pack,dozen,liter'],
-            'category_id' => ['required', 'exists:product_categories,id'],
+            'product_name'  => ['required', 'min:3', 'max:255'],
+            'description'   => ['nullable', 'max:1000'],
+            'price_per_unit'=> ['required', 'numeric', 'min:0'],
+            'unit_type'     => ['required', 'in:kg,g,piece,bundle,pack,dozen,liter'],
+            'category_id'   => ['required', 'exists:product_categories,id'],
             'product_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
-            'stock_quantity' => ['required', 'integer', 'min:0'],
+            'stock_quantity'=> ['required', 'integer', 'min:0'],
             'minimum_stock' => ['required', 'integer', 'min:0'],
-            'track_stock' => ['boolean'],
+            'is_available'  => ['nullable', 'boolean'],
+            'track_stock'   => ['nullable', 'boolean'],
         ];
 
         $messages = [
-            'product_name.required' => 'Product name is required.',
-            'product_name.min' => 'Product name must be at least 3 characters.',
-            'price_per_unit.required' => 'Price is required.',
+            'product_name.required'  => 'Product name is required.',
+            'product_name.min'       => 'Product name must be at least 3 characters.',
+            'price_per_unit.required'=> 'Price is required.',
             'price_per_unit.numeric' => 'Price must be a valid number.',
-            'unit_type.required' => 'Unit type is required.',
-            'category_id.required' => 'Please select a category.',
-            'stock_quantity.required' => 'Stock quantity is required.',
+            'unit_type.required'     => 'Unit type is required.',
+            'category_id.required'   => 'Please select a category.',
+            'stock_quantity.required'=> 'Stock quantity is required.',
             'minimum_stock.required' => 'Minimum stock level is required.',
         ];
 
@@ -159,31 +167,31 @@ class VendorProductController extends Controller
         }
 
         $product = new Product();
-        $product->vendor_id = $vendor->id;
-        $product->category_id = $request->category_id;
-        $product->product_name = trim($request->product_name);
-        $product->description = $request->description;
-        $product->price_per_unit = $request->price_per_unit;
-        $product->unit_type = trim($request->unit_type);
+        $product->vendor_id         = $vendor->id;
+        $product->category_id       = $request->category_id;
+        $product->product_name      = trim($request->product_name);
+        $product->description       = $request->description;
+        $product->price_per_unit    = $request->price_per_unit;
+        $product->unit_type         = trim($request->unit_type);
         $product->product_image_url = $imagePath;
-        $product->is_available = $request->has('is_available') ? true : false;
-        $product->stock_quantity = $request->stock_quantity;
-        $product->minimum_stock = $request->minimum_stock;
-        $product->track_stock = $request->has('track_stock') ? true : false;
-        $product->allow_backorder = false;
-        $product->stock_notes = null;
+        $product->is_available      = $request->is_available;
+        $product->stock_quantity    = $request->stock_quantity;
+        $product->minimum_stock     = $request->minimum_stock;
+        $product->track_stock       = $request->track_stock;
+        $product->allow_backorder   = false;
+        $product->stock_notes       = null;
         $product->save();
 
         // Log initial stock entry
         if ($request->stock_quantity > 0) {
             StockLog::create([
-                'product_id' => $product->id,
-                'vendor_id' => $vendor->id,
-                'previous_stock' => 0,
-                'new_stock' => $request->stock_quantity,
+                'product_id'       => $product->id,
+                'vendor_id'        => $vendor->id,
+                'previous_stock'   => 0,
+                'new_stock'        => $request->stock_quantity,
                 'quantity_changed' => $request->stock_quantity,
-                'change_type' => 'restock',
-                'notes' => 'Initial stock entry',
+                'change_type'      => 'restock',
+                'notes'            => 'Initial stock entry',
             ]);
         }
 
@@ -230,7 +238,6 @@ class VendorProductController extends Controller
         }
 
         $categories = DB::table('product_categories')
-            ->where('id', '<>', $product->category_id)
             ->get();
 
         return view('product.edit', compact('product', 'categories'));
@@ -238,26 +245,34 @@ class VendorProductController extends Controller
 
     public function update(Request $request, string $id)
     {
+        // Convert checkboxes to booleans BEFORE validation runs,
+        // because browsers send "on" for checked boxes (not true/false)
+        $request->merge([
+            'is_available' => $request->has('is_available') ? true : false,
+            'track_stock'  => $request->has('track_stock')  ? true : false,
+        ]);
+
         $rules = [
-            'product_name' => ['required', 'min:3', 'max:255'],
-            'description' => ['nullable', 'max:1000'],
-            'price_per_unit' => ['required', 'numeric', 'min:0'],
-            'unit_type' => ['required', 'in:kg,g,piece,bundle,pack,dozen,liter'],
-            'category_id' => ['required', 'exists:product_categories,id'],
+            'product_name'  => ['required', 'min:3', 'max:255'],
+            'description'   => ['nullable', 'max:1000'],
+            'price_per_unit'=> ['required', 'numeric', 'min:0'],
+            'unit_type'     => ['required', 'in:kg,g,piece,bundle,pack,dozen,liter'],
+            'category_id'   => ['required', 'exists:product_categories,id'],
             'product_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
-            'stock_quantity' => ['required', 'integer', 'min:0'],
+            'stock_quantity'=> ['required', 'integer', 'min:0'],
             'minimum_stock' => ['required', 'integer', 'min:0'],
-            'track_stock' => ['boolean'],
+            'is_available'  => ['nullable', 'boolean'],
+            'track_stock'   => ['nullable', 'boolean'],
         ];
 
         $messages = [
-            'product_name.required' => 'Product name is required.',
-            'product_name.min' => 'Product name must be at least 3 characters.',
-            'price_per_unit.required' => 'Price is required.',
+            'product_name.required'  => 'Product name is required.',
+            'product_name.min'       => 'Product name must be at least 3 characters.',
+            'price_per_unit.required'=> 'Price is required.',
             'price_per_unit.numeric' => 'Price must be a valid number.',
-            'unit_type.required' => 'Unit type is required.',
-            'category_id.required' => 'Please select a category.',
-            'stock_quantity.required' => 'Stock quantity is required.',
+            'unit_type.required'     => 'Unit type is required.',
+            'category_id.required'   => 'Please select a category.',
+            'stock_quantity.required'=> 'Stock quantity is required.',
             'minimum_stock.required' => 'Minimum stock level is required.',
         ];
 
@@ -283,23 +298,23 @@ class VendorProductController extends Controller
 
         // Check if stock quantity is changing
         $oldStock = $product->stock_quantity;
-        $newStock = $request->stock_quantity;
+        $newStock  = $request->stock_quantity;
 
         $updateData = [
-            'category_id' => $request->category_id,
-            'product_name' => trim($request->product_name),
-            'description' => $request->description,
-            'price_per_unit' => $request->price_per_unit,
-            'unit_type' => trim($request->unit_type),
-            'is_available' => $request->has('is_available') ? true : false,
-            'stock_quantity' => $request->stock_quantity,
+            'category_id'   => $request->category_id,
+            'product_name'  => trim($request->product_name),
+            'description'   => $request->description,
+            'price_per_unit'=> $request->price_per_unit,
+            'unit_type'     => trim($request->unit_type),
+            'is_available'  => $request->is_available,
+            'stock_quantity'=> $request->stock_quantity,
             'minimum_stock' => $request->minimum_stock,
-            'track_stock' => $request->has('track_stock') ? true : false,
+            'track_stock'   => $request->track_stock,
         ];
 
         if ($request->hasFile('product_image')) {
             $name = $request->file('product_image')->getClientOriginalName();
-            $path = \Illuminate\Support\Facades\Storage::putFileAs(
+            \Illuminate\Support\Facades\Storage::putFileAs(
                 'public/products',
                 $request->file('product_image'),
                 $name
@@ -311,19 +326,14 @@ class VendorProductController extends Controller
 
         // Log stock change if quantity changed
         if ($oldStock != $newStock) {
-            $changeType = 'adjustment';
-            if ($newStock > $oldStock) {
-                $changeType = 'restock';
-            }
-            
             StockLog::create([
-                'product_id' => $id,
-                'vendor_id' => $vendor->id,
-                'previous_stock' => $oldStock,
-                'new_stock' => $newStock,
+                'product_id'       => $id,
+                'vendor_id'        => $vendor->id,
+                'previous_stock'   => $oldStock,
+                'new_stock'        => $newStock,
                 'quantity_changed' => $newStock - $oldStock,
-                'change_type' => $changeType,
-                'notes' => null,
+                'change_type'      => $newStock > $oldStock ? 'restock' : 'adjustment',
+                'notes'            => null,
             ]);
         }
 
@@ -342,13 +352,13 @@ class VendorProductController extends Controller
 
         $request->validate([
             'product_ids' => 'required|string',
-            'action' => 'required|in:add,subtract,set',
-            'amount' => 'required|integer|min:0',
+            'action'      => 'required|in:add,subtract,set',
+            'amount'      => 'required|integer|min:0',
         ]);
 
         $productIds = array_filter(explode(',', $request->product_ids));
-        $action = $request->action;
-        $amount = $request->amount;
+        $action     = $request->action;
+        $amount     = $request->amount;
 
         // Verify all products belong to vendor
         $productsCount = Product::whereIn('id', $productIds)
@@ -360,38 +370,26 @@ class VendorProductController extends Controller
         }
 
         foreach ($productIds as $productId) {
-            $product = Product::find($productId);
+            $product  = Product::find($productId);
             $oldStock = $product->stock_quantity;
-            $newStock = $oldStock;
 
-            switch ($action) {
-                case 'add':
-                    $newStock = $oldStock + $amount;
-                    break;
-                case 'subtract':
-                    $newStock = max(0, $oldStock - $amount);
-                    break;
-                case 'set':
-                    $newStock = $amount;
-                    break;
-            }
+            $newStock = match ($action) {
+                'add'      => $oldStock + $amount,
+                'subtract' => max(0, $oldStock - $amount),
+                'set'      => $amount,
+                default    => $oldStock,
+            };
 
             $product->update(['stock_quantity' => $newStock]);
 
-            // Determine change type
-            $changeType = 'adjustment';
-            if ($newStock > $oldStock) {
-                $changeType = 'restock';
-            }
-
             StockLog::create([
-                'product_id' => $productId,
-                'vendor_id' => $vendor->id,
-                'previous_stock' => $oldStock,
-                'new_stock' => $newStock,
+                'product_id'       => $productId,
+                'vendor_id'        => $vendor->id,
+                'previous_stock'   => $oldStock,
+                'new_stock'        => $newStock,
                 'quantity_changed' => $newStock - $oldStock,
-                'change_type' => $changeType,
-                'notes' => 'Batch update: ' . $action,
+                'change_type'      => $newStock > $oldStock ? 'restock' : 'adjustment',
+                'notes'            => 'Batch update: ' . $action,
             ]);
         }
 
@@ -433,7 +431,6 @@ class VendorProductController extends Controller
 
         $productIds = array_filter(explode(',', $request->product_ids));
 
-        // Verify all products belong to vendor
         $productsCount = Product::whereIn('id', $productIds)
             ->where('vendor_id', $vendor->id)
             ->count();
@@ -442,7 +439,7 @@ class VendorProductController extends Controller
             return redirect()->back()->with('error', 'One or more products do not belong to your store.');
         }
 
-        Product::whereIn('id', $productIds)->delete(); // Soft delete
+        Product::whereIn('id', $productIds)->delete();
 
         return redirect()->route('products.index')->with('success', count($productIds) . ' product(s) deleted successfully.');
     }
@@ -463,7 +460,6 @@ class VendorProductController extends Controller
 
         $productIds = array_filter(explode(',', $request->product_ids));
 
-        // Verify all products belong to vendor
         $productsCount = Product::withTrashed()->whereIn('id', $productIds)
             ->where('vendor_id', $vendor->id)
             ->count();
@@ -493,7 +489,6 @@ class VendorProductController extends Controller
 
         $productIds = array_filter(explode(',', $request->product_ids));
 
-        // Verify all products belong to vendor
         $productsCount = Product::withTrashed()->whereIn('id', $productIds)
             ->where('vendor_id', $vendor->id)
             ->count();
@@ -526,4 +521,3 @@ class VendorProductController extends Controller
         return redirect()->route('products.index')->with('success', 'Product restored successfully.');
     }
 }
-

@@ -102,17 +102,13 @@ class VendorDashboardController extends Controller
 
         try {
             if ($request->hasFile('banner')) {
-                // Delete old banner if exists
                 if ($vendor->banner_url && Storage::disk('public')->exists($vendor->banner_url)) {
                     Storage::disk('public')->delete($vendor->banner_url);
                 }
                 
-                $banner = $request->file('banner');
-                $bannerPath = $banner->store('vendor-banners', 'public');
+                $bannerPath = $request->file('banner')->store('vendor-banners', 'public');
                 
-                $vendor->update([
-                    'banner_url' => $bannerPath
-                ]);
+                $vendor->update(['banner_url' => $bannerPath]);
             }
 
             return response()->json([
@@ -140,73 +136,126 @@ class VendorDashboardController extends Controller
     }
 
     public function updateSettings(Request $request)
-{
-    $vendor = Vendor::where('user_id', Auth::id())->first();
-    
-    if (!$vendor) {
-        return response()->json(['success' => false, 'message' => 'Vendor not found.'], 404);
-    }
-
-    try {
-        $validated = $request->validate([
-            'business_name' => 'required|string|max:255',
-            'contact_phone' => 'nullable|string|max:20',
-            'business_description' => 'nullable|string|max:1000',
-            'business_hours' => 'nullable|string|max:100',
-            'delivery_available' => 'boolean',
-            'farm_name' => 'nullable|string|max:255',
-            'region' => 'nullable|string|max:100',
-            'complete_address' => 'nullable|string|max:500',
-            'farm_size' => 'nullable|numeric|min:0',
-            'years_in_operation' => 'nullable|integer|min:0',
-            'banner' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Added logo validation
-        ]);
-
-        // Handle banner upload
-        if ($request->hasFile('banner')) {
-            // Delete old banner if exists
-            if ($vendor->banner_url && Storage::disk('public')->exists($vendor->banner_url)) {
-                Storage::disk('public')->delete($vendor->banner_url);
-            }
-            
-            $banner = $request->file('banner');
-            $bannerPath = $banner->store('vendor-banners', 'public');
-            $validated['banner_url'] = $bannerPath;
-        }
+    {
+        $vendor = Vendor::where('user_id', Auth::id())->first();
         
-        // Handle logo upload
-        if ($request->hasFile('logo')) {
-            // Delete old logo if exists
-            if ($vendor->logo_url && Storage::disk('public')->exists($vendor->logo_url)) {
-                Storage::disk('public')->delete($vendor->logo_url);
-            }
-            
-            $logo = $request->file('logo');
-            $logoPath = $logo->store('vendor-logos', 'public');
-            $validated['logo_url'] = $logoPath;
+        if (!$vendor) {
+            return response()->json(['success' => false, 'message' => 'Vendor not found.'], 404);
         }
 
-        // Update vendor with validated data
-        $vendor->update($validated);
+        try {
+            $validated = $request->validate([
+                'business_name'        => 'required|string|max:255',
+                'contact_phone'        => 'nullable|string|max:20',
+                'business_description' => 'nullable|string|max:1000',
+                'business_hours'       => 'nullable|string|max:100',
+                'delivery_available'   => 'boolean',
+                'farm_name'            => 'nullable|string|max:255',
+                'region'               => 'nullable|string|max:100',
+                'complete_address'     => 'nullable|string|max:500',
+                'farm_size'            => 'nullable|numeric|min:0',
+                'years_in_operation'   => 'nullable|integer|min:0',
+                'banner'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'logo'                 => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-        return response()->json([
-            'success' => true, 
-            'message' => 'Store settings updated successfully.',
-            'banner_url' => $vendor->banner_url ? asset('storage/' . $vendor->banner_url) : null,
-            'logo_url' => $vendor->logo_url ? asset('storage/' . $vendor->logo_url) : null, // Return logo URL too
-        ]);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return response()->json([
-            'success' => false, 
-            'message' => 'Validation failed',
-            'errors' => $e->errors()
-        ], 422);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false, 
-            'message' => 'Failed to update settings: ' . $e->getMessage()
-        ], 500);
+            // Handle banner upload
+            if ($request->hasFile('banner')) {
+                if ($vendor->banner_url && Storage::disk('public')->exists($vendor->banner_url)) {
+                    Storage::disk('public')->delete($vendor->banner_url);
+                }
+                $validated['banner_url'] = $request->file('banner')->store('vendor-banners', 'public');
+            }
+            
+            // Handle logo upload
+            if ($request->hasFile('logo')) {
+                if ($vendor->logo_url && Storage::disk('public')->exists($vendor->logo_url)) {
+                    Storage::disk('public')->delete($vendor->logo_url);
+                }
+                $validated['logo_url'] = $request->file('logo')->store('vendor-logos', 'public');
+            }
+
+            // Remove 'banner' and 'logo' keys from validated so Eloquent
+            // doesn't try to write them as columns (they don't exist in the table)
+            unset($validated['banner'], $validated['logo']);
+
+            $vendor->update($validated);
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Store settings updated successfully.',
+                'banner_url' => $vendor->banner_url ? asset('storage/' . $vendor->banner_url) : null,
+                'logo_url'   => $vendor->logo_url   ? asset('storage/' . $vendor->logo_url)   : null,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update settings: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
+
+    /**
+     * Remove the vendor's banner image from storage and null the DB column.
+     * Called via AJAX POST from the Store Settings page.
+     */
+    public function removeBanner()
+    {
+        try {
+            $vendor = Vendor::where('user_id', Auth::id())->first();
+
+            if (!$vendor) {
+                return response()->json(['message' => 'Vendor not found.'], 404);
+            }
+
+            if ($vendor->banner_url) {
+                if (Storage::disk('public')->exists($vendor->banner_url)) {
+                    Storage::disk('public')->delete($vendor->banner_url);
+                }
+                $vendor->update(['banner_url' => null]);
+            }
+
+            return response()->json(['message' => 'Banner removed successfully.']);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to remove banner: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove the vendor's logo image from storage and null the DB column.
+     * Called via AJAX POST from the Store Settings page.
+     */
+    public function removeLogo()
+    {
+        try {
+            $vendor = Vendor::where('user_id', Auth::id())->first();
+
+            if (!$vendor) {
+                return response()->json(['message' => 'Vendor not found.'], 404);
+            }
+
+            if ($vendor->logo_url) {
+                if (Storage::disk('public')->exists($vendor->logo_url)) {
+                    Storage::disk('public')->delete($vendor->logo_url);
+                }
+                $vendor->update(['logo_url' => null]);
+            }
+
+            return response()->json(['message' => 'Logo removed successfully.']);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to remove logo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

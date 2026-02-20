@@ -292,14 +292,27 @@ function previewBanner(input) {
     }
 }
 
-// Remove banner and restore default placeholders
-function removeBanner() {
-    const placeholder = `<div class="d-flex align-items-center justify-content-center h-100 text-center">
-        <div><i class="bi bi-image fs-1 text-muted mb-3"></i><p class="text-muted">No banner uploaded</p></div>
-    </div>`;
-    document.getElementById('bannerPreview').innerHTML = placeholder;
-    document.getElementById('previewBanner').innerHTML = `<div class="d-flex align-items-center justify-content-center h-100 text-white bg-primary"><i class="bi bi-shop fs-3"></i></div>`;
-    document.getElementById('bannerInput').value = '';
+// Remove banner via AJAX, then restore default placeholders
+async function removeBanner() {
+    try {
+        const res = await fetch('{{ route("vendor.remove-banner") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        });
+        if (res.ok) {
+            document.getElementById('bannerPreview').innerHTML = `<div class="d-flex align-items-center justify-content-center h-100 text-center"><div><i class="bi bi-image fs-1 text-muted mb-3"></i><p class="text-muted">No banner uploaded</p></div></div>`;
+            document.getElementById('previewBanner').innerHTML = `<div class="d-flex align-items-center justify-content-center h-100 text-white bg-primary"><i class="bi bi-shop fs-3"></i></div>`;
+            document.getElementById('bannerInput').value = '';
+            showToast('Banner removed successfully');
+        } else {
+            throw new Error('Server error');
+        }
+    } catch(e) {
+        showToast('Failed to remove banner', 'danger');
+    }
 }
 
 // Preview logo image before upload
@@ -315,14 +328,27 @@ function previewLogo(input) {
     }
 }
 
-// Remove logo and restore default placeholder
-function removeLogo() {
-    const placeholder = `<div class="d-flex align-items-center justify-content-center h-100"><i class="bi bi-shop fs-1 text-muted"></i></div>`;
-    document.getElementById('logoPreview').innerHTML = placeholder;
-    
-    const previewPlaceholder = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 100%; height: 100%;"><i class="bi bi-shop text-white"></i></div>`;
-    document.getElementById('previewLogo').innerHTML = previewPlaceholder;
-    document.getElementById('logoInput').value = '';
+// Remove logo via AJAX, then restore default placeholder
+async function removeLogo() {
+    try {
+        const res = await fetch('{{ route("vendor.remove-logo") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        });
+        if (res.ok) {
+            document.getElementById('logoPreview').innerHTML = `<div class="d-flex align-items-center justify-content-center h-100"><i class="bi bi-shop fs-1 text-muted"></i></div>`;
+            document.getElementById('previewLogo').innerHTML = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 100%; height: 100%;"><i class="bi bi-shop text-white"></i></div>`;
+            document.getElementById('logoInput').value = '';
+            showToast('Logo removed successfully');
+        } else {
+            throw new Error('Server error');
+        }
+    } catch(e) {
+        showToast('Failed to remove logo', 'danger');
+    }
 }
 
 // Real-time preview: Update business name as user types

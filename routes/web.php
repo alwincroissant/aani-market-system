@@ -10,6 +10,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\VendorProfileController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\VendorDashboardController;
 use App\Http\Controllers\VendorReportController;
@@ -139,6 +140,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendor/settings', [VendorDashboardController::class, 'settings'])->name('vendor.settings');
     Route::post('/vendor/update-settings', [VendorDashboardController::class, 'updateSettings'])->name('vendor.update-settings');
     
+    Route::post('/vendor/remove-banner', [VendorDashboardController::class, 'removeBanner'])->name('vendor.remove-banner');
+    Route::post('/vendor/remove-logo',   [VendorDashboardController::class, 'removeLogo'])->name('vendor.remove-logo');
+
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
