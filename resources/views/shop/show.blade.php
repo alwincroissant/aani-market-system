@@ -186,7 +186,8 @@
     </div>
 </div>
 
-<!-- Cart Summary -->
+<!-- Cart Summary - Only shown for logged in users -->
+@auth
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
     <div class="card" style="min-width: 250px;">
         <div class="card-body">
@@ -198,6 +199,7 @@
         </div>
     </div>
 </div>
+@endauth
 @endsection
 
 @push('scripts')
