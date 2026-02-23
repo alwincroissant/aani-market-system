@@ -32,12 +32,25 @@
         <div class="card">
             <div class="card-body">
                 <form method="GET" action="{{ route('stock.index') }}" class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="search" class="form-label">Search Products</label>
                         <input type="text" class="form-control" id="search" name="search" 
                                placeholder="Search products..." value="{{ request('search') }}">
                     </div>
-                    <div class="col-md-4">
+
+                    @if(isset($vendors) && auth()->user()->role === 'administrator')
+                    <div class="col-md-3">
+                        <label for="vendor_id" class="form-label">Shop</label>
+                        <select name="vendor_id" id="vendor_id" class="form-select">
+                            <option value="">All Shops</option>
+                            @foreach($vendors as $v)
+                                <option value="{{ $v->id }}" {{ (string)request('vendor_id') === (string)$v->id ? 'selected' : '' }}>{{ $v->business_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+
+                    <div class="col-md-3">
                         <label for="stock_status" class="form-label">Stock Status</label>
                         <select name="stock_status" id="stock_status" class="form-select">
                             <option value="">All Status</option>
@@ -219,5 +232,3 @@ function showBulkUpdateModal() {
 }
 </script>
 @endsection
-
-

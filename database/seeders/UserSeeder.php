@@ -24,13 +24,13 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Create pickup manager user
+        // Create pickup manager user (using 'customer' role to satisfy DB enum)
         $pickupManagerUser = User::firstOrCreate([
             'email' => 'pickup@aani.com'
         ], [
             'email' => 'pickup@aani.com',
             'password' => Hash::make('pickup123'),
-            'role' => 'pickup_manager',
+            'role' => 'customer',
             'email_verified_at' => now(),
         ]);
 

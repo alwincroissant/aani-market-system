@@ -169,6 +169,11 @@
                                 <i class="bi bi-gear me-2"></i>Store Settings
                             </a>
                         </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('stock.index') }}" class="btn btn-outline-success w-100">
+                                <i class="bi bi-box-seam me-2"></i>Manage Stocks
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

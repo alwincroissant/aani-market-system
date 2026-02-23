@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
+use App\Models\Product;
+use App\Models\StockLog;
 
 class CheckoutController extends Controller
 {
@@ -134,6 +136,27 @@ class CheckoutController extends Controller
         $customerName = $request->customer_name ?: auth()->user()->name;
         $customerPhone = $request->customer_phone ?: auth()->user()->customer->phone;
         
+        // Validate stock availability before creating the order
+        $outOfStock = [];
+        foreach ($cart->items as $itemId => $item) {
+            $product = Product::find($itemId);
+            if (! $product) {
+                $outOfStock[] = "Product ID {$itemId} not found";
+                continue;
+            }
+
+            if ($product->track_stock) {
+                // If backorders are not allowed, ensure enough stock
+                if (! $product->allow_backorder && $item['qty'] > $product->stock_quantity) {
+                    $outOfStock[] = "{$product->product_name} has insufficient stock (available: {$product->stock_quantity})";
+                }
+            }
+        }
+
+        if (! empty($outOfStock)) {
+            return redirect()->route('getCart')->with('error', implode('; ', $outOfStock));
+        }
+
         try {
             DB::beginTransaction();
             
@@ -160,7 +183,7 @@ class CheckoutController extends Controller
                 'updated_at' => now()
             ]);
             
-            // Save order items with vendor information
+            // Save order items with vendor information and deduct stock
             foreach ($cart->items as $itemId => $item) {
                 DB::table('order_items')->insert([
                     'order_id' => $orderId,
@@ -172,6 +195,30 @@ class CheckoutController extends Controller
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
+
+                // Deduct stock and record StockLog when tracking is enabled
+                $product = Product::find($itemId);
+                if ($product && $product->track_stock) {
+                    $previous = $product->stock_quantity;
+                    $new = $previous - $item['qty'];
+                    // If backorder allowed, new can be negative; otherwise floor at 0
+                    if (! $product->allow_backorder) {
+                        $new = max(0, $new);
+                    }
+
+                    $product->stock_quantity = $new;
+                    $product->save();
+
+                    StockLog::create([
+                        'product_id' => $product->id,
+                        'vendor_id' => $product->vendor_id,
+                        'previous_stock' => $previous,
+                        'new_stock' => $new,
+                        'quantity_changed' => $new - $previous,
+                        'change_type' => 'sale',
+                        'notes' => 'Order ' . $orderId,
+                    ]);
+                }
             }
             
             DB::commit();

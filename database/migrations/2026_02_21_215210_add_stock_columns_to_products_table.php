@@ -11,13 +11,36 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->integer('stock_quantity')->default(0)->after('product_image_url');
-            $table->integer('minimum_stock')->default(5)->after('stock_quantity');
-            $table->boolean('track_stock')->default(true)->after('minimum_stock');
-            $table->boolean('allow_backorder')->default(false)->after('track_stock');
-            $table->text('stock_notes')->nullable()->after('allow_backorder');
-        });
+        // Add each column only if it doesn't already exist (safer for sqlite and redeploys)
+        if (! Schema::hasColumn('products', 'stock_quantity')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->integer('stock_quantity')->default(0)->after('product_image_url');
+            });
+        }
+
+        if (! Schema::hasColumn('products', 'minimum_stock')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->integer('minimum_stock')->default(5)->after('stock_quantity');
+            });
+        }
+
+        if (! Schema::hasColumn('products', 'track_stock')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->boolean('track_stock')->default(true)->after('minimum_stock');
+            });
+        }
+
+        if (! Schema::hasColumn('products', 'allow_backorder')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->boolean('allow_backorder')->default(false)->after('track_stock');
+            });
+        }
+
+        if (! Schema::hasColumn('products', 'stock_notes')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->text('stock_notes')->nullable()->after('allow_backorder');
+            });
+        }
     }
 
     /**
@@ -25,8 +48,35 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn(['stock_quantity', 'minimum_stock', 'track_stock', 'allow_backorder', 'stock_notes']);
-        });
+        // Drop each column only if it exists
+        if (Schema::hasColumn('products', 'stock_quantity')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('stock_quantity');
+            });
+        }
+
+        if (Schema::hasColumn('products', 'minimum_stock')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('minimum_stock');
+            });
+        }
+
+        if (Schema::hasColumn('products', 'track_stock')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('track_stock');
+            });
+        }
+
+        if (Schema::hasColumn('products', 'allow_backorder')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('allow_backorder');
+            });
+        }
+
+        if (Schema::hasColumn('products', 'stock_notes')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('stock_notes');
+            });
+        }
     }
 };
