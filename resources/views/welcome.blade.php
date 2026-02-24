@@ -115,8 +115,13 @@
         <div class="card h-100 text-center">
             <div class="card-body">
                 <i class="bi bi-person-circle fs-1 text-warning mb-3"></i>
-                <h5>Sign In to Order</h5>
-                <p class="text-muted">Create an account or login to manage your cart and place orders.</p>
+                @auth
+                    <h5>Manage Your Orders</h5>
+                    <p class="text-muted">You are signed in. Review your cart and place orders anytime.</p>
+                @else
+                    <h5>Sign In to Order</h5>
+                    <p class="text-muted">Create an account or login to manage your cart and place orders.</p>
+                @endauth
                 @auth
                     <a href="{{ route('getCart') }}" class="btn btn-warning">
                         <i class="bi bi-cart"></i> View My Cart

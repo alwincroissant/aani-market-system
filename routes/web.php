@@ -69,10 +69,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard.index');
         
         // User Management
+        Route::post('users/assign-stall', [AdminUserController::class, 'assignStallAndActivate'])->name('users.assign-stall');
         Route::resource('users', AdminUserController::class);
         Route::put('users/{id}/deactivate', [AdminUserController::class, 'deactivate'])->name('users.deactivate');
         Route::put('users/{id}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
-        Route::post('users/assign-stall', [AdminUserController::class, 'assignStallAndActivate'])->name('users.assign-stall');
         
         // Map Management
         Route::get('/map', [AdminMapController::class, 'index'])->name('map.index');

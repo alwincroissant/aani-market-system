@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             MarketSectionSeeder::class,
             SampleDataSeeder::class,
+            MockDataSeeder::class,
         ]);
     }
 }

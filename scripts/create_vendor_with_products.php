@@ -10,6 +10,10 @@ use App\Models\StockLog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
+$profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+$vendorImagePath = 'maps/1769326582_6975c7f61ae02.jpg';
+$productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+
 $vendorEmail = 'vendor2@test.com';
 $vendorPassword = 'password';
 
@@ -21,6 +25,7 @@ if (! $user) {
         'password' => Hash::make($vendorPassword),
         'role' => 'vendor',
         'email_verified_at' => now(),
+        'profile_picture' => $profileImagePath,
     ]);
     echo "Created user: {$vendorEmail} (id={$user->id})\n";
 } else {
@@ -38,6 +43,8 @@ if (! $existingVendor) {
         'contact_email' => $vendorEmail,
         'regional_sourcing_origin' => 'Green Valley Region',
         'business_description' => 'Delivering wholesome local produce and pantry items',
+        'logo_url' => $vendorImagePath,
+        'banner_url' => $vendorImagePath,
         'weekend_pickup_enabled' => true,
         'weekday_delivery_enabled' => false,
         'weekend_delivery_enabled' => true,
@@ -102,7 +109,7 @@ foreach ($products as $p) {
         'description' => $p['description'],
         'price_per_unit' => $p['price_per_unit'],
         'unit_type' => $p['unit_type'],
-        'product_image_url' => null,
+        'product_image_url' => $productImagePath,
         'is_available' => true,
         'stock_quantity' => $p['stock_quantity'],
         'minimum_stock' => 5,

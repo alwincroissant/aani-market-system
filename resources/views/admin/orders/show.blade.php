@@ -1,8 +1,9 @@
-@extends('layouts.base')
+@extends('layouts.admin')
 
 @section('title', 'Order ' . $order->order_reference)
 
 @section('content')
+<div class="container mt-4">
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -261,4 +262,5 @@ function showResult(message, type) {
     resultDiv.classList.remove('d-none');
 }
 </script>
+</div>
 @endsection

@@ -14,6 +14,8 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+
         // Create administrator user
         $adminUser = User::firstOrCreate([
             'email' => 'admin@aani.com'
@@ -22,6 +24,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('admin123'),
             'role' => 'administrator',
             'email_verified_at' => now(),
+            'profile_picture' => $profileImagePath,
         ]);
 
         // Create pickup manager user (using 'customer' role to satisfy DB enum)
@@ -32,6 +35,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('pickup123'),
             'role' => 'customer',
             'email_verified_at' => now(),
+            'profile_picture' => $profileImagePath,
         ]);
 
         // Create vendor user
@@ -42,6 +46,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'vendor',
             'email_verified_at' => now(),
+            'profile_picture' => $profileImagePath,
         ]);
 
         // Create customer user
@@ -52,6 +57,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'customer',
             'email_verified_at' => now(),
+            'profile_picture' => $profileImagePath,
         ]);
 
         $this->command->info('Sample users created:');

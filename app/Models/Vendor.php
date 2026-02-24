@@ -26,6 +26,7 @@ class Vendor extends Model
         'business_hours',
         'logo_url',
         'banner_url',
+        'banner_image',
         'weekend_pickup_enabled',
         'weekday_delivery_enabled',
         'weekend_delivery_enabled',

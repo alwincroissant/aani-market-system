@@ -13,19 +13,25 @@ class TestVendorSeeder extends Seeder
 {
     public function run(): void
     {
+        $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+        $vendorImagePath = 'maps/1769326582_6975c7f61ae02.jpg';
+        $productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+
         // Create test users first
         $user1 = User::firstOrCreate([
             'email' => 'vendor1@example.com'
         ], [
             'password' => bcrypt('password'),
-            'role' => 'vendor'
+            'role' => 'vendor',
+            'profile_picture' => $profileImagePath,
         ]);
 
         $user2 = User::firstOrCreate([
             'email' => 'vendor2@example.com'
         ], [
             'password' => bcrypt('password'),
-            'role' => 'vendor'
+            'role' => 'vendor',
+            'profile_picture' => $profileImagePath,
         ]);
 
         // Create test vendors linked to users
@@ -36,6 +42,8 @@ class TestVendorSeeder extends Seeder
             'owner_name' => 'John Farmer',
             'contact_phone' => '09123456789',
             'contact_email' => 'vendor1@example.com',
+            'logo_url' => $vendorImagePath,
+            'banner_url' => $vendorImagePath,
             'weekend_pickup_enabled' => true,
             'weekday_delivery_enabled' => true
         ]);
@@ -47,6 +55,8 @@ class TestVendorSeeder extends Seeder
             'owner_name' => 'Sarah Green',
             'contact_phone' => '09987654321',
             'contact_email' => 'vendor2@example.com',
+            'logo_url' => $vendorImagePath,
+            'banner_url' => $vendorImagePath,
             'weekend_pickup_enabled' => true,
             'weekend_delivery_enabled' => true
         ]);
@@ -64,6 +74,7 @@ class TestVendorSeeder extends Seeder
             'description' => 'Locally grown ripe tomatoes, perfect for salads and cooking',
             'price_per_unit' => 45.50,
             'unit_type' => 'kg',
+            'product_image_url' => $productImagePath,
             'is_available' => true,
             'stock_quantity' => 25,
             'minimum_stock' => 10,
@@ -79,6 +90,7 @@ class TestVendorSeeder extends Seeder
             'description' => 'Crisp organic lettuce, grown without pesticides',
             'price_per_unit' => 35.00,
             'unit_type' => 'piece',
+            'product_image_url' => $productImagePath,
             'is_available' => true,
             'stock_quantity' => 8,
             'minimum_stock' => 15,
@@ -94,6 +106,7 @@ class TestVendorSeeder extends Seeder
             'description' => 'Sweet and juicy mangoes, perfect for desserts',
             'price_per_unit' => 120.00,
             'unit_type' => 'kg',
+            'product_image_url' => $productImagePath,
             'is_available' => true,
             'stock_quantity' => 0,
             'minimum_stock' => 5,
@@ -110,6 +123,7 @@ class TestVendorSeeder extends Seeder
             'description' => 'Organic whole milk from grass-fed cows',
             'price_per_unit' => 65.00,
             'unit_type' => 'liter',
+            'product_image_url' => $productImagePath,
             'is_available' => true,
             'stock_quantity' => 30,
             'minimum_stock' => 10,
@@ -125,6 +139,7 @@ class TestVendorSeeder extends Seeder
             'description' => 'Handcrafted cheese aged for 6 months',
             'price_per_unit' => 450.00,
             'unit_type' => 'kg',
+            'product_image_url' => $productImagePath,
             'is_available' => true,
             'stock_quantity' => 5,
             'minimum_stock' => 3,
@@ -140,6 +155,7 @@ class TestVendorSeeder extends Seeder
             'description' => 'Crisp organic apples, perfect for snacking',
             'price_per_unit' => 85.00,
             'unit_type' => 'kg',
+            'product_image_url' => $productImagePath,
             'is_available' => true,
             'stock_quantity' => 50,
             'minimum_stock' => 20,
@@ -155,6 +171,7 @@ class TestVendorSeeder extends Seeder
             'description' => 'Sweet and crunchy carrots, great for juicing',
             'price_per_unit' => 28.00,
             'unit_type' => 'kg',
+            'product_image_url' => $productImagePath,
             'is_available' => true,
             'stock_quantity' => 2,
             'minimum_stock' => 10,

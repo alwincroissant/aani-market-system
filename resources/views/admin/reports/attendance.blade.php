@@ -2,232 +2,238 @@
 
 @section('title', 'Vendor Attendance Report')
 
+@push('styles')
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+        --bg:        #F5F4F0;
+        --surface:   #FFFFFF;
+        --border:    #E4E2DC;
+        --text:      #1A1916;
+        --muted:     #7A7871;
+        --accent:    #1D6F42;
+        --accent-lt: #EAF4EE;
+        --danger:    #C0392B;
+        --warn:      #D97706;
+        --warn-lt:   #FEF3C7;
+        --radius:    10px;
+        --shadow:    0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.04);
+    }
+
+    .admin-page { background: var(--bg); padding: 20px 0; }
+
+    .page-header { margin-bottom: 24px; }
+    .page-header h2 { font-size: 24px; font-weight: 600; color: var(--text); margin: 0; }
+
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .card-body { padding: 20px; }
+
+    table { width: 100%; border-collapse: collapse; font-family: 'DM Sans', sans-serif; }
+    thead tr { background: var(--bg); border-bottom: 1px solid var(--border); }
+    th {
+        text-align: left;
+        padding: 10px 16px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    td {
+        padding: 11px 16px;
+        font-size: 13.5px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #faf9f7; }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 500;
+        background: var(--accent-lt);
+        color: var(--accent);
+    }
+    .badge-absent { background: #fde8e7; color: var(--danger); }
+    .badge-late { background: var(--warn-lt); color: var(--warn); }
+
+    .btn-outline-primary {
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        background: transparent;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all .15s;
+    }
+    .btn-outline-primary:hover { background: var(--bg); border-color: #999; }
+
+    .form-control, .form-select {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--text);
+        background-color: white;
+    }
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-lt);
+    }
+
+    .filter-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 36px 20px;
+        color: var(--muted);
+        font-size: 13.5px;
+    }
+
+    @media (max-width: 768px) {
+        .filter-section { grid-template-columns: 1fr; }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Vendor Attendance Report</h2>
-            <a href="{{ route('admin.dashboard.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Dashboard
-            </a>
+<div class="admin-page">
+<div class="container" style="padding: 20px;">
+    <div style="margin-bottom: 24px;">
+        <h2 style="margin: 0 0 4px 0; font-size: 24px; font-weight: 600; color: var(--text);">Vendor Attendance Report</h2>
+        <p style="margin: 0; font-size: 13px; color: var(--muted);">Monitor vendor market attendance and punctuality</p>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" action="{{ route('admin.reports.attendance') }}">
+                <div class="filter-section">
+                    <input type="date" class="form-control" name="market_date" value="{{ $marketDate }}" required>
+                    <button type="submit" class="btn-outline-primary">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
 
-<!-- Filter Form -->
-<div class="row mb-4">
-    <div class="col-12">
+    <!-- Summary Stats -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 24px;">
         <div class="card">
             <div class="card-body">
-                <form method="GET" action="{{ route('admin.reports.attendance') }}">
-                    <div class="row align-items-end">
-                        <div class="col-md-3">
-                            <label for="market_date" class="form-label">Market Date</label>
-                            <input type="date" class="form-control" name="market_date" value="{{ $marketDate }}" required>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-funnel"></i> Filter
-                            </button>
-                        </div>
-                        <div class="col-md-7">
-                            <div class="text-end">
-                                <small class="text-muted">Quick dates:</small><br>
-                                <a href="?market_date={{ now()->toDateString() }}" class="btn btn-sm btn-outline-secondary">Today</a>
-                                <a href="?market_date={{ now()->subDay()->toDateString() }}" class="btn btn-sm btn-outline-secondary">Yesterday</a>
-                                <a href="?market_date={{ now()->startOfWeek()->toDateString() }}" class="btn btn-sm btn-outline-secondary">This Week</a>
-                                <a href="?market_date={{ now()->subWeek()->startOfWeek()->toDateString() }}" class="btn btn-sm btn-outline-secondary">Last Week</a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+                <div style="font-size: 11.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Present</div>
+                <div style="font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text);">{{ $attendance->count() }}</div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Export Buttons -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex gap-2">
-            <a href="{{ route('admin.reports.attendance.export-pdf', ['market_date' => $marketDate]) }}" class="btn btn-danger" target="_blank">
-                <i class="bi bi-file-earmark-pdf"></i> Export PDF
-            </a>
-            <a href="{{ route('admin.reports.attendance.export-csv', ['market_date' => $marketDate]) }}" class="btn btn-success">
-                <i class="bi bi-file-earmark-csv"></i> Export CSV
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Summary Cards -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ $attendance->count() }}</h4>
-                        <p class="mb-0">Present</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle fs-2"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-danger text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ $absentVendors->count() }}</h4>
-                        <p class="mb-0">Absent</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-x-circle fs-2"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ $allVendors->count() }}</h4>
-                        <p class="mb-0">Total Vendors</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-people fs-2"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Attendance Records -->
-<div class="row">
-    <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-check-circle text-success"></i> Present Vendors
-                    <small class="text-muted">({{ $attendance->count() }})</small>
-                </h5>
-            </div>
             <div class="card-body">
-                @if($attendance->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Vendor</th>
-                                    <th>Owner</th>
-                                    <th>Check In</th>
-                                    <th>Check Out</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($attendance as $record)
-                                    <tr>
-                                        <td>{{ $record->business_name }}</td>
-                                        <td>{{ $record->owner_name }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($record->check_in_time)->format('H:i') }}</td>
-                                        <td>
-                                            @if($record->check_out_time)
-                                                {{ \Carbon\Carbon::parse($record->check_out_time)->format('H:i') }}
-                                            @else
-                                                <span class="badge bg-warning">Still in</span>
-                                            @endif
-                                        </td>
+                <div style="font-size: 11.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Absent</div>
+                <div style="font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text);">{{ $absentVendors->count() }}</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div style="font-size: 11.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Total</div>
+                <div style="font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text);">{{ $allVendors->count() }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Present Vendors Table -->
+    <div class="card">
+        <div class="card-body" style="padding: 0;">
+            <h5 style="padding: 20px 20px 0 20px; margin-bottom: 0;">✓ Present Vendors ({{ $attendance->count() }})</h5>
+            @if($attendance->count() > 0)
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vendor</th>
+                            <th>Owner</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($attendance as $record)
+                            <tr>
+                                <td>{{ $record->business_name }}</td>
+                                <td>{{ $record->owner_name }}</td>
+                                <td>{{ \Carbon\Carbon::parse($record->check_in_time)->format('H:i') }}</td>
+                                <td>
+                                    @if($record->check_out_time)
+                                        {{ \Carbon\Carbon::parse($record->check_out_time)->format('H:i') }}
+                                    @else
+                                        <span class="badge">Still here</span>
+                                    @endif
+                                </td>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="text-center py-3">
-                        <i class="bi bi-x-circle text-muted" style="font-size: 2rem;"></i>
-                        <p class="text-muted mb-0">No vendors checked in on this date</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-x-circle text-danger"></i> Absent Vendors
-                    <small class="text-muted">({{ $absentVendors->count() }})</small>
-                </h5>
-            </div>
-            <div class="card-body">
-                @if($absentVendors->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Vendor</th>
-                                    <th>Owner</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($absentVendors as $vendor)
-                                    <tr>
-                                        <td>{{ $vendor->business_name }}</td>
-                                        <td>{{ $vendor->owner_name }}</td>
-                                        <td>
-                                            <span class="badge bg-danger">Absent</span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="text-center py-3">
-                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                        <p class="text-muted mb-0">All vendors present!</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Attendance Rate -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Attendance Summary</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="progress" style="height: 30px;">
-                            <?php $attendanceRate = $allVendors->count() > 0 ? ($attendance->count() / $allVendors->count()) * 100 : 0; ?>
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $attendanceRate }}%;">
-                                {{ number_format($attendanceRate, 1) }}% Attendance Rate
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <h5>
-                            {{ $attendance->count() }} / {{ $allVendors->count() }} Vendors
-                        </h5>
-                        <p class="text-muted mb-0">for {{ \Carbon\Carbon::parse($marketDate)->format('F d, Y') }}</p>
-                    </div>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+                <div class="empty-state">
+                    <i class="bi bi-check-circle" style="font-size: 2rem; color: var(--accent);"></i>
+                    <p style="margin: 12px 0 0 0;">All vendors checked in!</p>
                 </div>
-            </div>
+            @endif
         </div>
     </div>
+
+    <!-- Absent Vendors Table -->
+    <div class="card">
+        <div class="card-body" style="padding: 0;">
+            <h5 style="padding: 20px 20px 0 20px; margin-bottom: 0;">✗ Absent Vendors ({{ $absentVendors->count() }})</h5>
+            @if($absentVendors->count() > 0)
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vendor</th>
+                            <th>Owner</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($absentVendors as $vendor)
+                            <tr>
+                                <td>{{ $vendor->business_name }}</td>
+                                <td>{{ $vendor->owner_name }}</td>
+                                <td>
+                                    <span class="badge badge-absent">Absent</span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+                <div class="empty-state">
+                    <i class="bi bi-check-circle" style="font-size: 2rem; color: var(--accent);"></i>
+                    <p style="margin: 12px 0 0 0;">All vendors present!</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+</div>
 </div>
 @endsection

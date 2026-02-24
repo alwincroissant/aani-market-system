@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\StockLog;
 use Illuminate\Support\Facades\DB;
 
+$productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+
 // Find vendor (by email) or use first vendor
 $vendor = DB::table('vendors')->first();
 if (! $vendor) {
@@ -67,7 +69,7 @@ foreach ($products as $p) {
         'description' => $p['description'],
         'price_per_unit' => $p['price_per_unit'],
         'unit_type' => $p['unit_type'],
-        'product_image_url' => null,
+        'product_image_url' => $productImagePath,
         'is_available' => true,
         'stock_quantity' => $p['stock_quantity'],
         'minimum_stock' => 5,

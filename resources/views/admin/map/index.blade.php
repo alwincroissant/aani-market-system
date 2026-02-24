@@ -3,6 +3,7 @@
 @section('title', 'Map Management')
 
 @section('content')
+<div class="container mt-4">
 <div class="row">
     <div class="col-12">
         <h2>Market Map Editor</h2>
@@ -157,6 +158,9 @@
         </div>
     </div>
 @endif
+
+</div>
+@endsection
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

@@ -12,7 +12,7 @@
             <div class="card mb-4">
                 <div class="position-relative" style="height: 200px; overflow: hidden;">
                     @if($vendor->banner_url)
-                        <img src="{{ asset($vendor->banner_url) }}" alt="Banner" 
+                        <img src="{{ asset('storage/' . $vendor->banner_url) }}" alt="Banner" 
                              style="width: 100%; height: 100%; object-fit: cover;">
                     @else
                         <div class="bg-primary d-flex align-items-center justify-content-center h-100">
@@ -23,7 +23,7 @@
                 <div class="card-body text-center" style="margin-top: -50px;">
                     <div class="d-inline-block">
                         @if($vendor->logo_url)
-                            <img src="{{ asset($vendor->logo_url) }}" alt="Logo" 
+                            <img src="{{ asset('storage/' . $vendor->logo_url) }}" alt="Logo" 
                                  class="rounded-circle border border-white border-3" 
                                  style="width: 100px; height: 100px; object-fit: cover;">
                         @else
