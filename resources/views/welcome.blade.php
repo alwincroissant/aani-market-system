@@ -20,6 +20,18 @@
 </div>
 @endif
 
+@if(auth()->check() && auth()->user()->role === 'customer')
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold text-dark">
+            Hi {{ auth()->user()->customer->first_name }} {{ auth()->user()->customer->last_name }}
+            <span class="text-primary">👋</span>
+        </h2>
+        <p class="text-muted mb-0">Welcome back! Let's find some fresh items today.</p>
+    </div>
+</div>
+@endif
+
 <div class="row mb-5">
     <div class="col-12">
         <div class="hero-banner p-4 p-md-5 mb-3 rounded-4 position-relative overflow-hidden">
@@ -241,18 +253,7 @@
                 </h4>
             </div>
             <div class="card-body">
-                @if($mapImage)
-                    <div id="marketMap" style="height: 600px; border: 2px solid #ddd; border-radius: 4px;"></div>
-                @else
-                    <div class="text-center py-5">
-                        <i class="bi bi-map text-muted" style="font-size: 4rem;"></i>
-                        <h5 class="mt-3">Market Map Coming Soon</h5>
-                        <p class="text-muted">The interactive market map is currently being set up. Please check back later or browse our shops directly.</p>
-                        <a href="{{ route('shop.index') }}" class="btn btn-primary mt-3">
-                            <i class="bi bi-shop"></i> Browse Shops Instead
-                        </a>
-                    </div>
-                @endif
+                <div id="marketMap" style="height: 600px; border: 2px solid #ddd; border-radius: 4px;"></div>
             </div>
         </div>
     </div>
@@ -305,8 +306,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    @if($mapImage)
-    const mapImageUrl = '{{ asset($mapImage) }}';
+    // Hardcoded market map image
+    const mapImageUrl = '{{ asset("storage/maps/marketmap.png") }}';
     let map, imageOverlay, markers = [];
     
     // Initialize map
@@ -424,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    @endif
 });
 </script>
 @endpush

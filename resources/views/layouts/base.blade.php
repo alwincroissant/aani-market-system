@@ -41,6 +41,11 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('home') }}#market-map-section">Market map</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('profile.orders') }}">
+                                    <i class="bi bi-receipt"></i> My Orders
+                                </a>
+                            </li>
                         @endif
 
                         {{-- Vendor navigation --}}
@@ -117,14 +122,8 @@
                                     <li><a class="dropdown-item" href="{{ route('vendor.settings') }}">
                                         <i class="bi bi-gear"></i> Store Settings
                                     </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('profile.index') }}">
-                                        <i class="bi bi-person"></i> Profile Settings
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('profile.addresses') }}">
-                                        <i class="bi bi-geo-alt"></i> Delivery Addresses
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('profile.orders') }}">
-                                        <i class="bi bi-clock-history"></i> Order History
+                                    <li><a class="dropdown-item" href="{{ route('profile.change-password.show') }}">
+                                        <i class="bi bi-shield-lock"></i> Change Password
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="{{ route('logout') }}">
@@ -158,6 +157,23 @@
                                     </a></li>
                                 </ul>
                             </li>
+                            
+                            <!-- Account Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="pickupManagerAccountDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person-circle"></i> Account
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><h6 class="dropdown-header">My Account</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('profile.index') }}">
+                                        <i class="bi bi-person"></i> Profile Settings
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="{{ route('logout') }}">
+                                        <i class="bi bi-box-arrow-right"></i> Logout
+                                    </a></li>
+                                </ul>
+                            </li>
                         @endif
 
                         {{-- Admin navigation --}}
@@ -186,6 +202,23 @@
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('home', ['view_site' => 1]) }}">
                                         <i class="bi bi-eye"></i> View customer site
+                                    </a></li>
+                                </ul>
+                            </li>
+                            
+                            <!-- Account Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminAccountDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person-circle"></i> Account
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><h6 class="dropdown-header">My Account</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('profile.index') }}">
+                                        <i class="bi bi-person"></i> Profile Settings
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="{{ route('logout') }}">
+                                        <i class="bi bi-box-arrow-right"></i> Logout
                                     </a></li>
                                 </ul>
                             </li>
@@ -233,8 +266,8 @@
                         </li>
                         @endif
                         
-                        {{-- Account dropdown for customers (non-vendors) --}}
-                        @if(auth()->check() && auth()->user()->role !== 'vendor')
+                        {{-- Account dropdown for customers only --}}
+                        @if(auth()->check() && auth()->user()->role === 'customer')
                         <li class="nav-item dropdown ms-2">
                             <a class="nav-link dropdown-toggle" href="#" id="customerAccountDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-circle"></i> Account
@@ -246,9 +279,6 @@
                                 </a></li>
                                 <li><a class="dropdown-item" href="{{ route('profile.addresses') }}">
                                     <i class="bi bi-geo-alt"></i> Delivery Addresses
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ route('profile.orders') }}">
-                                    <i class="bi bi-receipt"></i> Order History
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ route('logout') }}">

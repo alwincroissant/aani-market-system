@@ -11,38 +11,12 @@
     </div>
 </div>
 
-@if(!$hasMapImage)
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Upload Market Floor Plan</h5>
-                </div>
-                <div class="card-body">
-                    <form action="{{ route('admin.map.upload') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="mb-3">
-                            <label for="map_image" class="form-label">Select Floor Plan Image</label>
-                            <input type="file" class="form-control @error('map_image') is-invalid @enderror" 
-                                   id="map_image" name="map_image" accept="image/*" required>
-                            @error('map_image')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="form-text text-muted">Supported formats: JPEG, PNG, JPG, GIF (Max: 5MB)</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Upload Image</button>
-                    </form>
-                </div>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Market Map Editor</h5>
             </div>
-        </div>
-    </div>
-@else
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Market Map Editor</h5>
-                </div>
                 <div class="card-body">
                     <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
                         <button class="btn btn-success" id="addStallBtn">
@@ -182,8 +156,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    @if($hasMapImage)
-    const mapImageUrl = '{{ asset($mapImage) }}';
+    // Hardcoded market map image
+    const mapImageUrl = '{{ asset("storage/maps/marketmap.png") }}';
     console.log('Map image URL:', mapImageUrl);
     let map, imageOverlay, markers = [], currentMode = null, editingStallId = null;
     
@@ -673,9 +647,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 3000);
         });
     }
-    @else
-    console.log('No map image uploaded yet');
-    @endif
 });
 </script>
 @endpush

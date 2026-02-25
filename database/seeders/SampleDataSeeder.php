@@ -11,7 +11,6 @@ class SampleDataSeeder extends Seeder
     public function run()
     {
         $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
-        $vendorImagePath = 'maps/1769326582_6975c7f61ae02.jpg';
         $productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
 
         // Create sample users for vendors
@@ -69,8 +68,8 @@ class SampleDataSeeder extends Seeder
                 'contact_email' => 'freshfarm@example.com',
                 'regional_sourcing_origin' => 'Laguna',
                 'business_description' => 'Fresh organic vegetables and fruits directly from our farm. No pesticides, all natural goodness.',
-                'logo_url' => $vendorImagePath,
-                'banner_url' => $vendorImagePath,
+                'logo_url' => null,
+                'banner_url' => null,
                 'weekend_pickup_enabled' => true,
                 'weekday_delivery_enabled' => true,
                 'weekend_delivery_enabled' => false,
@@ -85,8 +84,8 @@ class SampleDataSeeder extends Seeder
                 'contact_email' => 'greenhouse@example.com',
                 'regional_sourcing_origin' => 'Batangas',
                 'business_description' => 'Beautiful plants, flowers, and gardening supplies. Transform your space with our curated collection.',
-                'logo_url' => $vendorImagePath,
-                'banner_url' => $vendorImagePath,
+                'logo_url' => null,
+                'banner_url' => null,
                 'weekend_pickup_enabled' => true,
                 'weekday_delivery_enabled' => false,
                 'weekend_delivery_enabled' => true,
@@ -101,8 +100,8 @@ class SampleDataSeeder extends Seeder
                 'contact_email' => 'meatmaster@example.com',
                 'regional_sourcing_origin' => 'Cavite',
                 'business_description' => 'Premium quality meats and fresh seafood. All products are locally sourced and inspected daily.',
-                'logo_url' => $vendorImagePath,
-                'banner_url' => $vendorImagePath,
+                'logo_url' => null,
+                'banner_url' => null,
                 'weekend_pickup_enabled' => true,
                 'weekday_delivery_enabled' => true,
                 'weekend_delivery_enabled' => true,
@@ -117,8 +116,8 @@ class SampleDataSeeder extends Seeder
                 'contact_email' => 'foodhaven@example.com',
                 'regional_sourcing_origin' => 'Quezon City',
                 'business_description' => 'Delicious prepared foods, snacks, and ready-to-eat meals. Made with love and fresh ingredients.',
-                'logo_url' => $vendorImagePath,
-                'banner_url' => $vendorImagePath,
+                'logo_url' => null,
+                'banner_url' => null,
                 'weekend_pickup_enabled' => true,
                 'weekday_delivery_enabled' => true,
                 'weekend_delivery_enabled' => true,

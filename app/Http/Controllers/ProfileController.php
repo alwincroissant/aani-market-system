@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -109,7 +110,7 @@ class ProfileController extends Controller
     public function storeAddress(Request $request)
     {
         // Debug: Log the raw request data
-        \Log::info('Store address request data:', $request->all());
+        Log::info('Store address request data:', $request->all());
         
         // Remove boolean validation for now and handle manually
         $request->validate([
@@ -138,7 +139,7 @@ class ProfileController extends Controller
             // Create customer record if it doesn't exist
             $customerId = DB::table('customers')->insertGetId([
                 'user_id' => Auth::id(),
-                'first_name' => auth()->user()->name ?? 'First Name',
+                'first_name' => Auth::user()->name ?? 'First Name',
                 'last_name' => 'Last Name',
                 'phone' => null,
                 'created_at' => now(),
@@ -152,7 +153,7 @@ class ProfileController extends Controller
         $isDefault = $request->has('is_default') && $request->input('is_default') === '1';
         
         // Debug: Log the boolean value
-        \Log::info('Is default value:', ['is_default' => $isDefault, 'raw_input' => $request->input('is_default'), 'has_is_default' => $request->has('is_default')]);
+        Log::info('Is default value:', ['is_default' => $isDefault, 'raw_input' => $request->input('is_default'), 'has_is_default' => $request->has('is_default')]);
 
         // If this is set as default, unset other default addresses
         if ($isDefault) {
@@ -207,7 +208,7 @@ class ProfileController extends Controller
             // Create customer record if it doesn't exist
             $customerId = DB::table('customers')->insertGetId([
                 'user_id' => Auth::id(),
-                'first_name' => auth()->user()->name ?? 'First Name',
+                'first_name' => Auth::user()->name ?? 'First Name',
                 'last_name' => 'Last Name',
                 'phone' => null,
                 'created_at' => now(),
@@ -258,7 +259,7 @@ class ProfileController extends Controller
             // Create customer record if it doesn't exist
             $customerId = DB::table('customers')->insertGetId([
                 'user_id' => Auth::id(),
-                'first_name' => auth()->user()->name ?? 'First Name',
+                'first_name' => Auth::user()->name ?? 'First Name',
                 'last_name' => 'Last Name',
                 'phone' => null,
                 'created_at' => now(),
@@ -287,6 +288,11 @@ class ProfileController extends Controller
     public function orders()
     {
         return redirect()->route('customer.orders.index');
+    }
+
+    public function showChangePassword()
+    {
+        return view('auth.change-password');
     }
 
     public function changePassword(Request $request)

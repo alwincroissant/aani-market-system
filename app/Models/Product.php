@@ -7,6 +7,25 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Vendor;
 use App\Models\ProductCategory;
 
+/**
+ * @property int $id
+ * @property int $vendor_id
+ * @property int|null $category_id
+ * @property string $product_name
+ * @property string|null $description
+ * @property string|null $price_per_unit
+ * @property string|null $unit_type
+ * @property string|null $product_image_url
+ * @property bool $is_available
+ * @property int $stock_quantity
+ * @property int $minimum_stock
+ * @property bool $track_stock
+ * @property bool $allow_backorder
+ * @property string|null $stock_notes
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ */
 class Product extends Model
 {
     use HasFactory, SoftDeletes;

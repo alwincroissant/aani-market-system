@@ -93,18 +93,14 @@
                             <h5 class="mb-0">Order Summary</h5>
                         </div>
                         <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
+                            <div class="d-flex justify-content-between mb-3">
                                 <span>Subtotal (selected):</span>
                                 <strong id="selectedSubtotal">₱{{ number_format($totalPrice, 2) }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Shipping (Weekday Delivery):</span>
-                                <strong>₱50.00</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
                                 <span><strong>Total:</strong></span>
-                                <strong class="text-primary" id="selectedTotal">₱{{ number_format($totalPrice + 50, 2) }}</strong>
+                                <strong class="text-primary" id="selectedTotal">₱{{ number_format($totalPrice, 2) }}</strong>
                             </div>
                             
                             <div class="d-grid gap-2">
@@ -146,13 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Calculate shipping based on delivery options
-        let shipping = 0;
-        // For now, default to ₱50 shipping (weekday delivery)
-        // This will be updated when delivery options are selected in checkout
-        shipping = 50.00;
-        
-        const total = subtotal + shipping;
+        const total = subtotal;
         
         selectedSubtotal.textContent = `₱${subtotal.toFixed(2)}`;
         selectedTotal.textContent = `₱${total.toFixed(2)}`;

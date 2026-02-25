@@ -84,19 +84,110 @@
                                 <h5 class="mb-0">Customer Information</h5>
                             </div>
                             <div class="card-body">
-                                <p class="text-muted">Customer information will be collected during checkout.</p>
+                                @php
+                                    $customerName = auth()->user()->customer
+                                        ? (auth()->user()->customer->first_name && auth()->user()->customer->last_name
+                                            ? auth()->user()->customer->first_name . ' ' . auth()->user()->customer->last_name
+                                            : auth()->user()->name)
+                                        : auth()->user()->name;
+                                    $customerPhone = auth()->user()->customer ? auth()->user()->customer->phone : '';
+                                    $selectedAddress = $addresses ? $addresses->firstWhere('is_default', true) : null;
+                                    $selectedAddressText = $selectedAddress
+                                        ? trim($selectedAddress->address_line . ', ' . $selectedAddress->city . ($selectedAddress->province ? ', ' . $selectedAddress->province : '') . ($selectedAddress->postal_code ? ' ' . $selectedAddress->postal_code : ''))
+                                        : 'No address selected';
+                                @endphp
+
+                                <input type="hidden" id="customer_name" name="customer_name" value="{{ $customerName }}">
+                                <input type="hidden" id="customer_phone" name="customer_phone" value="{{ $customerPhone }}">
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="text-muted small">Full Name</div>
+                                        <div class="fw-semibold">{{ $customerName }}</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="text-muted small">Phone Number</div>
+                                        <div class="fw-semibold">{{ $customerPhone ?: 'Not set' }}</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="text-muted small">Email</div>
+                                        <div class="fw-semibold">{{ auth()->user()->email }}</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="text-muted small">Delivery Address</div>
+                                        <div class="fw-semibold" id="customerDeliveryAddress">{{ $selectedAddressText }}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Delivery Address -->
+                        <!-- Delivery Options -->
                         <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Delivery Options</h5>
+                            </div>
+                            <div class="card-body">
+                                @foreach($groupedCart as $vendorId => $items)
+                                    <div class="mb-4">
+                                        <label for="delivery_type_{{ $vendorId }}" class="form-label fw-semibold">
+                                            {{ $vendorInfo[$vendorId]->business_name }}
+                                        </label>
+                                        <select class="form-select delivery-option" name="delivery_type_{{ $vendorId }}" 
+                                                id="delivery_type_{{ $vendorId }}" data-vendor-id="{{ $vendorId }}">
+                                            <option value="">-- Select Delivery Option --</option>
+                                            @if(isset($vendorInfo[$vendorId]))
+                                                @if($vendorInfo[$vendorId]->weekend_pickup_enabled)
+                                                    <option value="weekend_pickup">🏪 Weekend Pickup (Free)</option>
+                                                @endif
+                                                @if($vendorInfo[$vendorId]->weekday_delivery_enabled)
+                                                    <option value="weekday_delivery">🚚 Weekday Delivery (₱50)</option>
+                                                @endif
+                                                @if($vendorInfo[$vendorId]->weekend_delivery_enabled)
+                                                    <option value="weekend_delivery">🚚 Weekend Delivery (₱75)</option>
+                                                @endif
+                                            @endif
+                                        </select>
+                                        @if(!isset($vendorInfo[$vendorId]) || (!$vendorInfo[$vendorId]->weekend_pickup_enabled && !$vendorInfo[$vendorId]->weekday_delivery_enabled && !$vendorInfo[$vendorId]->weekend_delivery_enabled))
+                                            <p class="text-muted small mt-2">No delivery options available for this vendor.</p>
+                                        @endif
+                                    </div>
+                                @endforeach
+                                <div class="text-danger small" id="deliveryOptionsError" style="display: none;">
+                                    Please select a delivery option for each shop.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AANI Market Pickup Information (for pickup orders) -->
+                        <div class="card mb-4" id="aaaniMarketPickupInfo" style="display: none;">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="bi bi-shop me-2"></i>AANI Market Pickup</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="alert alert-info mb-0">
+                                        <p class="mb-2"><strong>📍 Pickup Location:</strong></p>
+                                        <p class="mb-2">AANI Weekend Market, Arca South (formerly FTI Complex), Taguig City</p>
+                                        <hr class="my-2">
+                                        <p class="mb-2"><strong>🕐 Pickup Hours:</strong></p>
+                                        <p class="mb-2">Saturday and Sunday, 5:00 AM to 2:00 PM</p>
+                                        <hr class="my-2">
+                                        <p class="mb-0"><strong>📋 Pickup Instruction:</strong></p>
+                                        <p class="mb-0">A unique pickup code will be provided to you once your items are ready for collection at the market.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delivery Address (for delivery orders) -->
+                        <div class="card mb-4" id="deliveryAddressSection" style="display: none;">
                             <div class="card-header">
                                 <h5 class="mb-0">Delivery Address</h5>
                             </div>
                             <div class="card-body">
                                 @if($addresses && $addresses->count() > 0)
                                     <div class="mb-3">
-                                        <label class="form-label">Select Address</label>
+                                        <label class="form-label">Select Address <span class="text-danger">*</span></label>
                                         @foreach($addresses as $address)
                                             <div class="form-check mb-2">
                                                 <input class="form-check-input" type="radio" name="selected_address" 
@@ -140,67 +231,6 @@
                             </div>
                         </div>
 
-                        <!-- Delivery Options -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">Delivery Options & Customer Details</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- Customer Details -->
-                                <div class="row mb-4">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="customer_name" class="form-label">Full Name *</label>
-                                        <input type="text" class="form-control" id="customer_name" name="customer_name" 
-                                               value="{{ auth()->user()->customer ? (auth()->user()->customer->first_name && auth()->user()->customer->last_name ? auth()->user()->customer->first_name . ' ' . auth()->user()->customer->last_name : auth()->user()->name) : auth()->user()->name }}">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="customer_phone" class="form-label">Phone Number *</label>
-                                        <input type="tel" class="form-control" id="customer_phone" name="customer_phone" 
-                                               value="{{ auth()->user()->customer ? auth()->user()->customer->phone : '' }}">
-                                    </div>
-                                </div>
-                                
-                                <!-- Delivery Options by Vendor -->
-                                @foreach($groupedCart as $vendorId => $items)
-                                    <div class="mb-3">
-                                        <h6 class="text-primary">{{ $vendorInfo[$vendorId]->business_name }}</h6>
-                                        @if(isset($vendorInfo[$vendorId]))
-                                            <div class="form-check">
-                                                @if($vendorInfo[$vendorId]->weekend_pickup_enabled)
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="radio" name="delivery_type_{{ $vendorId }}" 
-                                                               id="pickup_{{ $vendorId }}" value="weekend_pickup" checked>
-                                                        <label class="form-check-label" for="pickup_{{ $vendorId }}">
-                                                            🏪 Weekend Pickup (Free)
-                                                        </label>
-                                                    </div>
-                                                @endif
-                                                @if($vendorInfo[$vendorId]->weekday_delivery_enabled)
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="radio" name="delivery_type_{{ $vendorId }}" 
-                                                               id="weekday_delivery_{{ $vendorId }}" value="weekday_delivery">
-                                                        <label class="form-check-label" for="weekday_delivery_{{ $vendorId }}">
-                                                            🚚 Weekday Delivery (₱50)
-                                                        </label>
-                                                    </div>
-                                                @endif
-                                                @if($vendorInfo[$vendorId]->weekend_delivery_enabled)
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="radio" name="delivery_type_{{ $vendorId }}" 
-                                                               id="weekend_delivery_{{ $vendorId }}" value="weekend_delivery">
-                                                        <label class="form-check-label" for="weekend_delivery_{{ $vendorId }}">
-                                                            🚚 Weekend Delivery (₱75)
-                                                        </label>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @else
-                                            <p class="text-muted">No delivery options available for this vendor.</p>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
                     </div>
 
                     <div class="col-lg-4">
@@ -225,7 +255,7 @@
                                 </div>
                                 
                                 <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary btn-lg">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="placeOrderButton">
                                         Place Order
                                     </button>
                                     <a href="{{ route('getCart') }}" class="btn btn-outline-secondary">
@@ -250,20 +280,134 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const deliveryAddressSection = document.getElementById('deliveryAddressSection');
+    const aaaniMarketPickupInfo = document.getElementById('aaaniMarketPickupInfo');
+    const deliveryOptions = document.querySelectorAll('.delivery-option');
+    const addressInputs = document.querySelectorAll('input[name="selected_address"]');
+    const customerDeliveryAddress = document.getElementById('customerDeliveryAddress');
+    const placeOrderButton = document.getElementById('placeOrderButton');
+    const deliveryOptionsError = document.getElementById('deliveryOptionsError');
+    
+    // Function to check and update fulfillment display
+    function updateFulfillmentDisplay() {
+        let hasDelivery = false;
+        let hasPickup = false;
+        
+        // Check all selected delivery options
+        deliveryOptions.forEach(select => {
+            const value = select.value;
+            if (value === 'weekday_delivery' || value === 'weekend_delivery') {
+                hasDelivery = true;
+            } else if (value === 'weekend_pickup') {
+                hasPickup = true;
+            }
+        });
+        
+        // Show/hide sections based on fulfillment type
+        if (hasDelivery) {
+            deliveryAddressSection.style.display = 'block';
+        } else {
+            deliveryAddressSection.style.display = 'none';
+        }
+        
+        if (hasPickup) {
+            aaaniMarketPickupInfo.style.display = 'block';
+        } else {
+            aaaniMarketPickupInfo.style.display = 'none';
+        }
+        
+        // Calculate delivery fees when delivery options change
+        calculateDeliveryFees();
+        validateDeliveryOptions();
+    }
+
+    function validateDeliveryOptions() {
+        let allSelected = true;
+        deliveryOptions.forEach(select => {
+            const hasValue = Boolean(select.value);
+            if (!hasValue) {
+                allSelected = false;
+                select.classList.add('is-invalid');
+            } else {
+                select.classList.remove('is-invalid');
+            }
+        });
+
+        if (deliveryOptionsError) {
+            deliveryOptionsError.style.display = allSelected ? 'none' : 'block';
+        }
+        if (placeOrderButton) {
+            placeOrderButton.disabled = !allSelected;
+        }
+    }
+
+    function updateSelectedAddressDisplay() {
+        if (!customerDeliveryAddress) {
+            return;
+        }
+
+        const selected = document.querySelector('input[name="selected_address"]:checked');
+        if (!selected) {
+            customerDeliveryAddress.textContent = 'No address selected';
+            return;
+        }
+
+        const label = document.querySelector(`label[for="${selected.id}"]`);
+        if (!label) {
+            customerDeliveryAddress.textContent = 'No address selected';
+            return;
+        }
+
+        const addressBlock = label.querySelector('div');
+        if (!addressBlock) {
+            customerDeliveryAddress.textContent = 'No address selected';
+            return;
+        }
+
+        const lines = [];
+        addressBlock.querySelectorAll('div').forEach((line, index) => {
+            const text = line.textContent.trim();
+            if (!text) {
+                return;
+            }
+            if (index === 0) {
+                return; // Recipient name
+            }
+            if (index === 1) {
+                return; // Recipient phone
+            }
+            if (text === 'Default') {
+                return;
+            }
+            lines.push(text);
+        });
+
+        customerDeliveryAddress.textContent = lines.length > 0 ? lines.join(', ') : 'No address selected';
+    }
+    
     // Calculate delivery fees when delivery options change
     function calculateDeliveryFees() {
-        let deliveryFees = 0;
+        let hasWeekdayDelivery = false;
+        let hasWeekendDelivery = false;
         
         @foreach($groupedCart as $vendorId => $items)
-            const deliveryType{{ $vendorId }} = document.querySelector('input[name="delivery_type_{{ $vendorId }}"]:checked');
-            if (deliveryType{{ $vendorId }}) {
-                if (deliveryType{{ $vendorId }}.value === 'weekday_delivery') {
-                    deliveryFees += 50;
-                } else if (deliveryType{{ $vendorId }}.value === 'weekend_delivery') {
-                    deliveryFees += 75;
+            const deliverySelect{{ $vendorId }} = document.querySelector('select[name="delivery_type_{{ $vendorId }}"]');
+            if (deliverySelect{{ $vendorId }} && deliverySelect{{ $vendorId }}.value) {
+                if (deliverySelect{{ $vendorId }}.value === 'weekday_delivery') {
+                    hasWeekdayDelivery = true;
+                } else if (deliverySelect{{ $vendorId }}.value === 'weekend_delivery') {
+                    hasWeekendDelivery = true;
                 }
             }
         @endforeach
+        
+        let deliveryFees = 0;
+        if (hasWeekdayDelivery) {
+            deliveryFees += 50;
+        }
+        if (hasWeekendDelivery) {
+            deliveryFees += 75;
+        }
         
         const subtotal = {{ $totalPrice }};
         const marketFee = subtotal * 0.05;
@@ -273,16 +417,18 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('totalAmount').textContent = `₱${total.toFixed(2)}`;
     }
     
-    // Add event listeners to delivery options
-    @foreach($groupedCart as $vendorId => $items)
-        const deliveryOptions{{ $vendorId }} = document.querySelectorAll('input[name="delivery_type_{{ $vendorId }}"]');
-        deliveryOptions{{ $vendorId }}.forEach(option => {
-            option.addEventListener('change', calculateDeliveryFees);
-        });
-    @endforeach
+    // Add event listeners to delivery option selects
+    deliveryOptions.forEach(select => {
+        select.addEventListener('change', updateFulfillmentDisplay);
+    });
+
+    addressInputs.forEach(input => {
+        input.addEventListener('change', updateSelectedAddressDisplay);
+    });
     
-    // Initial calculation
-    calculateDeliveryFees();
+    // Initial update
+    updateFulfillmentDisplay();
+    updateSelectedAddressDisplay();
 });
 </script>
 @endpush

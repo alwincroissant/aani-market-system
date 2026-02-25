@@ -12,7 +12,8 @@ class MockDataSeeder extends Seeder
     public function run(): void
     {
         $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
-        $vendorImagePath = 'maps/1769326582_6975c7f61ae02.jpg';
+        $vendorBannerPath = 'vendor-banners/LxiIpAHjlcIjdMWpIon7Q29XpeXLAJisu30C27Cq.jpg';
+        $vendorLogoPath = 'vendor-logos/wUwTyLfWjQ1BjUnC8JE0fV4CQZUUK1iPPpfcfyfi.png';
         $productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
 
         $vendors = DB::table('vendors')->get();
@@ -335,13 +336,7 @@ class MockDataSeeder extends Seeder
             ]);
         }
 
-        if (DB::table('vendors')->whereNull('logo_url')->count() > 0) {
-            DB::table('vendors')->whereNull('logo_url')->update(['logo_url' => $vendorImagePath]);
-        }
-
-        if (DB::table('vendors')->whereNull('banner_url')->count() > 0) {
-            DB::table('vendors')->whereNull('banner_url')->update(['banner_url' => $vendorImagePath]);
-        }
+        // Vendors will use fallback placeholders when images are not uploaded
 
         if (DB::table('products')->whereNull('product_image_url')->count() > 0) {
             DB::table('products')->whereNull('product_image_url')->update(['product_image_url' => $productImagePath]);

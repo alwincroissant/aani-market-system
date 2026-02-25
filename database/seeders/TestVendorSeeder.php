@@ -14,7 +14,8 @@ class TestVendorSeeder extends Seeder
     public function run(): void
     {
         $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
-        $vendorImagePath = 'maps/1769326582_6975c7f61ae02.jpg';
+        $vendorBannerPath = 'vendor-banners/LxiIpAHjlcIjdMWpIon7Q29XpeXLAJisu30C27Cq.jpg';
+        $vendorLogoPath = 'vendor-logos/wUwTyLfWjQ1BjUnC8JE0fV4CQZUUK1iPPpfcfyfi.png';
         $productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
 
         // Create test users first
@@ -42,8 +43,8 @@ class TestVendorSeeder extends Seeder
             'owner_name' => 'John Farmer',
             'contact_phone' => '09123456789',
             'contact_email' => 'vendor1@example.com',
-            'logo_url' => $vendorImagePath,
-            'banner_url' => $vendorImagePath,
+            'logo_url' => null,
+            'banner_url' => null,
             'weekend_pickup_enabled' => true,
             'weekday_delivery_enabled' => true
         ]);
@@ -55,8 +56,8 @@ class TestVendorSeeder extends Seeder
             'owner_name' => 'Sarah Green',
             'contact_phone' => '09987654321',
             'contact_email' => 'vendor2@example.com',
-            'logo_url' => $vendorImagePath,
-            'banner_url' => $vendorImagePath,
+            'logo_url' => null,
+            'banner_url' => null,
             'weekend_pickup_enabled' => true,
             'weekend_delivery_enabled' => true
         ]);

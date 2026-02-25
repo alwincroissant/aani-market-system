@@ -112,7 +112,6 @@ class VendorProductController extends Controller
         // because browsers send "on" for checked boxes (not true/false)
         $request->merge([
             'is_available' => $request->has('is_available') ? true : false,
-            'track_stock'  => $request->has('track_stock')  ? true : false,
         ]);
 
         $rules = [
@@ -123,9 +122,7 @@ class VendorProductController extends Controller
             'category_id'   => ['required', 'exists:product_categories,id'],
             'product_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'stock_quantity'=> ['required', 'integer', 'min:0'],
-            'minimum_stock' => ['required', 'integer', 'min:0'],
             'is_available'  => ['nullable', 'boolean'],
-            'track_stock'   => ['nullable', 'boolean'],
         ];
 
         $messages = [
@@ -136,7 +133,6 @@ class VendorProductController extends Controller
             'unit_type.required'     => 'Unit type is required.',
             'category_id.required'   => 'Please select a category.',
             'stock_quantity.required'=> 'Stock quantity is required.',
-            'minimum_stock.required' => 'Minimum stock level is required.',
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);
@@ -156,14 +152,37 @@ class VendorProductController extends Controller
         }
 
         $imagePath = null;
-        if ($request->hasFile('product_image')) {
-            $name = $request->file('product_image')->getClientOriginalName();
-            $path = \Illuminate\Support\Facades\Storage::putFileAs(
-                'public/products',
-                $request->file('product_image'),
-                $name
-            );
-            $imagePath = 'storage/products/' . $name;
+        
+        Log::info('Product create - hasFile: ' . ($request->hasFile('product_image') ? 'YES' : 'NO'));
+        
+        if ($request->hasFile('product_image') && $request->file('product_image')->isValid()) {
+            try {
+                $file = $request->file('product_image');
+                $name = time() . '_' . $file->getClientOriginalName();
+                
+                Log::info('Attempting to save file: ' . $name);
+                Log::info('File temp path: ' . $file->getRealPath());
+                
+                // Use move() instead of storeAs()
+                $destinationPath = storage_path('app/public/products');
+                $fullPath = $destinationPath . '/' . $name;
+                
+                Log::info('Destination: ' . $fullPath);
+                
+                $moved = $file->move($destinationPath, $name);
+                
+                if ($moved && file_exists($fullPath)) {
+                    $imagePath = 'storage/products/' . $name;
+                    Log::info('Product image saved successfully using move(): ' . $fullPath);
+                } else {
+                    Log::error('Failed to move file to: ' . $fullPath);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error saving product image: ' . $e->getMessage());
+                Log::error('Stack trace: ' . $e->getTraceAsString());
+            }
+        } else if ($request->hasFile('product_image')) {
+            Log::error('Product image file is not valid');
         }
 
         $product = new Product();
@@ -176,8 +195,8 @@ class VendorProductController extends Controller
         $product->product_image_url = $imagePath;
         $product->is_available      = $request->is_available;
         $product->stock_quantity    = $request->stock_quantity;
-        $product->minimum_stock     = $request->minimum_stock;
-        $product->track_stock       = $request->track_stock;
+        $product->minimum_stock     = 5; // Hardcoded: Alert when stock falls below 5
+        $product->track_stock       = true; // Always track stock
         $product->allow_backorder   = false;
         $product->stock_notes       = null;
         $product->save();
@@ -249,7 +268,6 @@ class VendorProductController extends Controller
         // because browsers send "on" for checked boxes (not true/false)
         $request->merge([
             'is_available' => $request->has('is_available') ? true : false,
-            'track_stock'  => $request->has('track_stock')  ? true : false,
         ]);
 
         $rules = [
@@ -260,9 +278,7 @@ class VendorProductController extends Controller
             'category_id'   => ['required', 'exists:product_categories,id'],
             'product_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'stock_quantity'=> ['required', 'integer', 'min:0'],
-            'minimum_stock' => ['required', 'integer', 'min:0'],
             'is_available'  => ['nullable', 'boolean'],
-            'track_stock'   => ['nullable', 'boolean'],
         ];
 
         $messages = [
@@ -273,7 +289,6 @@ class VendorProductController extends Controller
             'unit_type.required'     => 'Unit type is required.',
             'category_id.required'   => 'Please select a category.',
             'stock_quantity.required'=> 'Stock quantity is required.',
-            'minimum_stock.required' => 'Minimum stock level is required.',
         ];
 
         $validator = Validator::make($request->all(), $rules, $messages);
@@ -308,18 +323,36 @@ class VendorProductController extends Controller
             'unit_type'     => trim($request->unit_type),
             'is_available'  => $request->is_available,
             'stock_quantity'=> $request->stock_quantity,
-            'minimum_stock' => $request->minimum_stock,
-            'track_stock'   => $request->track_stock,
+            'minimum_stock' => 5, // Hardcoded: Alert when stock falls below 5
+            'track_stock'   => true, // Always track stock
         ];
 
-        if ($request->hasFile('product_image')) {
-            $name = $request->file('product_image')->getClientOriginalName();
-            \Illuminate\Support\Facades\Storage::putFileAs(
-                'public/products',
-                $request->file('product_image'),
-                $name
-            );
-            $updateData['product_image_url'] = 'storage/products/' . $name;
+        if ($request->hasFile('product_image') && $request->file('product_image')->isValid()) {
+            try {
+                $file = $request->file('product_image');
+                $name = time() . '_' . $file->getClientOriginalName();
+                
+                Log::info('Attempting to update file: ' . $name);
+                Log::info('File temp path: ' . $file->getRealPath());
+                
+                // Try direct move to ensure it works
+                $destinationPath = storage_path('app/public/products');
+                $fullPath = $destinationPath . '/' . $name;
+                
+                Log::info('Destination: ' . $fullPath);
+                
+                $moved = $file->move($destinationPath, $name);
+                
+                if ($moved && file_exists($fullPath)) {
+                    $updateData['product_image_url'] = 'storage/products/' . $name;
+                    Log::info('Product image saved successfully using move(): ' . $fullPath);
+                } else {
+                    Log::error('Failed to move file to: ' . $fullPath);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error updating product image: ' . $e->getMessage());
+                Log::error('Stack trace: ' . $e->getTraceAsString());
+            }
         }
 
         Product::where('id', $id)->update($updateData);

@@ -16,7 +16,8 @@ class VendorSeeder extends Seeder
     public function run(): void
     {
         $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
-        $vendorImagePath = 'maps/1769326582_6975c7f61ae02.jpg';
+        $vendorBannerPath = 'vendor-banners/LxiIpAHjlcIjdMWpIon7Q29XpeXLAJisu30C27Cq.jpg';
+        $vendorLogoPath = 'vendor-logos/wUwTyLfWjQ1BjUnC8JE0fV4CQZUUK1iPPpfcfyfi.png';
 
         // Get or create the vendor user
         $vendorUser = User::firstOrCreate([
@@ -41,8 +42,8 @@ class VendorSeeder extends Seeder
                 'contact_email' => 'vendor@test.com',
                 'regional_sourcing_origin' => 'Local Region',
                 'business_description' => 'Providing fresh organic produce from local farms',
-                'logo_url' => $vendorImagePath,
-                'banner_url' => $vendorImagePath,
+                'logo_url' => null,
+                'banner_url' => null,
                 'weekend_pickup_enabled' => true,
                 'weekday_delivery_enabled' => false,
                 'weekend_delivery_enabled' => true,

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\Product;
 use App\Models\StockLog;
@@ -82,12 +84,12 @@ class CheckoutController extends Controller
         }
 
         // Ensure customer record exists
-        $customer = auth()->user()->customer;
+        $customer = Auth::user()->customer;
         if (!$customer) {
             // Create customer record if it doesn't exist
             $customer = \App\Models\Customer::create([
-                'user_id' => auth()->id(),
-                'first_name' => auth()->user()->name ?? 'First Name',
+                'user_id' => Auth::id(),
+                'first_name' => Auth::user()->name ?? 'First Name',
                 'last_name' => 'Last Name',
                 'phone' => '',
                 'delivery_address' => '',
@@ -95,7 +97,7 @@ class CheckoutController extends Controller
         } else {
             // Update customer record if first_name or last_name are empty
             if (empty($customer->first_name) || empty($customer->last_name)) {
-                $nameParts = explode(' ', auth()->user()->name ?? 'First Name Last Name', 2);
+                $nameParts = explode(' ', Auth::user()->name ?? 'First Name Last Name', 2);
                 $customer->first_name = $customer->first_name ?: ($nameParts[0] ?? 'First Name');
                 $customer->last_name = $customer->last_name ?: ($nameParts[1] ?? 'Last Name');
                 $customer->save();
@@ -133,8 +135,8 @@ class CheckoutController extends Controller
         ]);
         
         // If customer name is empty, use the authenticated user's name
-        $customerName = $request->customer_name ?: auth()->user()->name;
-        $customerPhone = $request->customer_phone ?: auth()->user()->customer->phone;
+        $customerName = $request->customer_name ?: Auth::user()->name;
+        $customerPhone = $request->customer_phone ?: Auth::user()->customer->phone;
         
         // Validate stock availability before creating the order
         $outOfStock = [];
@@ -159,7 +161,7 @@ class CheckoutController extends Controller
 
         try {
             DB::beginTransaction();
-            
+
             // Group cart items by vendor for processing
             $groupedCart = [];
             foreach ($cart->items as $itemId => $item) {
@@ -169,55 +171,100 @@ class CheckoutController extends Controller
                 }
                 $groupedCart[$vendorId][$itemId] = $item;
             }
-            
-            // Create order
-            $orderId = DB::table('orders')->insertGetId([
-                'order_reference' => 'ORD-' . strtoupper(uniqid()),
-                'customer_id' => auth()->user()->customer->id,
-                'order_date' => now(),
-                'fulfillment_type' => 'weekend_pickup',
-                'order_status' => 'pending',
-                'delivery_address' => $request->delivery_notes,
-                'notes' => $request->delivery_notes,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-            
-            // Save order items with vendor information and deduct stock
-            foreach ($cart->items as $itemId => $item) {
-                DB::table('order_items')->insert([
-                    'order_id' => $orderId,
-                    'vendor_id' => $item['item']->vendor_id,
-                    'product_id' => $itemId,
-                    'quantity' => $item['qty'],
-                    'unit_price' => $item['item']->price_per_unit,
-                    'item_status' => 'pending',
+
+            // Determine fulfillment choices and whether delivery address is needed
+            $vendorFulfillment = [];
+            $hasDelivery = false;
+            foreach ($groupedCart as $vendorId => $items) {
+                $fulfillment = $request->input('delivery_type_' . $vendorId);
+                if (!$fulfillment) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Please select a delivery option for each shop.');
+                }
+                if (in_array($fulfillment, ['weekday_delivery', 'weekend_delivery'], true)) {
+                    $hasDelivery = true;
+                }
+                $vendorFulfillment[$vendorId] = $fulfillment;
+            }
+
+            $deliveryAddressText = null;
+            if ($hasDelivery) {
+                $selectedAddressId = $request->input('selected_address');
+                if (!$selectedAddressId) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Please select a delivery address.');
+                }
+
+                $address = DB::table('customer_addresses')
+                    ->where('id', $selectedAddressId)
+                    ->where('customer_id', Auth::user()->customer->id)
+                    ->first();
+
+                if (!$address) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Selected delivery address is invalid.');
+                }
+
+                $deliveryAddressText = trim(sprintf(
+                    '%s, %s, %s%s',
+                    $address->address_line,
+                    $address->city,
+                    $address->province ?? '',
+                    $address->postal_code ? ' ' . $address->postal_code : ''
+                ));
+            }
+
+            foreach ($groupedCart as $vendorId => $items) {
+                $fulfillment = $vendorFulfillment[$vendorId];
+                $orderId = DB::table('orders')->insertGetId([
+                    'order_reference' => 'ORD-' . strtoupper(uniqid()),
+                    'customer_id' => Auth::user()->customer->id,
+                    'order_date' => now(),
+                    'fulfillment_type' => $fulfillment,
+                    'order_status' => 'pending',
+                    'delivery_address' => $hasDelivery && in_array($fulfillment, ['weekday_delivery', 'weekend_delivery'], true)
+                        ? $deliveryAddressText
+                        : null,
+                    'notes' => $request->delivery_notes,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
 
-                // Deduct stock and record StockLog when tracking is enabled
-                $product = Product::find($itemId);
-                if ($product && $product->track_stock) {
-                    $previous = $product->stock_quantity;
-                    $new = $previous - $item['qty'];
-                    // If backorder allowed, new can be negative; otherwise floor at 0
-                    if (! $product->allow_backorder) {
-                        $new = max(0, $new);
-                    }
-
-                    $product->stock_quantity = $new;
-                    $product->save();
-
-                    StockLog::create([
-                        'product_id' => $product->id,
-                        'vendor_id' => $product->vendor_id,
-                        'previous_stock' => $previous,
-                        'new_stock' => $new,
-                        'quantity_changed' => $new - $previous,
-                        'change_type' => 'sale',
-                        'notes' => 'Order ' . $orderId,
+                foreach ($items as $itemId => $item) {
+                    DB::table('order_items')->insert([
+                        'order_id' => $orderId,
+                        'vendor_id' => $vendorId,
+                        'product_id' => $itemId,
+                        'quantity' => $item['qty'],
+                        'unit_price' => $item['item']->price_per_unit,
+                        'item_status' => 'pending',
+                        'created_at' => now(),
+                        'updated_at' => now()
                     ]);
+
+                    // Deduct stock and record StockLog when tracking is enabled
+                    $product = Product::find($itemId);
+                    if ($product && $product->track_stock) {
+                        $previous = $product->stock_quantity;
+                        $new = $previous - $item['qty'];
+                        // If backorder allowed, new can be negative; otherwise floor at 0
+                        if (! $product->allow_backorder) {
+                            $new = max(0, $new);
+                        }
+
+                        $product->stock_quantity = $new;
+                        $product->save();
+
+                        StockLog::create([
+                            'product_id' => $product->id,
+                            'vendor_id' => $product->vendor_id,
+                            'previous_stock' => $previous,
+                            'new_stock' => $new,
+                            'quantity_changed' => $new - $previous,
+                            'change_type' => 'sale',
+                            'notes' => 'Order ' . $orderId,
+                        ]);
+                    }
                 }
             }
             
@@ -232,8 +279,8 @@ class CheckoutController extends Controller
             DB::rollBack();
             
             // Log the error for debugging
-            \Log::error('Order placement failed: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            Log::error('Order placement failed: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
             return redirect()->back()->with('error', 'Order placement failed. Please try again. Error: ' . $e->getMessage());
         }

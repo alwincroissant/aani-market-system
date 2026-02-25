@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\Stall;
@@ -54,10 +56,8 @@ class AdminUserController extends Controller
             ->whereNull('stall_assignments.vendor_id')
             ->count();
 
-        // Get map image for stall assignment modal
-        $mapImage = DB::table('system_settings')
-            ->where('setting_key', 'market_map_image')
-            ->value('setting_value');
+        // Hardcoded market map image
+        $mapImage = 'storage/maps/marketmap.png';
 
         return view('admin.users.index', compact('users', 'pendingVendorsCount', 'mapImage'));
     }
@@ -264,7 +264,7 @@ class AdminUserController extends Controller
         }
 
         // Prevent deactivating the currently logged-in admin
-        if ($user->id === auth()->user()->id) {
+        if ($user->id === Auth::id()) {
             return redirect()->route('admin.users.index')
                 ->with('error', 'You cannot deactivate your own account.');
         }
@@ -318,7 +318,7 @@ class AdminUserController extends Controller
             $vendor = DB::table('vendors')->where('user_id', $request->user_id)->first();
 
             // Debug logging
-            \Log::info('Assign stall attempt:', [
+            Log::info('Assign stall attempt:', [
                 'user_id' => $request->user_id,
                 'user_found' => $user ? true : false,
                 'vendor_found' => $vendor ? true : false,
@@ -326,7 +326,7 @@ class AdminUserController extends Controller
             ]);
 
             if (!$user || !$vendor) {
-                \Log::error('User or vendor not found:', [
+                Log::error('User or vendor not found:', [
                     'user_id' => $request->user_id,
                     'user' => $user,
                     'vendor' => $vendor
@@ -340,7 +340,7 @@ class AdminUserController extends Controller
                 $centerX = ($request->x1 + $request->x2) / 2;
                 $centerY = ($request->y1 + $request->y2) / 2;
 
-                $stall = new \App\Models\Stall();
+                $stall = new Stall();
                 $stall->stall_number = trim($request->stall_number);
                 $stall->section_id = $request->section_id;
                 $stall->position_x = $centerX;
@@ -391,12 +391,12 @@ class AdminUserController extends Controller
             }
 
             // Activate user
-            \Log::info('About to activate user:', ['user_id' => $request->user_id, 'vendor_id' => $vendor->id]);
+            Log::info('About to activate user:', ['user_id' => $request->user_id, 'vendor_id' => $vendor->id]);
             DB::table('users')->where('id', $request->user_id)->update(['is_active' => true]);
 
             DB::commit();
 
-            \Log::info('Stall assignment completed successfully:', [
+            Log::info('Stall assignment completed successfully:', [
                 'user_id' => $request->user_id,
                 'stall_id' => $stall->id,
                 'stall_number' => $stall->stall_number
@@ -416,7 +416,7 @@ class AdminUserController extends Controller
             DB::rollBack();
             
             // Detailed error logging
-            \Log::error('Stall assignment failed:', [
+            Log::error('Stall assignment failed:', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

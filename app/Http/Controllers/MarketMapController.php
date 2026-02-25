@@ -39,9 +39,8 @@ class MarketMapController extends Controller
             )
             ->get();
 
-        $mapImage = DB::table('system_settings')
-            ->where('setting_key', 'market_map_image')
-            ->value('setting_value');
+        // Hardcoded market map image
+        $mapImage = 'storage/maps/marketmap.png';
 
         $featuredVendors = DB::table('vendors as v')
             ->whereNull('v.deleted_at')

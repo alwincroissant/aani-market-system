@@ -22,12 +22,7 @@ return new class extends Migration
             $table->string('owner_name');
             $table->string('contact_phone', 20)->nullable();
             $table->string('contact_email')->nullable();
-            $table->string('farm_name')->nullable();
             $table->string('regional_sourcing_origin')->nullable();
-            $table->string('region')->nullable();
-            $table->string('complete_address')->nullable();
-            $table->decimal('farm_size', 10, 2)->nullable();
-            $table->integer('years_in_operation')->nullable();
             $table->string('logo_url', 500)->nullable();
             $table->string('banner_url', 500)->nullable();
             $table->string('business_hours')->default('8:00 AM - 6:00 PM');

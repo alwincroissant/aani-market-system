@@ -143,20 +143,25 @@ class VendorDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Vendor not found.'], 404);
         }
 
+        // Convert checkboxes to booleans based on their VALUE (not just presence)
+        // JavaScript sends '1' for checked, '0' for unchecked
+        $request->merge([
+            'weekend_pickup_enabled' => $request->input('weekend_pickup_enabled') === '1',
+            'weekday_delivery_enabled' => $request->input('weekday_delivery_enabled') === '1',
+            'weekend_delivery_enabled' => $request->input('weekend_delivery_enabled') === '1',
+        ]);
+
         try {
             $validated = $request->validate([
-                'business_name'        => 'required|string|max:255',
-                'contact_phone'        => 'nullable|string|max:20',
-                'business_description' => 'nullable|string|max:1000',
-                'business_hours'       => 'nullable|string|max:100',
-                'delivery_available'   => 'boolean',
-                'farm_name'            => 'nullable|string|max:255',
-                'region'               => 'nullable|string|max:100',
-                'complete_address'     => 'nullable|string|max:500',
-                'farm_size'            => 'nullable|numeric|min:0',
-                'years_in_operation'   => 'nullable|integer|min:0',
-                'banner'               => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'logo'                 => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'business_name'          => 'required|string|max:255',
+                'contact_phone'          => 'nullable|string|max:20',
+                'business_description'   => 'nullable|string|max:1000',
+                'business_hours'         => 'nullable|string|max:100',
+                'weekend_pickup_enabled' => 'boolean',
+                'weekday_delivery_enabled' => 'boolean',
+                'weekend_delivery_enabled' => 'boolean',
+                'banner'                 => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'logo'                   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
             // Handle banner upload
@@ -164,7 +169,11 @@ class VendorDashboardController extends Controller
                 if ($vendor->banner_url && Storage::disk('public')->exists($vendor->banner_url)) {
                     Storage::disk('public')->delete($vendor->banner_url);
                 }
-                $validated['banner_url'] = $request->file('banner')->store('vendor-banners', 'public');
+                $bannerFile = $request->file('banner');
+                $bannerDestination = storage_path('app/public/vendor-banners');
+                $bannerName = time() . '_' . uniqid() . '.' . $bannerFile->getClientOriginalExtension();
+                $bannerFile->move($bannerDestination, $bannerName);
+                $validated['banner_url'] = 'vendor-banners/' . $bannerName;
             }
             
             // Handle logo upload
@@ -172,7 +181,11 @@ class VendorDashboardController extends Controller
                 if ($vendor->logo_url && Storage::disk('public')->exists($vendor->logo_url)) {
                     Storage::disk('public')->delete($vendor->logo_url);
                 }
-                $validated['logo_url'] = $request->file('logo')->store('vendor-logos', 'public');
+                $logoFile = $request->file('logo');
+                $logoDestination = storage_path('app/public/vendor-logos');
+                $logoName = time() . '_' . uniqid() . '.' . $logoFile->getClientOriginalExtension();
+                $logoFile->move($logoDestination, $logoName);
+                $validated['logo_url'] = 'vendor-logos/' . $logoName;
             }
 
             // Remove 'banner' and 'logo' keys from validated so Eloquent

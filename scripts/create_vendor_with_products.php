@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
 $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
-$vendorImagePath = 'maps/1769326582_6975c7f61ae02.jpg';
 $productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
 
 $vendorEmail = 'vendor2@test.com';
@@ -43,8 +42,8 @@ if (! $existingVendor) {
         'contact_email' => $vendorEmail,
         'regional_sourcing_origin' => 'Green Valley Region',
         'business_description' => 'Delivering wholesome local produce and pantry items',
-        'logo_url' => $vendorImagePath,
-        'banner_url' => $vendorImagePath,
+        'logo_url' => null,
+        'banner_url' => null,
         'weekend_pickup_enabled' => true,
         'weekday_delivery_enabled' => false,
         'weekend_delivery_enabled' => true,

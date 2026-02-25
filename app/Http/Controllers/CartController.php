@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 use App\Cart;
 use App\Models\Product;
 
@@ -49,7 +50,7 @@ class CartController extends Controller
         $cart = new Cart($oldCart);
         
         // Debug: Log cart state
-        \Log::info('Cart state: ' . json_encode([
+        Log::info('Cart state: ' . json_encode([
             'has_items' => !empty($cart->items),
             'items_count' => $cart->items ? count($cart->items) : 0,
             'total_price' => $cart->totalPrice

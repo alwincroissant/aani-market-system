@@ -38,18 +38,11 @@
                         @endif
                         
                         {{-- Additional vendor info --}}
-                        @if($vendor->region || $vendor->business_hours)
+                        @if($vendor->business_hours)
                             <div class="mb-2">
-                                @if($vendor->region)
-                                    <small class="text-muted me-3">
-                                        <i class="bi bi-geo-alt"></i> {{ $vendor->region }}
-                                    </small>
-                                @endif
-                                @if($vendor->business_hours)
-                                    <small class="text-muted">
-                                        <i class="bi bi-clock"></i> {{ $vendor->business_hours }}
-                                    </small>
-                                @endif
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> {{ $vendor->business_hours }}
+                                </small>
                             </div>
                         @endif
                         
@@ -185,21 +178,6 @@
         @endif
     </div>
 </div>
-
-<!-- Cart Summary - Only shown for logged in users -->
-@auth
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
-    <div class="card" style="min-width: 250px;">
-        <div class="card-body">
-            <h6 class="card-title">Cart Summary</h6>
-            <div id="cartSummary">
-                <p class="mb-0">Loading...</p>
-            </div>
-            <a href="{{ route('getCart') }}" class="btn btn-primary btn-sm w-100 mt-2">View Cart</a>
-        </div>
-    </div>
-</div>
-@endauth
 @endsection
 
 @push('scripts')

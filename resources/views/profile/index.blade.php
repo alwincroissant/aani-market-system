@@ -101,46 +101,6 @@
                     </form>
                 </div>
             </div>
-            
-            <!-- Change Password Section -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Change Password</h5>
-                </div>
-                <div class="card-body">
-                    <form action="{{ route('profile.change-password') }}" method="POST">
-                        @csrf
-                        
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="current_password" class="form-label">Current Password</label>
-                                    <input type="password" class="form-control" id="current_password" 
-                                           name="current_password" required>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="new_password" class="form-label">New Password</label>
-                                    <input type="password" class="form-control" id="new_password" 
-                                           name="new_password" required minlength="8">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="new_password_confirmation" class="form-label">Confirm New Password</label>
-                                    <input type="password" class="form-control" id="new_password_confirmation" 
-                                           name="new_password_confirmation" required>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-warning">
-                            <i class="bi bi-shield-lock"></i> Change Password
-                        </button>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 </div>

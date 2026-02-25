@@ -116,21 +116,60 @@
                 <h5 class="mb-0">Shop Information</h5>
             </div>
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
+                <div class="text-center mb-3">
                     @if($product->logo_url)
-                        <img src="{{ asset($product->logo_url) }}" alt="{{ $product->business_name }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                        <img src="{{ asset('storage/' . $product->logo_url) }}" alt="{{ $product->business_name }}" class="rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
                     @else
-                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                            <i class="bi bi-shop text-white small"></i>
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 80px; height: 80px;">
+                            <i class="bi bi-shop text-white fs-3"></i>
                         </div>
                     @endif
-                    <div>
-                        <h6 class="mb-0">{{ $product->business_name }}</h6>
-                        <a href="{{ route('shop.show', $product->vendor_id) }}" class="btn btn-sm btn-outline-primary">
-                            View All Products
-                        </a>
-                    </div>
+                    <h6 class="mb-1">{{ $product->business_name }}</h6>
                 </div>
+
+                @if($product->business_description)
+                    <p class="text-muted small mb-3">{{ Str::limit($product->business_description, 120) }}</p>
+                @endif
+
+                @if($product->business_hours)
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> {{ $product->business_hours }}
+                        </small>
+                    </div>
+                @endif
+
+                @if($product->contact_phone)
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-telephone"></i> {{ $product->contact_phone }}
+                        </small>
+                    </div>
+                @endif
+
+                @if($product->contact_email)
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-envelope"></i> {{ $product->contact_email }}
+                        </small>
+                    </div>
+                @endif
+
+                <div class="mb-3">
+                    @if($product->weekend_pickup_enabled)
+                        <span class="badge bg-success mb-1" style="font-size: 0.7rem;">🏪 Weekend Pickup</span><br>
+                    @endif
+                    @if($product->weekday_delivery_enabled)
+                        <span class="badge bg-info mb-1" style="font-size: 0.7rem;">🚚 Weekday Delivery</span><br>
+                    @endif
+                    @if($product->weekend_delivery_enabled)
+                        <span class="badge bg-primary mb-1" style="font-size: 0.7rem;">🚚 Weekend Delivery</span>
+                    @endif
+                </div>
+
+                <a href="{{ route('shop.show', $product->vendor_id) }}" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-shop"></i> View All Products
+                </a>
             </div>
         </div>
     </div>

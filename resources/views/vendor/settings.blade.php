@@ -151,58 +151,27 @@
                                 <label class="form-label fw-semibold">Business Hours</label>
                                 <input type="text" class="form-control" name="business_hours" value="{{ $vendor->business_hours ?? '8:00 AM - 6:00 PM' }}">
                             </div>
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label fw-semibold">Delivery Options</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="delivery_available" id="deliveryAvailable" {{ ($vendor->delivery_available ?? false) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="deliveryAvailable">Available for delivery</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Farm Location Details Section --}}
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-white border-0">
-                        <h5 class="mb-0">Farm Location Details</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label fw-semibold">Farm Name</label>
-                                <input type="text" class="form-control" name="farm_name" value="{{ $vendor->farm_name ?? '' }}">
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label fw-semibold">Region/Province</label>
-                                {{-- Philippine regions dropdown --}}
-                                <select class="form-select" name="region">
-                                    <option value="">Select Region</option>
-                                    <option value="NCR" {{ ($vendor->region ?? '') == 'NCR' ? 'selected' : '' }}>National Capital Region</option>
-                                    <option value="CALABARZON" {{ ($vendor->region ?? '') == 'CALABARZON' ? 'selected' : '' }}>CALABARZON</option>
-                                    <option value="MIMAROPA" {{ ($vendor->region ?? '') == 'MIMAROPA' ? 'selected' : '' }}>MIMAROPA</option>
-                                    <option value="Bicol Region" {{ ($vendor->region ?? '') == 'Bicol Region' ? 'selected' : '' }}>Bicol Region</option>
-                                    <option value="Western Visayas" {{ ($vendor->region ?? '') == 'Western Visayas' ? 'selected' : '' }}>Western Visayas</option>
-                                    <option value="Central Visayas" {{ ($vendor->region ?? '') == 'Central Visayas' ? 'selected' : '' }}>Central Visayas</option>
-                                    <option value="Eastern Visayas" {{ ($vendor->region ?? '') == 'Eastern Visayas' ? 'selected' : '' }}>Eastern Visayas</option>
-                                </select>
-                            </div>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-semibold">Complete Address</label>
-                            <textarea class="form-control" name="complete_address" rows="2">{{ $vendor->complete_address ?? '' }}</textarea>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label fw-semibold">Farm Size (hectares)</label>
-                                {{-- Accepts decimal values (step="0.1") --}}
-                                <input type="number" class="form-control" name="farm_size" value="{{ $vendor->farm_size ?? '' }}" step="0.1">
+                            <label class="form-label fw-semibold">Delivery Fulfillment Options</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="weekend_pickup_enabled" id="weekendPickup" {{ ($vendor->weekend_pickup_enabled ?? false) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="weekendPickup">
+                                    <i class="bi bi-calendar-check me-1"></i> Weekend Pickup
+                                </label>
                             </div>
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label fw-semibold">Years in Operation</label>
-                                <input type="number" class="form-control" name="years_in_operation" value="{{ $vendor->years_in_operation ?? '' }}">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="weekday_delivery_enabled" id="weekdayDelivery" {{ ($vendor->weekday_delivery_enabled ?? false) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="weekdayDelivery">
+                                    <i class="bi bi-truck me-1"></i> Weekday Delivery
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="weekend_delivery_enabled" id="weekendDelivery" {{ ($vendor->weekend_delivery_enabled ?? false) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="weekendDelivery">
+                                    <i class="bi bi-truck me-1"></i> Weekend Delivery
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -246,10 +215,6 @@
                                 </div>
                                 <p class="text-muted small mb-2" id="previewDescription">{{ $vendor->business_description ?? 'Fresh local products from our farm' }}</p>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">
-                                        <i class="bi bi-geo-alt me-1"></i>
-                                        <span id="previewRegion">{{ $vendor->region ?? 'Philippines' }}</span>
-                                    </small>
                                     {{-- Status badge (currently static) --}}
                                     <span class="badge bg-success">
                                         <i class="bi bi-circle-fill me-1"></i>Open
@@ -361,11 +326,6 @@ document.querySelector('textarea[name="business_description"]').addEventListener
     document.getElementById('previewDescription').textContent = e.target.value || 'Fresh local products';
 });
 
-// Real-time preview: Update region when dropdown changes
-document.querySelector('select[name="region"]').addEventListener('change', function(e) {
-    document.getElementById('previewRegion').textContent = e.target.value || 'Philippines';
-});
-
 // Handle form submission via AJAX
 document.getElementById('storeSettingsForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -384,9 +344,15 @@ document.getElementById('storeSettingsForm').addEventListener('submit', async fu
 
     try {
         const formData = new FormData(form);
-        // Manually handle checkbox value (checked = 1, unchecked = 0)
-        const deliveryCheckbox = form.querySelector('input[name="delivery_available"]');
-        formData.set('delivery_available', deliveryCheckbox.checked ? '1' : '0');
+        
+        // Manually handle checkbox values (create proper boolean values for each delivery option)
+        const weekendPickup = form.querySelector('input[name="weekend_pickup_enabled"]');
+        const weekdayDelivery = form.querySelector('input[name="weekday_delivery_enabled"]');
+        const weekendDelivery = form.querySelector('input[name="weekend_delivery_enabled"]');
+        
+        formData.set('weekend_pickup_enabled', weekendPickup.checked ? '1' : '0');
+        formData.set('weekday_delivery_enabled', weekdayDelivery.checked ? '1' : '0');
+        formData.set('weekend_delivery_enabled', weekendDelivery.checked ? '1' : '0');
 
         const response = await fetch('{{ route("vendor.update-settings") }}', {
             method: 'POST',

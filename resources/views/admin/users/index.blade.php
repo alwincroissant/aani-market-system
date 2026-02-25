@@ -309,11 +309,8 @@ function initializeStallMap() {
         stallMap.remove();
     }
     
-    const mapImageUrl = '{{ asset($mapImage ?? '') }}';
-    if (!mapImageUrl) {
-        document.getElementById('stallMap').innerHTML = '<div class="alert alert-warning">No market map image available. Please upload a map first.</div>';
-        return;
-    }
+    // Hardcoded market map image
+    const mapImageUrl = '{{ asset("storage/maps/marketmap.png") }}';
     
     // Initialize map
     stallMap = L.map('stallMap', {

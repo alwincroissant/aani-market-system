@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Models\SystemSetting;
 use App\Models\Stall;
 use Illuminate\Support\Facades\Validator;
@@ -13,17 +14,13 @@ class AdminMapController extends Controller
 {
     public function index()
     {
-        $mapImage = DB::table('system_settings')
-            ->where('setting_key', 'market_map_image')
-            ->value('setting_value');
-
-        // Simple check - if we have a path, assume it's valid
-        // The asset() helper will handle the rest
-        $hasMapImage = !empty($mapImage);
+        // Hardcoded market map image
+        $mapImage = 'storage/maps/marketmap.png';
+        $hasMapImage = true;
         
         // Debug logging
-        \Log::info('Map Image Path: ' . $mapImage);
-        \Log::info('Has Map Image: ' . ($hasMapImage ? 'true' : 'false'));
+        Log::info('Map Image Path: ' . $mapImage);
+        Log::info('Has Map Image: ' . ($hasMapImage ? 'true' : 'false'));
 
         $stalls = DB::table('stalls as s')
             ->leftJoin('market_sections as ms', 's.section_id', '=', 'ms.id')
