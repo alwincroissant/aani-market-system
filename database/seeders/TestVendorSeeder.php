@@ -16,7 +16,7 @@ class TestVendorSeeder extends Seeder
         $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
         $vendorBannerPath = 'vendor-banners/LxiIpAHjlcIjdMWpIon7Q29XpeXLAJisu30C27Cq.jpg';
         $vendorLogoPath = 'vendor-logos/wUwTyLfWjQ1BjUnC8JE0fV4CQZUUK1iPPpfcfyfi.png';
-        $productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+        $productImagePath = 'storage/products/product-placeholder.svg';
 
         // Create test users first
         $user1 = User::firstOrCreate([

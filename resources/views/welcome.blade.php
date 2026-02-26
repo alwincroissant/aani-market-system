@@ -1,430 +1,757 @@
 @extends('layouts.base')
-
-@section('title', 'AANI Market - Interactive Map')
-
+@section('title', 'AANI Market - Fresh from the Market')
 @section('content')
-<!-- Admin Viewing Site Banner -->
-@if(auth()->check() && auth()->user()->role === 'administrator' && request('view_site'))
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0">
-            <div>
-                <i class="bi bi-eye me-2"></i>
-                <strong>Viewing as Customer</strong> - You are viewing the public site as an administrator
-            </div>
-            <a href="{{ route('admin.dashboard.index') }}" class="btn btn-primary btn-sm">
-                <i class="bi bi-speedometer2"></i> Back to Admin
-            </a>
-        </div>
-    </div>
-</div>
-@endif
 
-@if(auth()->check() && auth()->user()->role === 'customer')
-<div class="row mb-4">
-    <div class="col-12">
-        <h2 class="fw-bold text-dark">
-            Hi {{ auth()->user()->customer->first_name }} {{ auth()->user()->customer->last_name }}
-            <span class="text-primary">👋</span>
-        </h2>
-        <p class="text-muted mb-0">Welcome back! Let's find some fresh items today.</p>
-    </div>
-</div>
-@endif
-
-<div class="row mb-5">
-    <div class="col-12">
-        <div class="hero-banner p-4 p-md-5 mb-3 rounded-4 position-relative overflow-hidden">
-            <div class="row align-items-center">
-                <div class="col-md-7">
-                    <h1 class="display-5 fw-bold text-dark mb-3">
-                        Your neighborhood wet market, <span class="text-primary">online.</span>
-                    </h1>
-                    <p class="lead text-muted mb-4">
-                        Shop fresh seafood, meat, fruits, vegetables, and native favorites from trusted AANI vendors.
-                        Explore the market map, browse stalls like you do on-site, and enjoy the convenience of ordering online.
-                    </p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ route('shop.index') }}" class="btn btn-primary btn-lg">
-                            <i class="bi bi-bag"></i> Start shopping
-                        </a>
-                        <button class="btn btn-outline-secondary btn-lg" onclick="document.getElementById('market-map-section').scrollIntoView({behavior: 'smooth'})">
-                            <i class="bi bi-map"></i> Explore market map
-                        </button>
-                    </div>
-                    <div class="mt-4 d-flex flex-wrap gap-3 small text-muted">
-                        <div><i class="bi bi-check2-circle text-success me-1"></i> Verified wet market vendors</div>
-                        <div><i class="bi bi-check2-circle text-success me-1"></i> Pickup & delivery options</div>
-                        <div><i class="bi bi-check2-circle text-success me-1"></i> One cart across multiple stalls</div>
-                    </div>
-                </div>
-                <div class="col-md-5 d-none d-md-block">
-                    <div class="hero-visual position-relative">
-                        <div class="hero-card shadow-sm rounded-4 bg-white p-3 mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:40px;height:40px;">
-                                    <i class="bi bi-basket text-primary"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-semibold">Today’s wet market basket</div>
-                                    <small class="text-muted">Build your catch-of-the-day from different stalls</small>
-                                </div>
-                            </div>
-                            <ul class="list-unstyled small mb-0">
-                                <li class="d-flex justify-content-between mb-1">
-                                    <span>🥬 Organic greens (Stall VEG-12)</span>
-                                    <span class="text-muted">₱180</span>
-                                </li>
-                                <li class="d-flex justify-content-between mb-1">
-                                    <span>🥚 Free-range eggs (Stall FD-04)</span>
-                                    <span class="text-muted">₱140</span>
-                                </li>
-                                <li class="d-flex justify-content-between">
-                                    <span>🌿 Herbs bundle (Stall PLT-07)</span>
-                                    <span class="text-muted">₱95</span>
-                                </li>
-                            </ul>
-                            <hr class="my-2">
-                            <div class="d-flex justify-content-between small">
-                                <span>Estimated total</span>
-                                <span class="fw-bold text-primary">₱415</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row mb-5">
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="bi bi-shop fs-1 text-primary mb-3"></i>
-                <h5>Browse Shops</h5>
-                <p class="text-muted">Explore all vendors and their products</p>
-                <a href="{{ route('shop.index') }}" class="btn btn-primary">
-                    <i class="bi bi-arrow-right"></i> Browse Now
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="bi bi-map fs-1 text-success mb-3"></i>
-                <h5>Market Map</h5>
-                <p class="text-muted">Find vendors and their locations</p>
-                <button class="btn btn-success" onclick="document.getElementById('market-map-section').scrollIntoView({behavior: 'smooth'})">
-                    <i class="bi bi-arrow-right"></i> View Map
-                </button>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="bi bi-person-circle fs-1 text-warning mb-3"></i>
-                @auth
-                    <h5>Manage Your Orders</h5>
-                    <p class="text-muted">You are signed in. Review your cart and place orders anytime.</p>
-                @else
-                    <h5>Sign In to Order</h5>
-                    <p class="text-muted">Create an account or login to manage your cart and place orders.</p>
-                @endauth
-                @auth
-                    <a href="{{ route('getCart') }}" class="btn btn-warning">
-                        <i class="bi bi-cart"></i> View My Cart
-                    </a>
-                @else
-                    <a href="{{ route('auth.login') }}" class="btn btn-warning me-2">
-                        <i class="bi bi-box-arrow-in-right"></i> Login
-                    </a>
-                @endauth
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Featured Vendors -->
-@if($featuredVendors->count() > 0)
-<div class="row mb-5">
-    <div class="col-12">
-        <h3 class="mb-4">Featured Vendors</h3>
-        <div class="row">
-            @foreach($featuredVendors as $vendor)
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                @if($vendor->logo_url)
-                                    <img src="{{ asset('/storage/' . $vendor->logo_url) }}" alt="{{ $vendor->business_name }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
-                                @else
-                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
-                                        <i class="bi bi-shop text-white"></i>
-                                    </div>
-                                @endif
-                                <div>
-                                    <h6 class="mb-1">{{ $vendor->business_name }}</h6>
-                                    <small class="text-muted">{{ $vendor->product_count }} products</small>
-                                </div>
-                            </div>
-                            @if($vendor->business_description)
-                                <p class="card-text small text-muted">{{ Str::limit($vendor->business_description, 80) }}</p>
-                            @endif
-                            <div class="mt-auto">
-                                <a href="{{ route('shop.show', $vendor->id) }}" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-shop"></i> Visit Shop
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-        <div class="text-center mt-3">
-            <a href="{{ route('shop.index') }}" class="btn btn-outline-primary">
-                View All Vendors <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
-    </div>
-</div>
-@endif
-
-<!-- Recent Products -->
-@if($featuredProducts->count() > 0)
-<div class="row mb-5">
-    <div class="col-12">
-        <h3 class="mb-4">Recent Products</h3>
-        <div class="row">
-            @foreach($featuredProducts as $product)
-                <div class="col-md-6 col-lg-4 col-xl-3 mb-4">
-                    <div class="card h-100">
-                        @if($product->product_image_url)
-                            <img src="{{ asset($product->product_image_url) }}" alt="{{ $product->product_name }}" class="card-img-top" style="height: 180px; object-fit: cover;">
-                        @else
-                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
-                                <i class="bi bi-image text-muted fs-1"></i>
-                            </div>
-                        @endif
-                        <div class="card-body d-flex flex-column">
-                            <h6 class="card-title">{{ $product->product_name }}</h6>
-                            <p class="card-text small text-muted mb-2">{{ $product->business_name }}</p>
-                            @if($product->description)
-                                <p class="card-text text-muted small">{{ Str::limit($product->description, 60) }}</p>
-                            @endif
-                            <div class="mt-auto">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="fw-bold text-primary">₱{{ number_format($product->price_per_unit, 2) }}</span>
-                                    <span class="text-muted small">/ {{ $product->unit_type }}</span>
-                                </div>
-                                <div class="btn-group w-100">
-                                    <a href="{{ route('shop.product', $product->id) }}" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
-                                    <a href="{{ route('shop.show', $product->vendor_id) }}" class="btn btn-primary btn-sm">
-                                        <i class="bi bi-shop"></i> Shop
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-        <div class="text-center mt-3">
-            <a href="{{ route('shop.index') }}" class="btn btn-outline-primary">
-                Browse All Products <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
-    </div>
-</div>
-@endif
-
-<!-- Market Map Section -->
-<div id="market-map-section" class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="mb-0">
-                    <i class="bi bi-map"></i> Market Map
-                </h4>
-            </div>
-            <div class="card-body">
-                <div id="marketMap" style="height: 600px; border: 2px solid #ddd; border-radius: 4px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
-
-@push('styles')
 <style>
-    .hero-banner {
-        background: radial-gradient(circle at top left, #e3f2fd 0, #fdfbff 45%, #fff8e1 100%);
-        border: 1px solid rgba(15, 118, 110, 0.06);
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+        --bg:        #F5F4F0;
+        --surface:   #FFFFFF;
+        --border:    #E4E2DC;
+        --text:      #1A1916;
+        --muted:     #7A7871;
+        --accent:    #1D6F42;
+        --accent-lt: #EAF4EE;
+        --accent-dk: #155232;
+        --warm:      #D97706;
+        --warm-lt:   #FEF3C7;
+        --radius:    10px;
+        --shadow:    0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
     }
-    .hero-card {
-        border-radius: 1.25rem;
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'DM Sans', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.6;
     }
-    .card {
-        border: 1px solid rgba(15, 23, 42, 0.06);
-        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Utility ── */
+    .mono { font-family: 'DM Mono', monospace; }
+    .muted { color: var(--muted); }
+
+    /* ── Admin / Welcome Banner ── */
+    .notice-bar {
+        background: var(--warm-lt);
+        border-bottom: 1px solid #fde68a;
+        padding: 10px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 500;
+        color: #92400e;
     }
-    .card:hover {
-        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
-        transform: translateY(-2px);
-        transition: all 0.18s ease-out;
+    .notice-bar a {
+        padding: 5px 14px;
+        background: var(--warm);
+        color: #fff;
+        border-radius: 6px;
+        font-size: 12.5px;
+        font-weight: 600;
     }
-    .card .card-body {
-        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, #ffffff 60%, #fcfcff 100%);
+
+    .welcome-bar {
+        background: var(--accent-lt);
+        border-bottom: 1px solid #c6e8d4;
+        padding: 10px 28px;
+        font-size: 13.5px;
+        color: var(--accent-dk);
     }
-    .hero-banner .btn-primary {
-        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+    .welcome-bar strong { font-weight: 600; }
+
+    /* ── Page Wrapper ── */
+    .page { padding: 32px 28px; max-width: 1200px; margin: 0 auto; }
+
+    /* ── Hero ── */
+    .hero {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 40px;
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 44px 44px 44px 48px;
+        box-shadow: var(--shadow);
+        margin-bottom: 36px;
+        position: relative;
+        overflow: hidden;
     }
-    #market-map-section .card {
-        border-radius: 1.25rem;
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at top left, #eaf4ee 0%, transparent 55%);
+        pointer-events: none;
     }
-    .hero-visual .hero-pill {
-        z-index: 2;
+
+    .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-lt);
+        padding: 4px 12px;
+        border-radius: 99px;
+        margin-bottom: 16px;
     }
-    @media (max-width: 991.98px) {
-        /* On smaller screens, avoid overlapping by stacking the pill below the basket card */
-        .hero-visual .hero-pill {
-            position: static !important;
-            margin-top: 0.75rem;
-            margin-right: 0;
-        }
+    .hero-eyebrow span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+    .hero-title {
+        font-size: 36px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--text);
+        margin-bottom: 14px;
+        letter-spacing: -.5px;
+    }
+    .hero-title em { font-style: normal; color: var(--accent); }
+
+    .hero-desc {
+        font-size: 15px;
+        color: var(--muted);
+        max-width: 480px;
+        margin-bottom: 24px;
+        line-height: 1.65;
+    }
+
+    .hero-ctas {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 20px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: background .15s;
+        text-decoration: none;
+    }
+    .btn-primary:hover { background: var(--accent-dk); }
+
+    .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 20px;
+        background: transparent;
+        color: var(--text);
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: background .15s, border-color .15s;
+        text-decoration: none;
+    }
+    .btn-ghost:hover { background: var(--bg); border-color: #ccc; }
+
+    .hero-trust {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .trust-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        color: var(--muted);
+    }
+    .trust-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+    /* Hero Basket Card */
+    .basket-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,.08);
+        position: relative;
+        z-index: 1;
+    }
+    .basket-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .basket-icon {
+        width: 38px; height: 38px;
+        background: var(--accent-lt);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+    .basket-header-text .label { font-weight: 600; font-size: 13.5px; }
+    .basket-header-text .sub  { font-size: 12px; color: var(--muted); }
+
+    .basket-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+    }
+    .basket-item:last-of-type { border-bottom: none; }
+    .basket-item .item-name  { color: var(--text); }
+    .basket-item .item-stall { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+    .basket-item .item-price { font-family: 'DM Mono', monospace; font-size: 12.5px; color: var(--muted); }
+
+    .basket-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+    }
+    .basket-total .total-label { color: var(--muted); }
+    .basket-total .total-value { font-family: 'DM Mono', monospace; font-weight: 600; color: var(--accent); font-size: 16px; }
+
+    /* ── Quick Actions ── */
+    .section-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 14px;
+    }
+    .section-title { font-size: 15px; font-weight: 600; }
+    .section-link  { font-size: 12.5px; color: var(--accent); font-weight: 500; }
+    .section-link:hover { text-decoration: underline; }
+
+    .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 36px;
+    }
+
+    .quick-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: box-shadow .15s, transform .15s;
+    }
+    .quick-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+
+    .quick-icon {
+        width: 42px; height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .quick-icon.green  { background: var(--accent-lt); }
+    .quick-icon.amber  { background: var(--warm-lt); }
+    .quick-icon.slate  { background: #F1F0F5; }
+
+    .quick-card h5 { font-size: 14px; font-weight: 600; margin: 0; }
+    .quick-card p  { font-size: 13px; color: var(--muted); margin: 0; flex: 1; }
+
+    .btn-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 7px;
+        font-size: 12.5px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background .15s;
+        align-self: flex-start;
+    }
+    .btn-sm.green { background: var(--accent); color: #fff; }
+    .btn-sm.green:hover { background: var(--accent-dk); }
+    .btn-sm.amber { background: var(--warm); color: #fff; }
+    .btn-sm.amber:hover { background: #b45309; }
+    .btn-sm.outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-sm.outline:hover { background: var(--bg); }
+
+    /* ── Vendor Cards ── */
+    .vendor-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .vendor-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: box-shadow .15s, transform .15s;
+    }
+    .vendor-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+
+    .vendor-header { display: flex; align-items: center; gap: 12px; }
+    .vendor-avatar {
+        width: 44px; height: 44px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .vendor-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .vendor-name  { font-size: 13.5px; font-weight: 600; }
+    .vendor-count { font-size: 12px; color: var(--muted); }
+    .vendor-desc  { font-size: 12.5px; color: var(--muted); flex: 1; }
+
+    /* ── Product Cards ── */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .product-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow .15s, transform .15s;
+    }
+    .product-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+
+    .product-img {
+        height: 150px;
+        object-fit: cover;
+        width: 100%;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: var(--border);
+    }
+    .product-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .product-body {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+    }
+    .product-name   { font-size: 13.5px; font-weight: 600; }
+    .product-vendor { font-size: 12px; color: var(--muted); }
+    .product-desc   { font-size: 12px; color: var(--muted); flex: 1; }
+
+    .product-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    .product-price     { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; color: var(--accent); }
+    .product-unit      { font-size: 11.5px; color: var(--muted); }
+    .product-actions   { display: flex; gap: 6px; margin-top: 10px; }
+
+    /* ── Center helper ── */
+    .center { text-align: center; margin-top: 6px; margin-bottom: 36px; }
+
+    /* ── Map ── */
+    .map-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        margin-bottom: 36px;
+    }
+    .map-card-header {
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .map-card-header .map-icon {
+        width: 32px; height: 32px;
+        background: var(--accent-lt);
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+    .map-card-header .map-title { font-size: 14px; font-weight: 600; }
+    .map-card-header .map-sub   { font-size: 12px; color: var(--muted); }
+
+    .map-legend {
+        padding: 12px 22px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        background: var(--bg);
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    #marketMap { height: 580px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+        .hero          { grid-template-columns: 1fr; }
+        .basket-card   { display: none; }
+        .vendor-grid   { grid-template-columns: repeat(2, 1fr); }
+        .product-grid  { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+        .page          { padding: 20px 16px; }
+        .hero          { padding: 28px 22px; }
+        .hero-title    { font-size: 26px; }
+        .quick-grid    { grid-template-columns: 1fr; }
+        .vendor-grid   { grid-template-columns: 1fr; }
+        .product-grid  { grid-template-columns: 1fr; }
     }
 </style>
+
+{{-- Admin Banner --}}
+@if(auth()->check() && auth()->user()->role === 'administrator' && request('view_site'))
+<div class="notice-bar">
+    <span>👁 You are viewing the public site as an administrator</span>
+    <a href="{{ route('admin.dashboard.index') }}">← Back to Admin</a>
+</div>
+@endif
+
+{{-- Customer Welcome --}}
+@if(auth()->check() && auth()->user()->role === 'customer')
+<div class="welcome-bar">
+    👋 Welcome back, <strong>{{ auth()->user()->customer->first_name }}</strong>! Ready to shop?
+</div>
+@endif
+
+<div class="page">
+
+    {{-- ── Hero ── --}}
+    <div class="hero">
+        <div class="hero-left">
+            <div class="hero-eyebrow"><span></span> AANI Wet Market</div>
+            <h1 class="hero-title">Your neighborhood<br>market, <em>online.</em></h1>
+            <p class="hero-desc">Shop fresh seafood, meat, fruits, vegetables, and native favorites from trusted AANI vendors. Browse stalls like you do on-site and order from your phone.</p>
+            <div class="hero-ctas">
+                <a href="{{ route('shop.index') }}" class="btn-primary">
+                    🛒 Start Shopping
+                </a>
+                <button class="btn-ghost" onclick="document.getElementById('market-map-section').scrollIntoView({behavior:'smooth'})">
+                    🗺 Explore Map
+                </button>
+            </div>
+            <div class="hero-trust">
+                <div class="trust-item"><span class="trust-dot"></span> Verified vendors</div>
+                <div class="trust-item"><span class="trust-dot"></span> Pickup & delivery</div>
+                <div class="trust-item"><span class="trust-dot"></span> One cart, multiple stalls</div>
+            </div>
+        </div>
+
+        <div class="basket-card">
+            <div class="basket-header">
+                <div class="basket-icon">🧺</div>
+                <div class="basket-header-text">
+                    <div class="label">Today's Market Basket</div>
+                    <div class="sub">Build your order from different stalls</div>
+                </div>
+            </div>
+            <div class="basket-item">
+                <div>
+                    <div class="item-name">🥬 Organic Greens</div>
+                    <div class="item-stall">Stall VEG-12</div>
+                </div>
+                <div class="item-price">₱180</div>
+            </div>
+            <div class="basket-item">
+                <div>
+                    <div class="item-name">🥚 Free-range Eggs</div>
+                    <div class="item-stall">Stall FD-04</div>
+                </div>
+                <div class="item-price">₱140</div>
+            </div>
+            <div class="basket-item">
+                <div>
+                    <div class="item-name">🌿 Herbs Bundle</div>
+                    <div class="item-stall">Stall PLT-07</div>
+                </div>
+                <div class="item-price">₱95</div>
+            </div>
+            <div class="basket-total">
+                <span class="total-label">Estimated total</span>
+                <span class="total-value">₱415</span>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── Quick Actions ── --}}
+    <div class="section-header">
+        <div class="section-title">What are you looking for?</div>
+    </div>
+    <div class="quick-grid">
+        <div class="quick-card">
+            <div class="quick-icon green">🏪</div>
+            <h5>Browse Shops</h5>
+            <p>Explore all vendors and their products across the market</p>
+            <a href="{{ route('shop.index') }}" class="btn-sm green">Browse Now</a>
+        </div>
+        <div class="quick-card">
+            <div class="quick-icon slate">🗺</div>
+            <h5>Market Map</h5>
+            <p>Find vendors by location and explore the stall layout</p>
+            <button class="btn-sm outline" onclick="document.getElementById('market-map-section').scrollIntoView({behavior:'smooth'})">View Map</button>
+        </div>
+        <div class="quick-card">
+            <div class="quick-icon amber">🛒</div>
+            @auth
+                <h5>Your Cart</h5>
+                <p>You're signed in. Review your cart and place orders anytime.</p>
+                <a href="{{ route('getCart') }}" class="btn-sm amber">View Cart</a>
+            @else
+                <h5>Sign In to Order</h5>
+                <p>Create an account or login to manage your cart and orders.</p>
+                <a href="{{ route('auth.login') }}" class="btn-sm amber">Login</a>
+            @endauth
+        </div>
+    </div>
+
+    {{-- ── Featured Vendors ── --}}
+    @if($featuredVendors->count() > 0)
+    <div class="section-header">
+        <div class="section-title">Featured Vendors</div>
+        <a href="{{ route('shop.index') }}" class="section-link">View all →</a>
+    </div>
+    <div class="vendor-grid">
+        @foreach($featuredVendors as $vendor)
+        <div class="vendor-card">
+            <div class="vendor-header">
+                <div class="vendor-avatar">
+                    @if($vendor->logo_url)
+                        <img src="{{ asset('storage/' . $vendor->logo_url) }}" alt="{{ $vendor->business_name }}">
+                    @else
+                        🏪
+                    @endif
+                </div>
+                <div>
+                    <div class="vendor-name">{{ $vendor->business_name }}</div>
+                    <div class="vendor-count">{{ $vendor->product_count }} products</div>
+                </div>
+            </div>
+            @if($vendor->business_description)
+                <div class="vendor-desc">{{ Str::limit($vendor->business_description, 80) }}</div>
+            @endif
+            <a href="{{ route('shop.show', $vendor->id) }}" class="btn-sm green">Visit Shop</a>
+        </div>
+        @endforeach
+    </div>
+    <div class="center">
+        <a href="{{ route('shop.index') }}" class="btn-ghost">View All Vendors</a>
+    </div>
+    @endif
+
+    {{-- ── Recent Products ── --}}
+    @if($featuredProducts->count() > 0)
+    <div class="section-header">
+        <div class="section-title">Recent Products</div>
+        <a href="{{ route('shop.index') }}" class="section-link">Browse all →</a>
+    </div>
+    <div class="product-grid">
+        @foreach($featuredProducts as $product)
+        <div class="product-card">
+            <div class="product-img">
+                @if($product->product_image_url)
+                    <img src="{{ asset($product->product_image_url) }}" alt="{{ $product->product_name }}">
+                @else
+                    🛍
+                @endif
+            </div>
+            <div class="product-body">
+                <div class="product-name">{{ $product->product_name }}</div>
+                <div class="product-vendor">{{ $product->business_name }}</div>
+                @if($product->description)
+                    <div class="product-desc">{{ Str::limit($product->description, 55) }}</div>
+                @endif
+                <div class="product-footer">
+                    <div>
+                        <div class="product-price">₱{{ number_format($product->price_per_unit, 2) }}</div>
+                        <div class="product-unit">per {{ $product->unit_type }}</div>
+                    </div>
+                </div>
+                <div class="product-actions">
+                    <a href="{{ route('shop.product', $product->id) }}" class="btn-sm outline" style="flex:1; justify-content:center;">View</a>
+                    <a href="{{ route('shop.show', $product->vendor_id) }}" class="btn-sm green" style="flex:1; justify-content:center;">Shop</a>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+    <div class="center">
+        <a href="{{ route('shop.index') }}" class="btn-ghost">Browse All Products</a>
+    </div>
+    @endif
+
+    {{-- ── Market Map ── --}}
+    <div id="market-map-section">
+        <div class="section-header">
+            <div class="section-title">Market Map</div>
+        </div>
+        <div class="map-card">
+            <div class="map-card-header">
+                <div class="map-icon">🗺</div>
+                <div>
+                    <div class="map-title">Interactive Stall Map</div>
+                    <div class="map-sub">Click any stall to visit the vendor's shop</div>
+                </div>
+            </div>
+            <div class="map-legend">
+                <div class="legend-item"><span class="legend-dot" style="background:#228B22;"></span> Vegetables (VEG)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#9400D3;"></span> Plants & Flowers (PLT)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#8B4513;"></span> Meat & Fish (MF)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#FF8C00;"></span> Food (FD)</div>
+            </div>
+            <div id="marketMap"></div>
+        </div>
+    </div>
+
+</div>
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 @endpush
 
 @push('scripts')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Hardcoded market map image
     const mapImageUrl = '{{ asset("storage/maps/marketmap.png") }}';
-    let map, imageOverlay, markers = [];
-    
-    // Initialize map
-    map = L.map('marketMap', {
-        crs: L.CRS.Simple,
-        minZoom: -2,
-        maxZoom: 2
-    });
-    
-    // Load image and set bounds
+    let map, markers = [];
+
+    map = L.map('marketMap', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2 });
+
     const img = new Image();
     img.onload = function() {
         const bounds = [[0, 0], [this.height, this.width]];
-        imageOverlay = L.imageOverlay(mapImageUrl, bounds).addTo(map);
+        L.imageOverlay(mapImageUrl, bounds).addTo(map);
         map.fitBounds(bounds);
-        
-        // Add stall markers
         loadStalls();
     };
     img.onerror = function() {
-        document.getElementById('marketMap').innerHTML = '<div class="alert alert-danger m-3">Failed to load map image</div>';
+        document.getElementById('marketMap').innerHTML = '<div style="padding:24px;color:#7A7871;font-size:13px;">Failed to load map image.</div>';
     };
     img.src = mapImageUrl;
-    
-    // Load existing stalls
+
     function loadStalls() {
         @foreach($stalls as $stall)
             @if($stall->x1 && $stall->y1 && $stall->x2 && $stall->y2)
-                addStallRectangle({{ $stall->stall_id }}, {{ $stall->x1 }}, {{ $stall->y1 }}, {{ $stall->x2 }}, {{ $stall->y2 }}, '{{ $stall->stall_number }}', {{ $stall->vendor_id }}, '{{ $stall->business_name }}', '{{ $stall->section_code ?? '' }}', {{ $stall->weekend_pickup_enabled ? 'true' : 'false' }}, {{ $stall->weekday_delivery_enabled ? 'true' : 'false' }}, {{ $stall->weekend_delivery_enabled ? 'true' : 'false' }});
+                addStall(
+                    {{ $stall->stall_id }},
+                    {{ $stall->x1 }}, {{ $stall->y1 }}, {{ $stall->x2 }}, {{ $stall->y2 }},
+                    '{{ $stall->stall_number }}',
+                    {{ $stall->vendor_id }},
+                    '{{ addslashes($stall->business_name) }}',
+                    '{{ $stall->section_code ?? '' }}',
+                    {{ $stall->weekend_pickup_enabled ? 'true' : 'false' }},
+                    {{ $stall->weekday_delivery_enabled ? 'true' : 'false' }},
+                    {{ $stall->weekend_delivery_enabled ? 'true' : 'false' }}
+                );
             @endif
         @endforeach
     }
-    
-    // Add stall rectangle
-    function addStallRectangle(id, x1, y1, x2, y2, stallNumber, vendorId, businessName, sectionCode, weekendPickup, weekdayDelivery, weekendDelivery) {
-        // Section-specific colors
-        const sectionColors = {
-            'VEG': 'rgba(34, 139, 34, 0.7)',     // Forest Green for Vegetables
-            'PLT': 'rgba(148, 0, 211, 0.7)',     // Dark Violet for Plants/Flowers
-            'MF': 'rgba(139, 69, 19, 0.7)',      // Saddle Brown for Meat & Fish
-            'FD': 'rgba(255, 140, 0, 0.7)'       // Dark Orange for Food
+
+    function addStall(id, x1, y1, x2, y2, stallNumber, vendorId, businessName, sectionCode, weekendPickup, weekdayDelivery, weekendDelivery) {
+        const colors = {
+            'VEG': '#228B22',
+            'PLT': '#9400D3',
+            'MF':  '#8B4513',
+            'FD':  '#FF8C00'
         };
-        
-        const fillColor = sectionColors[sectionCode] || 'rgba(0, 123, 255, 0.7)';
-        const borderColor = fillColor.replace('0.7', '1');
-        
-        // Ensure proper ordering
-        const bounds = [[Math.min(y1, y2), Math.min(x1, x2)], [Math.max(y1, y2), Math.max(x1, x2)]];
-        
-        const rectangle = L.rectangle(bounds, {
-            color: borderColor,
-            fillColor: fillColor,
-            weight: 2,
-            opacity: 0.8,
-            fillOpacity: 0.5
+        const color = colors[sectionCode] || '#1D6F42';
+        const bounds = [[Math.min(y1,y2), Math.min(x1,x2)], [Math.max(y1,y2), Math.max(x1,x2)]];
+
+        const rect = L.rectangle(bounds, {
+            color, fillColor: color, weight: 2, opacity: 0.9, fillOpacity: 0.45
         }).addTo(map);
-        
-        rectangle.stallData = { id, stallNumber, vendorId, businessName, bounds };
-        markers.push(rectangle);
-        
-        // Add stall number label in center
-        const center = L.latLng(
-            (bounds[0][0] + bounds[1][0]) / 2,
-            (bounds[0][1] + bounds[1][1]) / 2
-        );
-        
-        // Build service badges
-        let serviceBadges = [];
-        if (weekendPickup) serviceBadges.push('🏪 Weekend Pickup');
-        if (weekdayDelivery) serviceBadges.push('🚚 Weekday Delivery');
-        if (weekendDelivery) serviceBadges.push('🚚 Weekend Delivery');
-        
-        const label = L.divIcon({
-            className: 'stall-label',
-            html: `<div style="background: white; border: 3px solid ${borderColor}; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;">${stallNumber}</div>`,
-            iconSize: [35, 35],
-            iconAnchor: [17.5, 17.5]
+
+        const center = L.latLng((bounds[0][0]+bounds[1][0])/2, (bounds[0][1]+bounds[1][1])/2);
+
+        const icon = L.divIcon({
+            className: '',
+            html: `<div style="background:#fff;border:2.5px solid ${color};border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer;">${stallNumber}</div>`,
+            iconSize: [32,32], iconAnchor: [16,16]
         });
-        
-        const labelMarker = L.marker(center, { icon: label }).addTo(map);
-        labelMarker.stallData = rectangle.stallData;
-        markers.push(labelMarker);
-        
-        // Popup content
-        const popupContent = `
-            <div style="min-width: 200px;">
-                <h6><strong>${businessName}</strong></h6>
-                <p class="mb-1"><strong>Stall:</strong> ${stallNumber}</p>
-                <p class="mb-1"><strong>Section:</strong> ${sectionCode || 'N/A'}</p>
-                ${serviceBadges.length > 0 ? '<p class="mb-2"><strong>Services:</strong><br>' + serviceBadges.join(' | ') + '</p>' : ''}
-                <button class="btn btn-primary btn-sm" onclick="window.location.href='/shop/${vendorId}'">
-                    🛒 View Shop
-                </button>
-            </div>
-        `;
-        
-        rectangle.bindPopup(popupContent);
-        labelMarker.bindPopup(popupContent);
-        
-        // Click handler - redirect to shop
-        [rectangle, labelMarker].forEach(element => {
-            element.on('click', function(e) {
-                if (!e.originalEvent.target.closest('.leaflet-popup-content')) {
-                    window.location.href = `/shop/${vendorId}`;
-                }
-            });
-            
-            // Hover effect
-            element.on('mouseover', function() {
-                this.setStyle({ fillOpacity: 0.8, weight: 3 });
-            });
-            
-            element.on('mouseout', function() {
-                this.setStyle({ fillOpacity: 0.5, weight: 2 });
-            });
+        const label = L.marker(center, { icon }).addTo(map);
+
+        let services = [];
+        if (weekendPickup) services.push('🏪 Weekend Pickup');
+        if (weekdayDelivery) services.push('🚚 Weekday Delivery');
+        if (weekendDelivery) services.push('🚚 Weekend Delivery');
+
+        const popup = `
+            <div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:2px;">
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${businessName}</div>
+                <div style="font-size:12px;color:#7A7871;margin-bottom:2px;">Stall ${stallNumber} &middot; Section ${sectionCode||'N/A'}</div>
+                ${services.length ? `<div style="font-size:12px;color:#7A7871;margin-bottom:10px;">${services.join(' · ')}</div>` : '<div style="margin-bottom:10px;"></div>'}
+                <a href="/shop/${vendorId}" style="display:inline-block;padding:6px 14px;background:#1D6F42;color:#fff;border-radius:6px;font-size:12.5px;font-weight:600;text-decoration:none;">Visit Shop →</a>
+            </div>`;
+
+        rect.bindPopup(popup);
+        label.bindPopup(popup);
+
+        [rect, label].forEach(el => {
+            el.on('mouseover', () => rect.setStyle({ fillOpacity: 0.7 }));
+            el.on('mouseout',  () => rect.setStyle({ fillOpacity: 0.45 }));
         });
+
+        markers.push(rect, label);
     }
 });
 </script>
 @endpush
+
+@endsection

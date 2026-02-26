@@ -11,7 +11,7 @@ class SampleDataSeeder extends Seeder
     public function run()
     {
         $profileImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
-        $productImagePath = 'storage/maps/1769326582_6975c7f61ae02.jpg';
+        $productImagePath = 'storage/products/product-placeholder.svg';
 
         // Create sample users for vendors
         $vendorUsers = [
