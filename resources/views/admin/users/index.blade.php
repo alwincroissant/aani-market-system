@@ -590,13 +590,25 @@ function selectStallPoint(e) {
     // If not clicking on existing stall, proceed with 2-point selection
     if (!clickedStall) {
         if (stallPoints.length === 0) {
-            stallPoints.push([lat, lng]);
-            // Add temporary marker
-            L.marker([lat, lng]).addTo(stallMap);
+            stallPoints.push({ x: lng, y: lat });
+            // Add a temporary marker for the clicked point
+            const tempMarker = L.circleMarker([lat, lng], {
+                radius: 5,
+                fillColor: '#ff7800',
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(stallMap);
+            
+            // Update coordinate fields
+            document.getElementById('x1').value = lng.toFixed(2);
+            document.getElementById('y1').value = lat.toFixed(2);
         } else if (stallPoints.length === 1) {
-            stallPoints.push([lat, lng]);
+            stallPoints.push({ x: lng, y: lat });
+            
             // Create rectangle from two points
-            const bounds = [stallPoints[0], stallPoints[1]];
+            const bounds = [[stallPoints[0].y, stallPoints[0].x], [stallPoints[1].y, stallPoints[1].x]];
             if (tempStallRectangle) {
                 stallMap.removeLayer(tempStallRectangle);
             }
@@ -607,10 +619,8 @@ function selectStallPoint(e) {
             }).addTo(stallMap);
             
             // Fill coordinate fields
-            document.getElementById('x1').value = Math.min(stallPoints[0][0], stallPoints[1][0]).toFixed(2);
-            document.getElementById('y1').value = Math.min(stallPoints[0][1], stallPoints[1][1]).toFixed(2);
-            document.getElementById('x2').value = Math.max(stallPoints[0][0], stallPoints[1][0]).toFixed(2);
-            document.getElementById('y2').value = Math.max(stallPoints[0][1], stallPoints[1][1]).toFixed(2);
+            document.getElementById('x2').value = lng.toFixed(2);
+            document.getElementById('y2').value = lat.toFixed(2);
         } else {
             // Reset for new selection
             if (tempStallRectangle) {
@@ -620,7 +630,7 @@ function selectStallPoint(e) {
             stallPoints = [];
             // Clear temporary markers
             stallMap.eachLayer(function(layer) {
-                if (layer instanceof L.Marker && !layer.stallData) {
+                if (layer instanceof L.CircleMarker && !layer.stallData) {
                     stallMap.removeLayer(layer);
                 }
             });
