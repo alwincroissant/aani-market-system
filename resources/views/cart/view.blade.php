@@ -32,7 +32,6 @@
 
     a { color: inherit; text-decoration: none; }
 
-    /* ── Page ── */
     .page { padding: 28px; max-width: 1100px; margin: 0 auto; }
 
     .page-header {
@@ -44,7 +43,6 @@
     .page-header h1 { font-size: 20px; font-weight: 600; }
     .page-header p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
-    /* ── Layout ── */
     .cart-layout {
         display: grid;
         grid-template-columns: 1fr 300px;
@@ -52,7 +50,6 @@
         align-items: start;
     }
 
-    /* ── Cart Card ── */
     .cart-card {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -87,7 +84,6 @@
         color: var(--muted);
     }
 
-    /* Checkbox styling */
     input[type="checkbox"] {
         width: 16px; height: 16px;
         accent-color: var(--accent);
@@ -96,7 +92,6 @@
         margin: 0;
     }
 
-    /* ── Cart Row ── */
     .cart-row {
         display: grid;
         grid-template-columns: 20px 52px 1fr auto auto auto auto;
@@ -110,7 +105,6 @@
     .cart-row:hover { background: #faf9f7; }
     .cart-row.unchecked { opacity: .55; }
 
-    /* Product image */
     .cart-thumb {
         width: 52px; height: 52px;
         border-radius: 8px;
@@ -125,7 +119,6 @@
     }
     .cart-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    /* Product info */
     .cart-product-name { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
     .cart-product-unit { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .cart-vendor {
@@ -141,7 +134,6 @@
         align-self: flex-start;
     }
 
-    /* Price */
     .cart-price {
         font-family: 'DM Mono', monospace;
         font-size: 13px;
@@ -150,7 +142,6 @@
         text-align: right;
     }
 
-    /* Qty stepper */
     .qty-control {
         display: flex;
         align-items: center;
@@ -168,14 +159,12 @@
         color: var(--text);
         display: flex; align-items: center; justify-content: center;
         transition: background .12s;
-        text-decoration: none;
         flex-shrink: 0;
         line-height: 1;
     }
     .qty-btn:hover { background: var(--border); }
-    .qty-input {
+    .qty-display {
         width: 36px; height: 32px;
-        border: none;
         border-left: 1px solid var(--border);
         border-right: 1px solid var(--border);
         text-align: center;
@@ -184,16 +173,11 @@
         font-weight: 600;
         color: var(--text);
         background: var(--surface);
-        outline: none;
-        padding: 0;
-    }
-    .qty-input::-webkit-outer-spin-button,
-    .qty-input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Row total */
     .cart-row-total {
         font-family: 'DM Mono', monospace;
         font-size: 13.5px;
@@ -204,7 +188,6 @@
         min-width: 72px;
     }
 
-    /* Remove */
     .btn-remove {
         display: flex;
         align-items: center;
@@ -226,7 +209,6 @@
     }
     .btn-remove svg { width: 14px; height: 14px; }
 
-    /* ── Summary Card ── */
     .summary-card {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -274,7 +256,7 @@
         margin-bottom: 20px;
     }
     .summary-total .label { font-size: 14px; font-weight: 600; color: var(--text); }
-    .summary-total .val   {
+    .summary-total .val {
         font-family: 'DM Mono', monospace;
         font-size: 20px;
         font-weight: 600;
@@ -334,7 +316,6 @@
         line-height: 1.5;
     }
 
-    /* ── Empty State ── */
     .empty-state {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -364,7 +345,6 @@
     }
     .btn-primary:hover { background: var(--accent-dk); }
 
-    /* ── Responsive ── */
     @media (max-width: 860px) {
         .cart-layout { grid-template-columns: 1fr; }
         .summary-card { position: static; }
@@ -414,7 +394,6 @@
                 <input type="checkbox"
                        class="item-checkbox"
                        data-item-id="{{ $itemId }}"
-                       data-price="{{ $item['price'] }}"
                        checked>
 
                 {{-- Thumb --}}
@@ -440,13 +419,13 @@
 
                 {{-- Qty --}}
                 <div class="qty-control">
-                    <a href="{{ route('reduceByOne', $itemId) }}" class="qty-btn">−</a>
-                    <input type="number" class="qty-input" id="quantityInput-{{ $itemId }}" value="{{ $item['qty'] }}" min="1" data-price="{{ $item['item']->price_per_unit }}" data-item-id="{{ $itemId }}">
-                    <a href="{{ route('addToCart', $itemId) }}" class="qty-btn">+</a>
+                    <button type="button" class="qty-btn" onclick="changeQty('{{ $itemId }}', -1)">−</button>
+                    <span class="qty-display" id="qty-{{ $itemId }}">{{ $item['qty'] }}</span>
+                    <button type="button" class="qty-btn" onclick="changeQty('{{ $itemId }}', 1)">+</button>
                 </div>
 
                 {{-- Row total --}}
-                <div class="cart-row-total">₱{{ number_format($item['price'], 2) }}</div>
+                <div class="cart-row-total" id="rowtotal-{{ $itemId }}">₱{{ number_format($item['price'], 2) }}</div>
 
                 {{-- Remove --}}
                 <a href="{{ route('removeItem', $itemId) }}" class="btn-remove" title="Remove item">
@@ -511,20 +490,89 @@
 
 @push('scripts')
 <script>
+// ── Seed item data from Blade ──────────────────────────────────────────────
+const itemData = {
+    @foreach($products as $itemId => $item)
+    '{{ $itemId }}': {
+        unitPrice: {{ $item['item']->price_per_unit }},
+        qty: {{ $item['qty'] }}
+    },
+    @endforeach
+};
+
+// ── Pending sync state ─────────────────────────────────────────────────────
+let pendingSync = false;
+const syncTimers = {};
+
+// ── Format helper ──────────────────────────────────────────────────────────
+function formatPeso(amount) {
+    return '₱' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// ── Persist qty to backend, returns a Promise ──────────────────────────────
+function syncQtyToBackend(itemId, qty) {
+    return fetch('/cart/add/' + itemId + '?quantity=' + qty).catch(() => {});
+}
+
+// ── Change qty ─────────────────────────────────────────────────────────────
+function changeQty(itemId, delta) {
+    const d = itemData[itemId];
+    const newQty = d.qty + delta;
+
+    if (newQty < 1) {
+        // Sync any other pending changes first, then navigate
+        Promise.all(
+            Object.keys(syncTimers).map(id => {
+                clearTimeout(syncTimers[id].timer);
+                return syncQtyToBackend(id, syncTimers[id].qty);
+            })
+        ).then(() => {
+            window.location.href = '/cart/remove/' + itemId;
+        });
+        return;
+    }
+
+    d.qty = newQty;
+
+    // Update qty display
+    document.getElementById('qty-' + itemId).textContent = newQty;
+
+    // Update row total
+    const rowTotal = d.unitPrice * newQty;
+    const rowTotalEl = document.getElementById('rowtotal-' + itemId);
+    if (rowTotalEl) rowTotalEl.textContent = formatPeso(rowTotal);
+
+    updateTotals();
+
+    // Mark as pending and debounce the backend sync
+    pendingSync = true;
+    clearTimeout(syncTimers[itemId]?.timer);
+    syncTimers[itemId] = {
+        qty: newQty,
+        timer: setTimeout(() => {
+            syncQtyToBackend(itemId, newQty).then(() => {
+                delete syncTimers[itemId];
+                if (Object.keys(syncTimers).length === 0) pendingSync = false;
+            });
+        }, 400)
+    };
+}
+
+// ── Update summary totals ──────────────────────────────────────────────────
 function updateTotals() {
-    const checkboxes    = document.querySelectorAll('.item-checkbox');
-    const subtotalEl    = document.getElementById('selectedSubtotal');
-    const totalEl       = document.getElementById('selectedTotal');
-    const countEl       = document.getElementById('itemsSelected');
+    const checkboxes     = document.querySelectorAll('.item-checkbox');
+    const subtotalEl     = document.getElementById('selectedSubtotal');
+    const totalEl        = document.getElementById('selectedTotal');
+    const countEl        = document.getElementById('itemsSelected');
     const checkedCountEl = document.getElementById('checkedCount');
-    const checkoutBtn   = document.getElementById('checkoutBtn');
-    let subtotal = 0;
-    let count = 0;
+    const checkoutBtn    = document.getElementById('checkoutBtn');
+    let subtotal = 0, count = 0;
 
     checkboxes.forEach(cb => {
         const row = document.getElementById('row-' + cb.dataset.itemId);
         if (cb.checked) {
-            subtotal += parseFloat(cb.dataset.price);
+            const d = itemData[cb.dataset.itemId];
+            subtotal += d.unitPrice * d.qty;
             count++;
             row?.classList.remove('unchecked');
         } else {
@@ -532,30 +580,62 @@ function updateTotals() {
         }
     });
 
-    if (subtotalEl) subtotalEl.textContent   = '₱' + subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    if (totalEl) totalEl.textContent      = '₱' + subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    if (countEl) countEl.textContent      = count;
+    if (subtotalEl)     subtotalEl.textContent    = formatPeso(subtotal);
+    if (totalEl)        totalEl.textContent        = formatPeso(subtotal);
+    if (countEl)        countEl.textContent        = count;
     if (checkedCountEl) checkedCountEl.textContent = count + ' selected';
-    if (checkoutBtn) checkoutBtn.disabled = count === 0;
+    if (checkoutBtn)    checkoutBtn.disabled       = count === 0;
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    const selectAll     = document.getElementById('selectAll');
-    const checkboxes    = document.querySelectorAll('.item-checkbox');
-    const qtyInputs     = document.querySelectorAll('.qty-input');
+// ── Checkout: flush all pending syncs first, THEN submit ──────────────────
+function proceedToCheckout() {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+    if (checked.length === 0) {
+        alert('Please select at least one item to checkout.');
+        return;
+    }
 
-    // Handle quantity input changes
-    qtyInputs.forEach(input => {
-        input.addEventListener('change', function () {
-            const itemId = this.dataset.itemId;
-            const pricePerUnit = parseFloat(this.dataset.price);
-            const newQty = Math.max(1, parseInt(this.value) || 1);
-            this.value = newQty;
-            
-            // Submit the quantity change to the backend
-            window.location.href = `/cart/add/${itemId}?quantity=${newQty}`;
-        });
+    const selectedItems = Array.from(checked).map(cb => cb.dataset.itemId);
+
+    // Flush all pending debounced syncs before navigating
+    const flushPromises = Object.keys(syncTimers).map(id => {
+        clearTimeout(syncTimers[id].timer);
+        return syncQtyToBackend(id, syncTimers[id].qty);
     });
+
+    Promise.all(flushPromises).then(() => {
+        pendingSync = false;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route('checkout.index') }}';
+
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+
+        const items = document.createElement('input');
+        items.type = 'hidden'; items.name = 'selected_items';
+        items.value = JSON.stringify(selectedItems);
+        form.appendChild(items);
+
+        document.body.appendChild(form);
+        form.submit();
+    });
+}
+
+// ── Warn if user navigates away via browser back/other links while pending ─
+window.addEventListener('beforeunload', function (e) {
+    if (pendingSync) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// ── Page init ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll  = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.item-checkbox');
 
     selectAll.addEventListener('change', function () {
         checkboxes.forEach(cb => cb.checked = this.checked);
@@ -574,36 +654,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateTotals();
 });
-
-function proceedToCheckout() {
-    const checked = document.querySelectorAll('.item-checkbox:checked');
-
-    if (checked.length === 0) {
-        alert('Please select at least one item to checkout.');
-        return;
-    }
-
-    const selectedItems = Array.from(checked).map(cb => cb.dataset.itemId);
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '{{ route('checkout.index') }}';
-
-    const csrf = document.createElement('input');
-    csrf.type = 'hidden';
-    csrf.name = '_token';
-    csrf.value = '{{ csrf_token() }}';
-    form.appendChild(csrf);
-
-    const items = document.createElement('input');
-    items.type  = 'hidden';
-    items.name  = 'selected_items';
-    items.value = JSON.stringify(selectedItems);
-    form.appendChild(items);
-
-    document.body.appendChild(form);
-    form.submit();
-}
 </script>
 @endpush
 

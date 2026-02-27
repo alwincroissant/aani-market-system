@@ -34,16 +34,35 @@ class Cart
 
     public function reduceByOne($id)
     {
+        if (!array_key_exists($id, $this->items)) return;
+
+        $unitPrice = $this->items[$id]['item']->price_per_unit;
+
         if ($this->items[$id]['qty'] > 1) {
             $this->items[$id]['qty']--;
-            $this->items[$id]['price'] -= $this->items[$id]['item']->price_per_unit;
+            $this->items[$id]['price'] -= $unitPrice;
             $this->totalQty--;
-            $this->totalPrice -= $this->items[$id]['item']->price_per_unit;
+            $this->totalPrice -= $unitPrice;
         } else {
-            unset($this->items[$id]);
+            // qty is 1 — remove entirely
             $this->totalQty--;
-            $this->totalPrice -= $this->items[$id]['item']->price_per_unit;
+            $this->totalPrice -= $unitPrice;
+            unset($this->items[$id]); // unset AFTER reading price
         }
+    }
+
+    public function setQuantity($id, $quantity)
+    {
+        if (!array_key_exists($id, $this->items)) return;
+
+        $unitPrice = $this->items[$id]['item']->price_per_unit;
+        $oldQty    = $this->items[$id]['qty'];
+        $diff      = $quantity - $oldQty;
+
+        $this->items[$id]['qty']   = $quantity;
+        $this->items[$id]['price'] = $unitPrice * $quantity;
+        $this->totalQty            += $diff;
+        $this->totalPrice          += $unitPrice * $diff;
     }
 
     public function removeItem($id)

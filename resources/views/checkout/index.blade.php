@@ -18,7 +18,7 @@
                                 <div class="card-header">
                                     <h5 class="mb-0">
                                         {{ $vendorInfo[$vendorId]->business_name }}
-                                        <small class="text-muted">({{ count($items) }} items)</small>
+                                        <small class="text-muted">(<span id="vendor-item-count-{{ $vendorId }}">{{ count($items) }}</span> items)</small>
                                         @if(isset($vendorInfo[$vendorId]))
                                             <div class="float-end">
                                                 @if($vendorInfo[$vendorId]->weekend_pickup_enabled)
@@ -36,7 +36,7 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive">
-                                        <table class="table">
+                                        <table class="table" id="vendor-table-{{ $vendorId }}">
                                             <thead>
                                                 <tr>
                                                     <th>Product</th>
@@ -47,7 +47,7 @@
                                             </thead>
                                             <tbody>
                                                 @foreach($items as $itemId => $item)
-                                                    <tr>
+                                                    <tr id="checkout-row-{{ $itemId }}">
                                                         <td>
                                                             <div class="d-flex align-items-center">
                                                                 <img src="{{ $item['item']->product_image_url ?? '/images/default-product.jpg' }}" 
@@ -61,15 +61,25 @@
                                                             </div>
                                                         </td>
                                                         <td>₱{{ number_format($item['item']->price_per_unit, 2) }}</td>
-                                                        <td>{{ $item['qty'] }}</td>
-                                                        <td>₱{{ number_format($item['price'], 2) }}</td>
+                                                        <td>
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-secondary"
+                                                                        onclick="checkoutChangeQty('{{ $itemId }}', {{ $vendorId }}, -1)">−</button>
+                                                                <span id="checkout-qty-{{ $itemId }}" class="fw-semibold px-1">{{ $item['qty'] }}</span>
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-secondary"
+                                                                        onclick="checkoutChangeQty('{{ $itemId }}', {{ $vendorId }}, 1)">+</button>
+                                                            </div>
+                                                        </td>
+                                                        <td id="checkout-rowtotal-{{ $itemId }}">₱{{ number_format($item['price'], 2) }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
                                             <tfoot>
                                                 <tr class="table-primary">
                                                     <th colspan="3">Vendor Subtotal</th>
-                                                    <th>₱{{ number_format(array_sum(array_column($items, 'price')), 2) }}</th>
+                                                    <th id="checkout-vendortotal-{{ $vendorId }}">₱{{ number_format(array_sum(array_column($items, 'price')), 2) }}</th>
                                                 </tr>
                                             </tfoot>
                                         </table>
@@ -242,11 +252,11 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Subtotal:</span>
-                                    <strong>₱{{ number_format($totalPrice, 2) }}</strong>
+                                    <strong id="orderSubtotal">₱{{ number_format($totalPrice, 2) }}</strong>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Delivery Fees:</span>
-                                    <strong id="deliveryFees">₱0</strong>
+                                    <strong id="deliveryFees">₱0.00</strong>
                                 </div>
                                 <hr>
                                 <div class="d-flex justify-content-between mb-3">
@@ -279,44 +289,145 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const deliveryAddressSection = document.getElementById('deliveryAddressSection');
-    const aaaniMarketPickupInfo = document.getElementById('aaaniMarketPickupInfo');
-    const deliveryOptions = document.querySelectorAll('.delivery-option');
-    const addressInputs = document.querySelectorAll('input[name="selected_address"]');
+// ── Seed item data from Blade ──────────────────────────────────────────────
+const checkoutItems = {
+    @foreach($groupedCart as $vendorId => $items)
+        @foreach($items as $itemId => $item)
+        '{{ $itemId }}': {
+            unitPrice: {{ $item['item']->price_per_unit }},
+            qty:       {{ $item['qty'] }},
+            vendorId:  {{ $vendorId }}
+        },
+        @endforeach
+    @endforeach
+};
+
+// ── Pending sync state ─────────────────────────────────────────────────────
+let pendingSync = false;
+const syncTimers = {};
+
+// ── Format helper ──────────────────────────────────────────────────────────
+function formatPeso(amount) {
+    return '₱' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// ── Persist qty to backend ─────────────────────────────────────────────────
+function syncQtyToBackend(itemId, qty) {
+    return fetch('/cart/add/' + itemId + '?quantity=' + qty).catch(() => {});
+}
+
+// ── Qty change ─────────────────────────────────────────────────────────────
+function checkoutChangeQty(itemId, vendorId, delta) {
+    const d = checkoutItems[itemId];
+    const newQty = d.qty + delta;
+
+    if (newQty < 1) {
+        if (!confirm('Remove this item from your order?')) return;
+        // Flush all pending syncs, then remove
+        Promise.all(
+            Object.keys(syncTimers).map(id => {
+                clearTimeout(syncTimers[id].timer);
+                return syncQtyToBackend(id, syncTimers[id].qty);
+            })
+        ).then(() => {
+            window.location.href = '/cart/remove/' + itemId;
+        });
+        return;
+    }
+
+    d.qty = newQty;
+
+    // Update qty display
+    document.getElementById('checkout-qty-' + itemId).textContent = newQty;
+
+    // Update row total
+    const rowTotal = d.unitPrice * newQty;
+    const rowEl = document.getElementById('checkout-rowtotal-' + itemId);
+    if (rowEl) rowEl.textContent = formatPeso(rowTotal);
+
+    // Recalculate vendor subtotal
+    let vendorSubtotal = 0;
+    Object.values(checkoutItems).forEach(item => {
+        if (item.vendorId === vendorId) vendorSubtotal += item.unitPrice * item.qty;
+    });
+    const vendorEl = document.getElementById('checkout-vendortotal-' + vendorId);
+    if (vendorEl) vendorEl.textContent = formatPeso(vendorSubtotal);
+
+    // Recalculate order summary
+    calculateDeliveryFees();
+
+    // Mark pending and debounce backend sync
+    pendingSync = true;
+    clearTimeout(syncTimers[itemId]?.timer);
+    syncTimers[itemId] = {
+        qty: newQty,
+        timer: setTimeout(() => {
+            syncQtyToBackend(itemId, newQty).then(() => {
+                delete syncTimers[itemId];
+                if (Object.keys(syncTimers).length === 0) pendingSync = false;
+            });
+        }, 400)
+    };
+}
+
+// ── Delivery fee + subtotal calculation ───────────────────────────────────
+function calculateDeliveryFees() {
+    let hasWeekdayDelivery = false;
+    let hasWeekendDelivery = false;
+
+    @foreach($groupedCart as $vendorId => $items)
+        const deliverySelect{{ $vendorId }} = document.querySelector('select[name="delivery_type_{{ $vendorId }}"]');
+        if (deliverySelect{{ $vendorId }}) {
+            if (deliverySelect{{ $vendorId }}.value === 'weekday_delivery') hasWeekdayDelivery = true;
+            if (deliverySelect{{ $vendorId }}.value === 'weekend_delivery')  hasWeekendDelivery = true;
+        }
+    @endforeach
+
+    let subtotal = 0;
+    Object.values(checkoutItems).forEach(i => subtotal += i.unitPrice * i.qty);
+
+    let deliveryFees = 0;
+    if (hasWeekdayDelivery) deliveryFees += 50;
+    if (hasWeekendDelivery) deliveryFees += 75;
+
+    document.getElementById('orderSubtotal').textContent = formatPeso(subtotal);
+    document.getElementById('deliveryFees').textContent  = formatPeso(deliveryFees);
+    document.getElementById('totalAmount').textContent   = formatPeso(subtotal + deliveryFees);
+}
+
+// ── Warn on accidental navigation while sync pending ──────────────────────
+window.addEventListener('beforeunload', function (e) {
+    if (pendingSync) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// ── Page init ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const deliveryAddressSection  = document.getElementById('deliveryAddressSection');
+    const aaaniMarketPickupInfo   = document.getElementById('aaaniMarketPickupInfo');
+    const deliveryOptions         = document.querySelectorAll('.delivery-option');
+    const addressInputs           = document.querySelectorAll('input[name="selected_address"]');
     const customerDeliveryAddress = document.getElementById('customerDeliveryAddress');
-    const placeOrderButton = document.getElementById('placeOrderButton');
-    const deliveryOptionsError = document.getElementById('deliveryOptionsError');
-    
-    // Function to check and update fulfillment display
+    const placeOrderButton        = document.getElementById('placeOrderButton');
+    const deliveryOptionsError    = document.getElementById('deliveryOptionsError');
+
     function updateFulfillmentDisplay() {
         let hasDelivery = false;
-        let hasPickup = false;
-        
-        // Check all selected delivery options
+        let hasPickup   = false;
+
         deliveryOptions.forEach(select => {
-            const value = select.value;
-            if (value === 'weekday_delivery' || value === 'weekend_delivery') {
+            if (select.value === 'weekday_delivery' || select.value === 'weekend_delivery') {
                 hasDelivery = true;
-            } else if (value === 'weekend_pickup') {
+            } else if (select.value === 'weekend_pickup') {
                 hasPickup = true;
             }
         });
-        
-        // Show/hide sections based on fulfillment type
-        if (hasDelivery) {
-            deliveryAddressSection.style.display = 'block';
-        } else {
-            deliveryAddressSection.style.display = 'none';
-        }
-        
-        if (hasPickup) {
-            aaaniMarketPickupInfo.style.display = 'block';
-        } else {
-            aaaniMarketPickupInfo.style.display = 'none';
-        }
-        
-        // Calculate delivery fees when delivery options change
+
+        deliveryAddressSection.style.display = hasDelivery ? 'block' : 'none';
+        aaaniMarketPickupInfo.style.display  = hasPickup   ? 'block' : 'none';
+
         calculateDeliveryFees();
         validateDeliveryOptions();
     }
@@ -324,109 +435,42 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateDeliveryOptions() {
         let allSelected = true;
         deliveryOptions.forEach(select => {
-            const hasValue = Boolean(select.value);
-            if (!hasValue) {
+            if (!select.value) {
                 allSelected = false;
                 select.classList.add('is-invalid');
             } else {
                 select.classList.remove('is-invalid');
             }
         });
-
-        if (deliveryOptionsError) {
-            deliveryOptionsError.style.display = allSelected ? 'none' : 'block';
-        }
-        if (placeOrderButton) {
-            placeOrderButton.disabled = !allSelected;
-        }
+        if (deliveryOptionsError) deliveryOptionsError.style.display = allSelected ? 'none' : 'block';
+        if (placeOrderButton)     placeOrderButton.disabled           = !allSelected;
     }
 
     function updateSelectedAddressDisplay() {
-        if (!customerDeliveryAddress) {
-            return;
-        }
+        if (!customerDeliveryAddress) return;
 
         const selected = document.querySelector('input[name="selected_address"]:checked');
-        if (!selected) {
-            customerDeliveryAddress.textContent = 'No address selected';
-            return;
-        }
+        if (!selected) { customerDeliveryAddress.textContent = 'No address selected'; return; }
 
         const label = document.querySelector(`label[for="${selected.id}"]`);
-        if (!label) {
-            customerDeliveryAddress.textContent = 'No address selected';
-            return;
-        }
+        if (!label)  { customerDeliveryAddress.textContent = 'No address selected'; return; }
 
         const addressBlock = label.querySelector('div');
-        if (!addressBlock) {
-            customerDeliveryAddress.textContent = 'No address selected';
-            return;
-        }
+        if (!addressBlock) { customerDeliveryAddress.textContent = 'No address selected'; return; }
 
         const lines = [];
         addressBlock.querySelectorAll('div').forEach((line, index) => {
             const text = line.textContent.trim();
-            if (!text) {
-                return;
-            }
-            if (index === 0) {
-                return; // Recipient name
-            }
-            if (index === 1) {
-                return; // Recipient phone
-            }
-            if (text === 'Default') {
-                return;
-            }
+            if (!text || index === 0 || index === 1 || text === 'Default') return;
             lines.push(text);
         });
 
         customerDeliveryAddress.textContent = lines.length > 0 ? lines.join(', ') : 'No address selected';
     }
-    
-    // Calculate delivery fees when delivery options change
-    function calculateDeliveryFees() {
-        let hasWeekdayDelivery = false;
-        let hasWeekendDelivery = false;
-        
-        @foreach($groupedCart as $vendorId => $items)
-            const deliverySelect{{ $vendorId }} = document.querySelector('select[name="delivery_type_{{ $vendorId }}"]');
-            if (deliverySelect{{ $vendorId }} && deliverySelect{{ $vendorId }}.value) {
-                if (deliverySelect{{ $vendorId }}.value === 'weekday_delivery') {
-                    hasWeekdayDelivery = true;
-                } else if (deliverySelect{{ $vendorId }}.value === 'weekend_delivery') {
-                    hasWeekendDelivery = true;
-                }
-            }
-        @endforeach
-        
-        let deliveryFees = 0;
-        if (hasWeekdayDelivery) {
-            deliveryFees += 50;
-        }
-        if (hasWeekendDelivery) {
-            deliveryFees += 75;
-        }
-        
-        const subtotal = {{ $totalPrice }};
-        const marketFee = subtotal * 0.05;
-        const total = subtotal + marketFee + deliveryFees;
-        
-        document.getElementById('deliveryFees').textContent = `₱${deliveryFees.toFixed(2)}`;
-        document.getElementById('totalAmount').textContent = `₱${total.toFixed(2)}`;
-    }
-    
-    // Add event listeners to delivery option selects
-    deliveryOptions.forEach(select => {
-        select.addEventListener('change', updateFulfillmentDisplay);
-    });
 
-    addressInputs.forEach(input => {
-        input.addEventListener('change', updateSelectedAddressDisplay);
-    });
-    
-    // Initial update
+    deliveryOptions.forEach(select => select.addEventListener('change', updateFulfillmentDisplay));
+    addressInputs.forEach(input  => input.addEventListener('change',  updateSelectedAddressDisplay));
+
     updateFulfillmentDisplay();
     updateSelectedAddressDisplay();
 });
