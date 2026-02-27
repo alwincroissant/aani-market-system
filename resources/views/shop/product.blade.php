@@ -415,17 +415,6 @@
 
 <div class="page">
 
-    {{-- Breadcrumb --}}
-    <nav class="breadcrumb" aria-label="breadcrumb">
-        <a href="{{ route('home') }}">Home</a>
-        <span class="breadcrumb-sep">›</span>
-        <a href="{{ route('shop.index') }}">Browse Shops</a>
-        <span class="breadcrumb-sep">›</span>
-        <a href="{{ route('shop.show', $product->vendor_id) }}">{{ $product->business_name }}</a>
-        <span class="breadcrumb-sep">›</span>
-        <span class="breadcrumb-current">{{ $product->product_name }}</span>
-    </nav>
-
     <div class="product-layout">
 
         {{-- ── Product Main Card ── --}}
@@ -491,7 +480,7 @@
                                         <span class="qty-label">Quantity</span>
                                         <div class="qty-control">
                                             <button class="qty-btn" type="button" onclick="changeQty(-1)">−</button>
-                                            <input class="qty-input" type="number" id="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}" readonly>
+                                            <input class="qty-input" type="number" id="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}">
                                             <button class="qty-btn" type="button" onclick="changeQty(1)">+</button>
                                         </div>
                                     </div>

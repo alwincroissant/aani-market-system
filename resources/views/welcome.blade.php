@@ -470,7 +470,7 @@
 @endif
 
 {{-- Customer Welcome --}}
-@if(auth()->check() && auth()->user()->role === 'customer')
+@if(auth()->check() && auth()->user()->role === 'customer' && auth()->user()->customer)
 <div class="welcome-bar">
     👋 Welcome back, <strong>{{ auth()->user()->customer->first_name }}</strong>! Ready to shop?
 </div>

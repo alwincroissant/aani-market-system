@@ -659,7 +659,7 @@
                     @elseif($isLow)
                         <span class="stock-pill stock-low"><span class="dot"></span>Low — {{ $qty }} left</span>
                     @else
-                        <span class="stock-pill stock-in"><span class="dot"></span>In stock</span>
+                        <span class="stock-pill stock-in"><span class="dot"></span>In stock — {{ $qty }} available</span>
                     @endif
                 @endif
 
@@ -673,7 +673,7 @@
                         <div class="cart-row">
                             <div class="qty-control">
                                 <button class="qty-btn" type="button" onclick="changeQty({{ $product->id }}, -1, {{ $maxQty }})">−</button>
-                                <input class="qty-input" type="number" id="quantityInput-{{ $product->id }}" value="1" min="1" max="{{ $maxQty }}" readonly>
+                                <input class="qty-input" type="number" id="quantityInput-{{ $product->id }}" value="1" min="1" max="{{ $maxQty }}">
                                 <button class="qty-btn" type="button" onclick="changeQty({{ $product->id }}, 1, {{ $maxQty }})">+</button>
                             </div>
                             @if($isBack)

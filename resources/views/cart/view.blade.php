@@ -1,214 +1,610 @@
 @extends('layouts.base')
-
 @section('title', 'Shopping Cart')
-
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <h2 class="mb-4">Shopping Cart</h2>
-        
-        @if($products && count($products) > 0)
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40px;">
-                                                <input type="checkbox" class="form-check-input" id="selectAll" checked>
-                                            </th>
-                                            <th>Product</th>
-                                            <th>Shop</th>
-                                            <th>Price</th>
-                                            <th>Quantity</th>
-                                            <th>Total</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($products as $itemId => $item)
-                                            <tr>
-                                                <td>
-                                                    <input type="checkbox" class="form-check-input item-checkbox" 
-                                                           data-item-id="{{ $itemId }}" 
-                                                           data-price="{{ $item['price'] }}"
-                                                           checked>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="{{ $item['item']->product_image_url ?? '/images/default-product.jpg' }}" 
-                                                             alt="{{ $item['item']->product_name }}" 
-                                                             class="img-thumbnail me-3" 
-                                                             style="width: 60px; height: 60px; object-fit: cover;">
-                                                        <div>
-                                                            <div class="fw-semibold">{{ $item['item']->product_name }}</div>
-                                                            <small class="text-muted">{{ $item['item']->unit_type }}</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        @if($item['item']->vendor)
-                                                            <span class="badge bg-info">{{ $item['item']->vendor->business_name }}</span>
-                                                        @else
-                                                            <span class="text-muted">Unknown Shop</span>
-                                                        @endif
-                                                    </div>
-                                                </td>
-                                                <td>₱{{ number_format($item['item']->price_per_unit, 2) }}</td>
-                                                <td>
-                                                    <div class="input-group" style="width: 120px;">
-                                                        <a href="{{ route('reduceByOne', $itemId) }}" class="btn btn-outline-secondary btn-sm">
-                                                            <i class="bi bi-dash"></i>
-                                                        </a>
-                                                        <input type="text" 
-                                                               class="form-control text-center" 
-                                                               value="{{ $item['qty'] }}" 
-                                                               readonly>
-                                                        <a href="{{ route('addToCart', $itemId) }}" class="btn btn-outline-secondary btn-sm">
-                                                            <i class="bi bi-plus"></i>
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                                <td>₱{{ number_format($item['price'], 2) }}</td>
-                                                <td>
-                                                    <a href="{{ route('removeItem', $itemId) }}" class="btn btn-sm btn-danger">
-                                                        <i class="bi bi-trash"></i> Remove
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Order Summary</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-3">
-                                <span>Subtotal (selected):</span>
-                                <strong id="selectedSubtotal">₱{{ number_format($totalPrice, 2) }}</strong>
-                            </div>
-                            <hr>
-                            <div class="d-flex justify-content-between mb-3">
-                                <span><strong>Total:</strong></span>
-                                <strong class="text-primary" id="selectedTotal">₱{{ number_format($totalPrice, 2) }}</strong>
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-primary" onclick="proceedToCheckout()">
-                                    Proceed to Checkout (selected)
-                                </button>
-                                <a href="{{ route('home') }}" class="btn btn-outline-secondary">
-                                    Continue Shopping
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @else
-            <div class="alert alert-info text-center">
-                <h5>Your cart is empty</h5>
-                <p class="mb-3">Start shopping to add items to your cart!</p>
-                <a href="{{ route('home') }}" class="btn btn-primary">Browse Shops</a>
-            </div>
-        @endif
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+        --bg:        #F5F4F0;
+        --surface:   #FFFFFF;
+        --border:    #E4E2DC;
+        --text:      #1A1916;
+        --muted:     #7A7871;
+        --accent:    #1D6F42;
+        --accent-lt: #EAF4EE;
+        --accent-dk: #155232;
+        --danger:    #DC2626;
+        --danger-lt: #FEE2E2;
+        --radius:    10px;
+        --shadow:    0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'DM Sans', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Page ── */
+    .page { padding: 28px; max-width: 1100px; margin: 0 auto; }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+    .page-header h1 { font-size: 20px; font-weight: 600; }
+    .page-header p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Layout ── */
+    .cart-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    /* ── Cart Card ── */
+    .cart-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .cart-card-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .cart-card-header label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: var(--muted);
+        cursor: pointer;
+        user-select: none;
+    }
+    .cart-card-header .item-count {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    /* Checkbox styling */
+    input[type="checkbox"] {
+        width: 16px; height: 16px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    /* ── Cart Row ── */
+    .cart-row {
+        display: grid;
+        grid-template-columns: 20px 52px 1fr auto auto auto auto;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        transition: background .12s;
+    }
+    .cart-row:last-child { border-bottom: none; }
+    .cart-row:hover { background: #faf9f7; }
+    .cart-row.unchecked { opacity: .55; }
+
+    /* Product image */
+    .cart-thumb {
+        width: 52px; height: 52px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .cart-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Product info */
+    .cart-product-name { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+    .cart-product-unit { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .cart-vendor {
+        display: inline-flex;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--accent-dk);
+        background: var(--accent-lt);
+        padding: 2px 8px;
+        border-radius: 99px;
+        margin-top: 4px;
+        align-self: flex-start;
+    }
+
+    /* Price */
+    .cart-price {
+        font-family: 'DM Mono', monospace;
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    /* Qty stepper */
+    .qty-control {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--surface);
+    }
+    .qty-btn {
+        width: 30px; height: 32px;
+        background: var(--bg);
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        color: var(--text);
+        display: flex; align-items: center; justify-content: center;
+        transition: background .12s;
+        text-decoration: none;
+        flex-shrink: 0;
+        line-height: 1;
+    }
+    .qty-btn:hover { background: var(--border); }
+    .qty-input {
+        width: 36px; height: 32px;
+        border: none;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        text-align: center;
+        font-family: 'DM Mono', monospace;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        background: var(--surface);
+        outline: none;
+        padding: 0;
+    }
+    .qty-input::-webkit-outer-spin-button,
+    .qty-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Row total */
+    .cart-row-total {
+        font-family: 'DM Mono', monospace;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--accent);
+        text-align: right;
+        white-space: nowrap;
+        min-width: 72px;
+    }
+
+    /* Remove */
+    .btn-remove {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px; height: 30px;
+        border-radius: 7px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        cursor: pointer;
+        transition: background .12s, border-color .12s, color .12s;
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .btn-remove:hover {
+        background: var(--danger-lt);
+        border-color: #fca5a5;
+        color: var(--danger);
+    }
+    .btn-remove svg { width: 14px; height: 14px; }
+
+    /* ── Summary Card ── */
+    .summary-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        position: sticky;
+        top: 20px;
+    }
+
+    .summary-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .summary-body { padding: 20px; }
+
+    .summary-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 13.5px;
+        margin-bottom: 10px;
+        color: var(--muted);
+    }
+    .summary-line .val {
+        font-family: 'DM Mono', monospace;
+        font-size: 13px;
+        color: var(--text);
+    }
+
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+        margin-bottom: 20px;
+    }
+    .summary-total .label { font-size: 14px; font-weight: 600; color: var(--text); }
+    .summary-total .val   {
+        font-family: 'DM Mono', monospace;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--accent);
+    }
+
+    .btn-checkout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        height: 44px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .15s;
+        margin-bottom: 10px;
+    }
+    .btn-checkout:hover { background: var(--accent-dk); }
+    .btn-checkout:disabled {
+        background: var(--border);
+        color: var(--muted);
+        cursor: not-allowed;
+    }
+
+    .btn-continue {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        height: 40px;
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background .15s, border-color .15s, color .15s;
+        text-decoration: none;
+    }
+    .btn-continue:hover { background: var(--bg); border-color: #ccc; color: var(--text); }
+
+    .summary-note {
+        font-size: 11.5px;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 12px;
+        line-height: 1.5;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        padding: 64px 24px;
+        text-align: center;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .empty-state p  { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 22px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: background .15s;
+        text-decoration: none;
+    }
+    .btn-primary:hover { background: var(--accent-dk); }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+        .cart-layout { grid-template-columns: 1fr; }
+        .summary-card { position: static; }
+    }
+    @media (max-width: 600px) {
+        .page { padding: 16px; }
+        .cart-row {
+            grid-template-columns: 20px 44px 1fr;
+            grid-template-rows: auto auto;
+            row-gap: 10px;
+        }
+        .cart-price    { display: none; }
+        .qty-control   { grid-column: 2 / 4; }
+        .cart-row-total { grid-column: 2; }
+        .btn-remove    { grid-column: 3; justify-self: end; }
+    }
+</style>
+
+<div class="page">
+
+    <div class="page-header">
+        <div>
+            <h1>Shopping Cart</h1>
+            @if($products && count($products) > 0)
+                <p>{{ count($products) }} item{{ count($products) !== 1 ? 's' : '' }} in your cart</p>
+            @endif
+        </div>
     </div>
+
+    @if($products && count($products) > 0)
+
+    <div class="cart-layout">
+
+        {{-- ── Cart Items ── --}}
+        <div class="cart-card">
+            <div class="cart-card-header">
+                <label>
+                    <input type="checkbox" id="selectAll" checked>
+                    Select All
+                </label>
+                <span class="item-count" id="checkedCount">{{ count($products) }} selected</span>
+            </div>
+
+            @foreach($products as $itemId => $item)
+            <div class="cart-row" id="row-{{ $itemId }}">
+                {{-- Checkbox --}}
+                <input type="checkbox"
+                       class="item-checkbox"
+                       data-item-id="{{ $itemId }}"
+                       data-price="{{ $item['price'] }}"
+                       checked>
+
+                {{-- Thumb --}}
+                <div class="cart-thumb">
+                    @if(!empty($item['item']->product_image_url))
+                        <img src="{{ asset($item['item']->product_image_url) }}" alt="{{ $item['item']->product_name }}">
+                    @else
+                        🛍
+                    @endif
+                </div>
+
+                {{-- Info --}}
+                <div>
+                    <div class="cart-product-name">{{ $item['item']->product_name }}</div>
+                    <div class="cart-product-unit">per {{ $item['item']->unit_type }}</div>
+                    @if($item['item']->vendor)
+                        <span class="cart-vendor">{{ $item['item']->vendor->business_name }}</span>
+                    @endif
+                </div>
+
+                {{-- Unit price --}}
+                <div class="cart-price">₱{{ number_format($item['item']->price_per_unit, 2) }}</div>
+
+                {{-- Qty --}}
+                <div class="qty-control">
+                    <a href="{{ route('reduceByOne', $itemId) }}" class="qty-btn">−</a>
+                    <input type="number" class="qty-input" id="quantityInput-{{ $itemId }}" value="{{ $item['qty'] }}" min="1" data-price="{{ $item['item']->price_per_unit }}" data-item-id="{{ $itemId }}">
+                    <a href="{{ route('addToCart', $itemId) }}" class="qty-btn">+</a>
+                </div>
+
+                {{-- Row total --}}
+                <div class="cart-row-total">₱{{ number_format($item['price'], 2) }}</div>
+
+                {{-- Remove --}}
+                <a href="{{ route('removeItem', $itemId) }}" class="btn-remove" title="Remove item">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                    </svg>
+                </a>
+            </div>
+            @endforeach
+        </div>
+
+        {{-- ── Summary ── --}}
+        <div class="summary-card">
+            <div class="summary-header">Order Summary</div>
+            <div class="summary-body">
+
+                <div class="summary-line">
+                    <span>Subtotal</span>
+                    <span class="val" id="selectedSubtotal">₱{{ number_format($totalPrice, 2) }}</span>
+                </div>
+                <div class="summary-line">
+                    <span>Items selected</span>
+                    <span class="val" id="itemsSelected">{{ count($products) }}</span>
+                </div>
+
+                <div class="summary-total">
+                    <span class="label">Total</span>
+                    <span class="val" id="selectedTotal">₱{{ number_format($totalPrice, 2) }}</span>
+                </div>
+
+                <button type="button" class="btn-checkout" onclick="proceedToCheckout()" id="checkoutBtn">
+                    Proceed to Checkout
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+
+                <a href="{{ route('home') }}" class="btn-continue">
+                    ← Continue Shopping
+                </a>
+
+                <p class="summary-note">Only selected items will be included in checkout.</p>
+            </div>
+        </div>
+
+    </div>
+
+    @else
+
+    {{-- Empty State --}}
+    <div class="empty-state">
+        <div class="empty-icon">🛒</div>
+        <h3>Your cart is empty</h3>
+        <p>Browse the market and add items to your cart to get started.</p>
+        <a href="{{ route('home') }}" class="btn-primary">Browse Shops</a>
+    </div>
+
+    @endif
+
 </div>
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const selectAllCheckbox = document.getElementById('selectAll');
-    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
-    const selectedSubtotal = document.getElementById('selectedSubtotal');
-    const selectedTotal = document.getElementById('selectedTotal');
+function updateTotals() {
+    const checkboxes    = document.querySelectorAll('.item-checkbox');
+    const subtotalEl    = document.getElementById('selectedSubtotal');
+    const totalEl       = document.getElementById('selectedTotal');
+    const countEl       = document.getElementById('itemsSelected');
+    const checkedCountEl = document.getElementById('checkedCount');
+    const checkoutBtn   = document.getElementById('checkoutBtn');
+    let subtotal = 0;
+    let count = 0;
 
-    function updateTotals() {
-        let subtotal = 0;
-        
-        itemCheckboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                subtotal += parseFloat(checkbox.dataset.price);
-            }
-        });
-        
-        const total = subtotal;
-        
-        selectedSubtotal.textContent = `₱${subtotal.toFixed(2)}`;
-        selectedTotal.textContent = `₱${total.toFixed(2)}`;
-    }
+    checkboxes.forEach(cb => {
+        const row = document.getElementById('row-' + cb.dataset.itemId);
+        if (cb.checked) {
+            subtotal += parseFloat(cb.dataset.price);
+            count++;
+            row?.classList.remove('unchecked');
+        } else {
+            row?.classList.add('unchecked');
+        }
+    });
 
-    // Select all functionality
-    selectAllCheckbox.addEventListener('change', function() {
-        itemCheckboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
+    if (subtotalEl) subtotalEl.textContent   = '₱' + subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (totalEl) totalEl.textContent      = '₱' + subtotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (countEl) countEl.textContent      = count;
+    if (checkedCountEl) checkedCountEl.textContent = count + ' selected';
+    if (checkoutBtn) checkoutBtn.disabled = count === 0;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll     = document.getElementById('selectAll');
+    const checkboxes    = document.querySelectorAll('.item-checkbox');
+    const qtyInputs     = document.querySelectorAll('.qty-input');
+
+    // Handle quantity input changes
+    qtyInputs.forEach(input => {
+        input.addEventListener('change', function () {
+            const itemId = this.dataset.itemId;
+            const pricePerUnit = parseFloat(this.dataset.price);
+            const newQty = Math.max(1, parseInt(this.value) || 1);
+            this.value = newQty;
+            
+            // Submit the quantity change to the backend
+            window.location.href = `/cart/add/${itemId}?quantity=${newQty}`;
         });
+    });
+
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(cb => cb.checked = this.checked);
         updateTotals();
     });
 
-    // Individual item checkboxes
-    itemCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            // Update select all checkbox state
-            const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
-            const someChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
-            
-            selectAllCheckbox.checked = allChecked;
-            selectAllCheckbox.indeterminate = someChecked && !allChecked;
-            
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function () {
+            const all  = Array.from(checkboxes).every(c => c.checked);
+            const some = Array.from(checkboxes).some(c => c.checked);
+            selectAll.checked       = all;
+            selectAll.indeterminate = some && !all;
             updateTotals();
         });
     });
 
-    // Initial totals
     updateTotals();
 });
 
 function proceedToCheckout() {
-    const selectedItems = [];
-    const itemCheckboxes = document.querySelectorAll('.item-checkbox:checked');
-    
-    if (itemCheckboxes.length === 0) {
+    const checked = document.querySelectorAll('.item-checkbox:checked');
+
+    if (checked.length === 0) {
         alert('Please select at least one item to checkout.');
         return;
     }
-    
-    itemCheckboxes.forEach(checkbox => {
-        selectedItems.push(checkbox.dataset.itemId);
-    });
-    
-    // Create form and submit with selected items
+
+    const selectedItems = Array.from(checked).map(cb => cb.dataset.itemId);
+
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '{{ route('checkout.index') }}';
-    
-    // Add CSRF token
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = '_token';
-    csrfInput.value = '{{ csrf_token() }}';
-    form.appendChild(csrfInput);
-    
-    // Add selected items
-    const itemsInput = document.createElement('input');
-    itemsInput.type = 'hidden';
-    itemsInput.name = 'selected_items';
-    itemsInput.value = JSON.stringify(selectedItems);
-    form.appendChild(itemsInput);
-    
+
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = '_token';
+    csrf.value = '{{ csrf_token() }}';
+    form.appendChild(csrf);
+
+    const items = document.createElement('input');
+    items.type  = 'hidden';
+    items.name  = 'selected_items';
+    items.value = JSON.stringify(selectedItems);
+    form.appendChild(items);
+
     document.body.appendChild(form);
     form.submit();
 }
 </script>
 @endpush
+
 @endsection

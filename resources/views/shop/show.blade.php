@@ -437,10 +437,10 @@
                 <div class="vendor-contact">
                     <div class="contact-label">📞 Contact</div>
                     <div class="contact-item">
-                        <span>{{ $vendor->contact_phone }}</span>
+                        <span>{{ $vendor->contact_phone ?? 'N/A' }}</span>
                     </div>
                     <div class="contact-item">
-                        <span>{{ $vendor->contact_email }}</span>
+                        <span>{{ $vendor->contact_email ?? 'N/A' }}</span>
                     </div>
                 </div>
             </div>
@@ -482,9 +482,9 @@
                                         <div class="stock-badge @if(!$inStock && !$isBackorder) out-stock @elseif($isBackorder) backorder @elseif($isLow) low-stock @else in-stock @endif">
                                             @if($inStock)
                                                 @if($isLow)
-                                                    ⚠️ Low stock
+                                                    ⚠️ Low stock — {{ $product->stock_quantity }} left
                                                 @else
-                                                    ✓ In stock
+                                                    ✓ In stock — {{ $product->stock_quantity }} available
                                                 @endif
                                             @elseif($isBackorder)
                                                 🕐 Backorder available
