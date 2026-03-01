@@ -16,6 +16,16 @@ class CartController extends Controller
             return redirect()->back()->with('error', 'Product not found');
         }
 
+        // Check if the vendor's store is open
+        $vendor = Vendor::find($product->vendor_id);
+        if (!$vendor || !$vendor->is_live) {
+            $message = 'This store is currently closed. You cannot order at this time.';
+            if ($request->expectsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json(['success' => false, 'message' => $message], 403);
+            }
+            return redirect()->back()->with('error', $message);
+        }
+
         $oldCart = Session::has('cart') ? Session::get('cart') : null;
         $cart    = new Cart($oldCart);
 

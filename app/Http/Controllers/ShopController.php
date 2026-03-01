@@ -28,7 +28,8 @@ class ShopController extends Controller
                 'v.business_name',
                 'v.business_description',
                 'v.logo_url',
-                'v.banner_url', // Added banner_url
+                'v.banner_url',
+                'v.is_live',
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
                 'v.weekend_delivery_enabled',
@@ -41,7 +42,8 @@ class ShopController extends Controller
                 'v.business_name',
                 'v.business_description',
                 'v.logo_url',
-                'v.banner_url', // Added banner_url
+                'v.banner_url',
+                'v.is_live',
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
                 'v.weekend_delivery_enabled'
@@ -77,6 +79,7 @@ class ShopController extends Controller
                 'p.track_stock',
                 'p.allow_backorder',
                 'v.business_name',
+                'v.is_live as vendor_is_live',
                 'pc.category_name'
             );
 
@@ -163,6 +166,7 @@ class ShopController extends Controller
                 'v.logo_url',
                 'v.banner_url',
                 'v.business_hours',
+                'v.is_live',
                 'v.delivery_available',
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
@@ -230,6 +234,7 @@ class ShopController extends Controller
                 'v.logo_url',
                 'v.banner_url',
                 'v.business_hours',
+                'v.is_live as vendor_is_live',
                 'v.contact_phone',
                 'v.contact_email',
                 'v.weekend_pickup_enabled',

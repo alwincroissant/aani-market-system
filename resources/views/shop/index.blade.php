@@ -590,7 +590,12 @@
                     @endif
                 </div>
                 <div>
-                    <div class="vendor-name">{{ $vendor->business_name }}</div>
+                    <div class="vendor-name">
+                        {{ $vendor->business_name }}
+                        @if(!$vendor->is_live)
+                            <span style="display:inline-block;background:#FEE2E2;color:#991B1B;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px;font-weight:600;">Closed</span>
+                        @endif
+                    </div>
                     <div class="vendor-count">{{ $vendor->product_count ?? 0 }} products</div>
                 </div>
             </div>
@@ -641,7 +646,12 @@
             </div>
             <div class="product-body">
                 <div class="product-name">{{ $product->product_name }}</div>
-                <div class="product-vendor">{{ $product->business_name }}</div>
+                <div class="product-vendor">
+                    {{ $product->business_name }}
+                    @if(!$product->vendor_is_live)
+                        <span style="display:inline-block;background:#FEE2E2;color:#991B1B;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:4px;font-weight:600;">Closed</span>
+                    @endif
+                </div>
 
                 @if($product->category_name)
                     <span class="product-cat">{{ $product->category_name }}</span>
@@ -669,7 +679,9 @@
                         <span class="price-unit">/ {{ $product->unit_type }}</span>
                     </div>
 
-                    @if(!$isOut)
+                    @if(!$product->vendor_is_live)
+                        <button class="btn-cart" type="button" disabled style="width:100%;margin-bottom:8px;background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;">🔒 Store Closed</button>
+                    @elseif(!$isOut)
                         <div class="cart-row">
                             <div class="qty-control">
                                 <button class="qty-btn" type="button" onclick="changeQty({{ $product->id }}, -1, {{ $maxQty }})">−</button>

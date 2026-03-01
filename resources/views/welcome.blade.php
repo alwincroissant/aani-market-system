@@ -471,7 +471,7 @@
 
 {{-- Customer Welcome --}}
 @php
-    $welcomeFirst = optional(auth()->user()->customer)->first_name;
+    $welcomeFirst = optional(optional(auth()->user())->customer)->first_name;
 @endphp
 @if(auth()->check() && auth()->user()->role === 'customer' && $welcomeFirst)
 <div class="welcome-bar">

@@ -288,6 +288,25 @@
         cursor: not-allowed;
     }
 
+    /* ── Store Closed Banner ── */
+    .store-closed-banner {
+        background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+        border: 1px solid #F87171;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .store-closed-banner .closed-icon { font-size: 28px; flex-shrink: 0; }
+    .store-closed-banner .closed-text h4 {
+        font-size: 15px; font-weight: 600; color: #991B1B; margin-bottom: 2px;
+    }
+    .store-closed-banner .closed-text p {
+        font-size: 13px; color: #B91C1C; margin: 0;
+    }
+
     .btn-login {
         display: flex;
         align-items: center;
@@ -470,6 +489,16 @@
 
                     {{-- Cart --}}
                     <div class="cart-area">
+                        @if(!$product->vendor_is_live)
+                            <div class="store-closed-banner">
+                                <div class="closed-icon">🔒</div>
+                                <div class="closed-text">
+                                    <h4>Store is Closed</h4>
+                                    <p>This vendor's store is currently closed. Ordering is not available.</p>
+                                </div>
+                            </div>
+                            <button class="btn-add-cart disabled" disabled>🔒 Store Closed</button>
+                        @else
                         @auth
                             @if(auth()->user()->role === 'customer')
                                 @php
@@ -512,6 +541,7 @@
                             </div>
                             <a href="{{ route('auth.login') }}" class="btn-login">🔐 Login to Order</a>
                         @endauth
+                        @endif
                     </div>
 
                 </div>

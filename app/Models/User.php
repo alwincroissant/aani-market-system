@@ -70,4 +70,12 @@ class User extends Authenticatable
     {
         return $this->hasOne(Customer::class);
     }
+
+    /**
+     * Get the vendor associated with the user.
+     */
+    public function vendor()
+    {
+        return $this->hasOne(Vendor::class);
+    }
 }

@@ -376,6 +376,37 @@
         font-size: 14px;
     }
 
+    /* ── Store Closed Banner ── */
+    .store-closed-banner {
+        background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+        border: 1px solid #F87171;
+        border-radius: 12px;
+        padding: 24px 32px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .store-closed-banner .closed-icon {
+        font-size: 40px;
+        flex-shrink: 0;
+    }
+    .store-closed-banner .closed-text h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #991B1B;
+        margin-bottom: 4px;
+    }
+    .store-closed-banner .closed-text p {
+        font-size: 14px;
+        color: #B91C1C;
+        margin: 0;
+    }
+    .product-card.store-closed {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
     @media (max-width: 768px) {
         .vendor-info-block {
             grid-template-columns: 1fr;
@@ -446,6 +477,16 @@
             </div>
         </div>
 
+        @if(!$vendor->is_live)
+        <div class="store-closed-banner">
+            <div class="closed-icon">🔒</div>
+            <div class="closed-text">
+                <h3>Store is Closed</h3>
+                <p>This vendor's store is currently closed. You can browse their products but ordering is not available at this time.</p>
+            </div>
+        </div>
+        @endif
+
         <!-- Products by Category -->
         @if($groupedProducts->count() > 0)
             @foreach($groupedProducts as $categoryName => $products)
@@ -498,6 +539,9 @@
                                     <div class="product-unit">/ {{ $product->unit_type }}</div>
 
                                     <div class="product-actions">
+                                        @if(!$vendor->is_live)
+                                            <button class="btn-add-cart disabled" disabled>🔒 Store Closed</button>
+                                        @else
                                         @auth
                                             @if(auth()->user()->role === 'customer')
                                                 @if($product->track_stock && $product->stock_quantity > 0)
@@ -530,6 +574,7 @@
                                                 🔐 Login
                                             </button>
                                         @endauth
+                                        @endif
                                     </div>
                                 </div>
                             </div>

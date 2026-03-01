@@ -18,6 +18,7 @@ use App\Http\Controllers\VendorOrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\StockManagementController;
+use App\Http\Controllers\VendorStallPaymentController;
 
 // Public Routes
 Route::get('/', [MarketMapController::class, 'index'])->name('home');
@@ -160,4 +161,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/stock/{product}/edit', [StockManagementController::class, 'edit'])->name('stock.edit');
     Route::put('/stock/{product}', [StockManagementController::class, 'update'])->name('stock.update');
     Route::post('/stock/bulk-update', [StockManagementController::class, 'bulkUpdate'])->name('stock.bulk-update');
+});
+
+// Vendor Stall Payments
+Route::middleware(['auth', 'role:vendor'])->group(function () {
+    Route::get('/vendor/stall-payments', [\App\Http\Controllers\VendorStallPaymentController::class, 'index'])->name('vendor.stall-payments');
+    Route::post('/vendor/stall-payments/pay/{id}', [\App\Http\Controllers\VendorStallPaymentController::class, 'pay'])->name('vendor.stall-payments.pay');
+});
+
+// Admin Stall Payments
+Route::middleware(['auth', 'role:administrator'])->group(function () {
+    Route::get('/admin/stall-payments', [\App\Http\Controllers\AdminStallPaymentController::class, 'index'])->name('admin.stall-payments');
+    Route::post('/admin/stall-payments', [\App\Http\Controllers\AdminStallPaymentController::class, 'store'])->name('admin.stall-payments.store');
+    Route::post('/admin/stall-payments/mark-overdue', [\App\Http\Controllers\AdminStallPaymentController::class, 'markOverdue'])->name('admin.stall-payments.mark-overdue');
 });

@@ -174,6 +174,11 @@
                                 <i class="bi bi-box-seam me-2"></i>Manage Stocks
                             </a>
                         </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('vendor.stall-payments') }}" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-cash-coin me-2"></i>Stall Payment
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
