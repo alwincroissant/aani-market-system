@@ -470,9 +470,12 @@
 @endif
 
 {{-- Customer Welcome --}}
-@if(auth()->check() && auth()->user()->role === 'customer' && auth()->user()->customer)
+@php
+    $welcomeFirst = optional(auth()->user()->customer)->first_name;
+@endphp
+@if(auth()->check() && auth()->user()->role === 'customer' && $welcomeFirst)
 <div class="welcome-bar">
-    👋 Welcome back, <strong>{{ auth()->user()->customer->first_name }}</strong>! Ready to shop?
+    👋 Welcome back, <strong>{{ $welcomeFirst }}</strong>! Ready to shop?
 </div>
 @endif
 

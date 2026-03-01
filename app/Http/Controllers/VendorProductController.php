@@ -165,13 +165,13 @@ class VendorProductController extends Controller
                 
                 // Use move() instead of storeAs()
                 $destinationPath = storage_path('app/public/products');
-                $fullPath = $destinationPath . '/' . $name;
+                $fullPath = $destinationPath . DIRECTORY_SEPARATOR . $name;
                 
                 Log::info('Destination: ' . $fullPath);
                 
                 $moved = $file->move($destinationPath, $name);
                 
-                if ($moved && file_exists($fullPath)) {
+                if ($moved) {
                     $imagePath = 'storage/products/' . $name;
                     Log::info('Product image saved successfully using move(): ' . $fullPath);
                 } else {
@@ -199,7 +199,10 @@ class VendorProductController extends Controller
         $product->track_stock       = true; // Always track stock
         $product->allow_backorder   = false;
         $product->stock_notes       = null;
+        
+        Log::info('Saving product with image URL: ' . ($imagePath ?? 'NULL'));
         $product->save();
+        Log::info('Product saved - ID: ' . $product->id . ', Image: ' . ($product->product_image_url ?? 'NULL'));
 
         // Log initial stock entry
         if ($request->stock_quantity > 0) {
@@ -337,13 +340,13 @@ class VendorProductController extends Controller
                 
                 // Try direct move to ensure it works
                 $destinationPath = storage_path('app/public/products');
-                $fullPath = $destinationPath . '/' . $name;
+                $fullPath = $destinationPath . DIRECTORY_SEPARATOR . $name;
                 
                 Log::info('Destination: ' . $fullPath);
                 
                 $moved = $file->move($destinationPath, $name);
                 
-                if ($moved && file_exists($fullPath)) {
+                if ($moved) {
                     $updateData['product_image_url'] = 'storage/products/' . $name;
                     Log::info('Product image saved successfully using move(): ' . $fullPath);
                 } else {
@@ -355,7 +358,13 @@ class VendorProductController extends Controller
             }
         }
 
-        Product::where('id', $id)->update($updateData);
+        Log::info('Before update - Product ID: ' . $id . ', Image URL in data: ' . ($updateData['product_image_url'] ?? 'NOT SET'));
+        $result = Product::where('id', $id)->update($updateData);
+        Log::info('Update result: ' . $result . ' rows updated');
+        
+        // Verify the update
+        $updatedProduct = Product::find($id);
+        Log::info('After update - Product Image URL: ' . ($updatedProduct->product_image_url ?? 'NULL'));
 
         // Log stock change if quantity changed
         if ($oldStock != $newStock) {

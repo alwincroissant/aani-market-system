@@ -52,6 +52,15 @@ class CheckoutController extends Controller
             return redirect()->route('getCart')->with('error', 'Please select at least one item to checkout.');
         }
 
+        // Reload product data from database to get latest images and pricing
+        foreach ($cart->items as $itemId => $item) {
+            $freshProduct = Product::find($item['item']->id);
+            if ($freshProduct) {
+                // Update the cart item with fresh product data
+                $cart->items[$itemId]['item'] = $freshProduct;
+            }
+        }
+
         // Group cart items by vendor
         $groupedCart = [];
         foreach ($cart->items as $itemId => $item) {
@@ -83,7 +92,7 @@ class CheckoutController extends Controller
             }
         }
 
-        // Ensure customer record exists
+        // Ensure customer record exists and keep relation fresh
         $customer = Auth::user()->customer;
         if (!$customer) {
             // Create customer record if it doesn't exist
@@ -94,8 +103,8 @@ class CheckoutController extends Controller
                 'phone' => '',
                 'delivery_address' => '',
             ]);
+            Auth::user()->setRelation('customer', $customer);
         } else {
-            // Update customer record if first_name or last_name are empty
             if (empty($customer->first_name) || empty($customer->last_name)) {
                 $nameParts = explode(' ', Auth::user()->name ?? 'First Name Last Name', 2);
                 $customer->first_name = $customer->first_name ?: ($nameParts[0] ?? 'First Name');
@@ -111,11 +120,27 @@ class CheckoutController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // prepare customer info values for view
+        $customerName = Auth::user()->name;
+        if ($customer && $customer->first_name && $customer->last_name) {
+            $customerName = trim($customer->first_name . ' ' . $customer->last_name);
+        }
+        $customerPhone = $customer->phone ?? '';
+
+        // build selected address text
+        $selectedAddress = $addresses ? $addresses->firstWhere('is_default', true) : null;
+        $selectedAddressText = $selectedAddress
+            ? trim($selectedAddress->address_line . ', ' . $selectedAddress->city . ($selectedAddress->province ? ', ' . $selectedAddress->province : '') . ($selectedAddress->postal_code ? ' ' . $selectedAddress->postal_code : ''))
+            : 'No address selected';
+
         return view('checkout.index', [
             'groupedCart' => $groupedCart,
             'vendorInfo' => $vendorInfo,
             'totalPrice' => $cart->totalPrice,
-            'addresses' => $addresses
+            'addresses' => $addresses,
+            'customerName' => $customerName,
+            'customerPhone' => $customerPhone,
+            'selectedAddressText' => $selectedAddressText,
         ]);
     }
 
@@ -136,7 +161,20 @@ class CheckoutController extends Controller
         
         // If customer name is empty, use the authenticated user's name
         $customerName = $request->customer_name ?: Auth::user()->name;
-        $customerPhone = $request->customer_phone ?: Auth::user()->customer->phone;
+        // make sure a customer record exists here too
+        $customer = Auth::user()->customer;
+        if (!$customer) {
+            $customer = \App\Models\Customer::firstOrCreate([
+                'user_id' => Auth::id()
+            ], [
+                'first_name' => Auth::user()->name ?? '',
+                'last_name' => '',
+                'phone' => '',
+                'delivery_address' => '',
+            ]);
+            Auth::user()->setRelation('customer', $customer);
+        }
+        $customerPhone = $request->customer_phone ?: ($customer->phone ?? '');
         
         // Validate stock availability before creating the order
         $outOfStock = [];

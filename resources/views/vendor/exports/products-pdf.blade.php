@@ -78,11 +78,12 @@
         <tbody>
             @forelse($products as $product)
                 <tr>
-                    <td>{{ $product->name }}</td>
+                    {{-- query returns stdClass with product columns; primary name field is product_name --}}
+                    <td>{{ $product->product_name ?? '[unnamed]' }}</td>
                     <td>{{ $product->sku ?? 'N/A' }}</td>
-                    <td style="text-align: right;">KSH {{ number_format($product->price, 2) }}</td>
-                    <td style="text-align: right;">{{ $product->quantity }}</td>
-                    <td style="text-align: right;">{{ $product->total_sold }}</td>
+                    <td style="text-align: right;">KSH {{ number_format($product->price ?? 0, 2) }}</td>
+                    <td style="text-align: right;">{{ $product->stock_quantity ?? 0 }}</td>
+                    <td style="text-align: right;">{{ $product->total_sold ?? 0 }}</td>
                 </tr>
             @empty
                 <tr>

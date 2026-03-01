@@ -222,12 +222,13 @@ class VendorReportController extends Controller
             fputcsv($output, ['Product Name', 'SKU', 'Price', 'Stock', 'Total Sold']);
 
             foreach ($products as $product) {
+                // products coming from query builder use column names directly
                 fputcsv($output, [
-                    $product->name,
+                    $product->product_name ?? '[unnamed]',
                     $product->sku ?? 'N/A',
-                    number_format($product->price, 2),
-                    $product->quantity,
-                    $product->total_sold
+                    number_format($product->price ?? 0, 2),
+                    $product->stock_quantity ?? 0,
+                    $product->total_sold ?? 0
                 ]);
             }
             fclose($output);

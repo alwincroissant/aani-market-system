@@ -3,6 +3,18 @@
 @section('title', 'Checkout')
 
 @section('content')
+<style>
+    .checkout-product-image {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+        min-height: 50px;
+        flex-shrink: 0;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+</style>
 <div class="row">
     <div class="col-12">
         <h2 class="mb-4">Checkout</h2>
@@ -49,11 +61,16 @@
                                                 @foreach($items as $itemId => $item)
                                                     <tr id="checkout-row-{{ $itemId }}">
                                                         <td>
-                                                            <div class="d-flex align-items-center">
-                                                                <img src="{{ $item['item']->product_image_url ?? '/images/default-product.jpg' }}" 
-                                                                     alt="{{ $item['item']->product_name }}" 
-                                                                     class="img-thumbnail me-3" 
-                                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                                            <div class="d-flex align-items-center gap-3">
+                                                                @if(!empty($item['item']->product_image_url))
+                                                                    <img src="{{ asset($item['item']->product_image_url) }}" 
+                                                                         alt="{{ $item['item']->product_name }}" 
+                                                                         class="checkout-product-image">
+                                                                @else
+                                                                    <img src="{{ asset('/images/default-product.jpg') }}" 
+                                                                         alt="No image" 
+                                                                         class="checkout-product-image">
+                                                                @endif
                                                                 <div>
                                                                     <div class="fw-semibold">{{ $item['item']->product_name }}</div>
                                                                     <small class="text-muted">{{ $item['item']->unit_type }}</small>
@@ -94,19 +111,6 @@
                                 <h5 class="mb-0">Customer Information</h5>
                             </div>
                             <div class="card-body">
-                                @php
-                                    $customerName = auth()->user()->customer
-                                        ? (auth()->user()->customer->first_name && auth()->user()->customer->last_name
-                                            ? auth()->user()->customer->first_name . ' ' . auth()->user()->customer->last_name
-                                            : auth()->user()->name)
-                                        : auth()->user()->name;
-                                    $customerPhone = auth()->user()->customer ? auth()->user()->customer->phone : '';
-                                    $selectedAddress = $addresses ? $addresses->firstWhere('is_default', true) : null;
-                                    $selectedAddressText = $selectedAddress
-                                        ? trim($selectedAddress->address_line . ', ' . $selectedAddress->city . ($selectedAddress->province ? ', ' . $selectedAddress->province : '') . ($selectedAddress->postal_code ? ' ' . $selectedAddress->postal_code : ''))
-                                        : 'No address selected';
-                                @endphp
-
                                 <input type="hidden" id="customer_name" name="customer_name" value="{{ $customerName }}">
                                 <input type="hidden" id="customer_phone" name="customer_phone" value="{{ $customerPhone }}">
 

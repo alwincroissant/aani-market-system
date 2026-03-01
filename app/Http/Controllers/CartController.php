@@ -54,6 +54,12 @@ class CartController extends Controller
 
     if ($cart->items) {
         foreach ($cart->items as $itemId => $item) {
+            // Reload product from database to get latest data (images, pricing, etc)
+            $freshProduct = Product::find($item['item']->id);
+            if ($freshProduct) {
+                $cart->items[$itemId]['item'] = $freshProduct;
+            }
+            
             if (isset($item['item']) && $item['item']->vendor_id) {
                 $cart->items[$itemId]['item']->vendor = Vendor::find($item['item']->vendor_id);
             }

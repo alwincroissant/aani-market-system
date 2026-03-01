@@ -224,13 +224,19 @@ function updateItemAndNotes(itemId, status, notes) {
                 console.log('Notes update data:', data);
                 if (data.success) {
                     showToast('Status and notes updated successfully', 'success');
+                    // Update the order status badge
+                    updateOrderStatusBadge(status);
                 } else {
                     showToast('Status updated but failed to update notes: ' + data.message, 'warning');
+                    // Update the order status badge anyway
+                    updateOrderStatusBadge(status);
                 }
             })
             .catch(error => {
                 console.error('Error updating notes:', error);
                 showToast('Status updated but failed to update notes', 'warning');
+                // Update the order status badge anyway
+                updateOrderStatusBadge(status);
             });
         } else {
             showToast('Failed to update status: ' + data.message, 'error');
@@ -265,6 +271,8 @@ function updateItemStatus(itemId, status) {
             let message = 'Status updated successfully';
             if (data.order_status_updated) {
                 message = 'Status and order updated successfully';
+                // Update the main order status badge
+                updateOrderStatusBadge(status);
             }
             showToast(message, 'success');
         } else {
@@ -327,6 +335,41 @@ function generatePickupCode(orderId) {
     })
     .catch(error => {
         showToast('Error generating pickup code', 'error');
+    });
+}
+
+function updateOrderStatusBadge(status) {
+    // Find the status badge element and update its class and text
+    const statusBadges = document.querySelectorAll('span.badge');
+    statusBadges.forEach(badge => {
+        // Check if this is the order status badge (contains the status text)
+        if (badge.textContent.trim() === 'Pending' || 
+            badge.textContent.trim() === 'Confirmed' || 
+            badge.textContent.trim() === 'Ready' || 
+            badge.textContent.trim() === 'Preparing' || 
+            badge.textContent.trim() === 'Awaiting Rider' || 
+            badge.textContent.trim() === 'Out for Delivery' || 
+            badge.textContent.trim() === 'Delivered' || 
+            badge.textContent.trim() === 'Completed' || 
+            badge.textContent.trim() === 'Cancelled') {
+            
+            // Determine the new badge color based on status
+            let badgeColor = 'secondary';
+            let statusText = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            if (status === 'pending') badgeColor = 'warning';
+            else if (status === 'confirmed') badgeColor = 'info';
+            else if (status === 'ready') badgeColor = 'primary';
+            else if (status === 'completed') badgeColor = 'success';
+            else if (status === 'cancelled') badgeColor = 'danger';
+            else badgeColor = 'secondary';
+            
+            // Update the badge class and text
+            badge.className = `badge bg-${badgeColor}`;
+            badge.textContent = status === 'awaiting_rider' ? 'Awaiting Rider' : 
+                               status === 'out_for_delivery' ? 'Out for Delivery' :
+                               statusText;
+        }
     });
 }
 
