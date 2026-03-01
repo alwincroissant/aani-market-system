@@ -44,18 +44,58 @@ class AdminDashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Get top vendors by sales (through order_items)
-        $topVendors = DB::table('order_items as oi')
+        // Get top vendors by sales (including both online and physical sales)
+        $onlineVendorSales = DB::table('order_items as oi')
             ->join('vendors as v', 'oi.vendor_id', '=', 'v.id')
             ->select(
+                'v.id',
                 'v.business_name', 
                 DB::raw('COUNT(DISTINCT oi.order_id) as total_orders'), 
                 DB::raw('SUM(oi.quantity * oi.unit_price) as total_sales')
             )
             ->groupBy('v.id', 'v.business_name')
-            ->orderBy('total_sales', 'desc')
-            ->limit(5)
             ->get();
+
+        $physicalVendorSales = DB::table('walk_in_sales as ws')
+            ->join('vendors as v', 'ws.vendor_id', '=', 'v.id')
+            ->select(
+                'v.id',
+                'v.business_name',
+                DB::raw('0 as total_orders'),
+                DB::raw('SUM(ws.quantity * ws.unit_price) as total_sales')
+            )
+            ->groupBy('v.id', 'v.business_name')
+            ->get();
+
+        // Merge vendor sales data
+        $vendorSalesMap = collect();
+        foreach ($onlineVendorSales as $vendor) {
+            $vendorSalesMap->put($vendor->id, [
+                'business_name' => $vendor->business_name,
+                'total_orders' => $vendor->total_orders,
+                'total_sales' => $vendor->total_sales
+            ]);
+        }
+        foreach ($physicalVendorSales as $vendor) {
+            if ($vendorSalesMap->has($vendor->id)) {
+                $existing = $vendorSalesMap->get($vendor->id);
+                $vendorSalesMap->put($vendor->id, [
+                    'business_name' => $vendor->business_name,
+                    'total_orders' => $existing['total_orders'],
+                    'total_sales' => $existing['total_sales'] + $vendor->total_sales
+                ]);
+            } else {
+                $vendorSalesMap->put($vendor->id, [
+                    'business_name' => $vendor->business_name,
+                    'total_orders' => 0,
+                    'total_sales' => $vendor->total_sales
+                ]);
+            }
+        }
+        
+        $topVendors = $vendorSalesMap->sortByDesc('total_sales')->take(5)->map(function($item) {
+            return (object) $item;
+        })->values();
 
         // Get top products across the entire market
         $topProducts = DB::table('order_items as oi')

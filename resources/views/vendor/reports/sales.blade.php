@@ -114,8 +114,9 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Sales Amount</th>
-                                <th>Orders</th>
-                                <th>Avg per Order</th>
+                                <th>Online Orders</th>
+                                <th>Physical Sales</th>
+                                <th>Avg per Transaction</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -124,7 +125,8 @@
                                     <td>{{ \Carbon\Carbon::parse($sale->date)->format('M d, Y') }}</td>
                                     <td>₱{{ number_format($sale->total, 2) }}</td>
                                     <td>{{ $sale->order_count }}</td>
-                                    <td>₱{{ number_format($sale->total / max($sale->order_count, 1), 2) }}</td>
+                                    <td>{{ $sale->physical_count }}</td>
+                                    <td>₱{{ number_format($sale->total / max($sale->order_count + $sale->physical_count, 1), 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

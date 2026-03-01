@@ -22,9 +22,10 @@ class AdminReportController extends Controller
 
         $startDate = $request->input('start_date', now()->subDays(30)->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
+        $isFiltered = $request->has('start_date') || $request->has('end_date');
 
-        // Query orders with vendor information through order_items
-        $orders = DB::table('orders as o')
+        // Query ONLINE orders with vendor information through order_items
+        $ordersQuery = DB::table('orders as o')
             ->join('order_items as oi', 'o.id', '=', 'oi.order_id')
             ->join('vendors as v', 'oi.vendor_id', '=', 'v.id')
             ->whereBetween('o.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
@@ -36,19 +37,56 @@ class AdminReportController extends Controller
                 DB::raw('SUM(oi.quantity * oi.unit_price) * 0.05 as market_fee'),
                 DB::raw('SUM(oi.quantity * oi.unit_price) * 1.05 as total'),
                 'o.order_status as status',
-                'o.created_at'
+                'o.created_at',
+                DB::raw("'online' as sale_type")
             )
             ->groupBy('o.id', 'o.order_reference', 'v.business_name', 'o.order_status', 'o.created_at')
-            ->orderBy('o.created_at', 'desc')
-            ->get();
+            ->orderBy('o.created_at', 'desc');
 
-        // Calculate totals
-        $totalRevenue = $orders->sum('total');
-        $totalMarketFees = $orders->sum('market_fee');
-        $totalGrossSales = $orders->sum('subtotal');
+        // Only limit to 10 if no filter was applied
+        if (!$isFiltered) {
+            $ordersQuery->limit(10);
+        }
+
+        $orders = $ordersQuery->get();
+
+        // Get PHYSICAL/walk-in sales
+        $physicalSalesQuery = DB::table('walk_in_sales as ws')
+            ->join('vendors as v', 'ws.vendor_id', '=', 'v.id')
+            ->whereBetween('ws.sale_date', [$startDate, $endDate])
+            ->select(
+                'ws.id',
+                DB::raw("CONCAT('WS-', ws.id) as order_number"),
+                'v.business_name',
+                DB::raw('ws.quantity * ws.unit_price as subtotal'),
+                DB::raw('ws.quantity * ws.unit_price * 0.05 as market_fee'),
+                DB::raw('ws.quantity * ws.unit_price * 1.05 as total'),
+                DB::raw("'completed' as status"),
+                'ws.sale_date as created_at',
+                DB::raw("'physical' as sale_type")
+            )
+            ->orderBy('ws.sale_date', 'desc');
+
+        if (!$isFiltered) {
+            $physicalSalesQuery->limit(5);
+        }
+
+        $physicalSales = $physicalSalesQuery->get();
+
+        // Merge and sort all sales
+        $allSales = $orders->concat($physicalSales)->sortByDesc('created_at');
+        
+        if (!$isFiltered) {
+            $allSales = $allSales->take(10);
+        }
+
+        // Calculate totals from all sales
+        $totalRevenue = $allSales->sum('total');
+        $totalMarketFees = $allSales->sum('market_fee');
+        $totalGrossSales = $allSales->sum('subtotal');
 
         return view('admin.reports.sales', compact(
-            'orders',
+            'allSales',
             'startDate',
             'endDate',
             'totalRevenue',

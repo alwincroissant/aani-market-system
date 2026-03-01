@@ -43,6 +43,34 @@
         </div>
     </div>
 
+    {{-- Unpaid Bills Alert --}}
+    @if($unpaidBillsCount > 0)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">Unpaid Bills</h5>
+                        <p class="mb-0">
+                            You have <strong>{{ $unpaidBillsCount }}</strong> unpaid bill{{ $unpaidBillsCount > 1 ? 's' : '' }} 
+                            totaling <strong>₱{{ number_format($totalUnpaidAmount, 2) }}</strong>
+                        </p>
+                        @if($unpaidBills->where('status', 'overdue')->count() > 0)
+                            <small class="text-danger">
+                                <i class="bi bi-clock-fill"></i> {{ $unpaidBills->where('status', 'overdue')->count() }} overdue payment(s)
+                            </small>
+                        @endif
+                    </div>
+                </div>
+                <a href="{{ route('vendor.stall-payments') }}" class="btn btn-warning">
+                    <i class="bi bi-cash-coin me-1"></i> Pay Now
+                </a>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Key Metrics Row --}}
     <div class="row mb-4">
         <div class="col-md-3">

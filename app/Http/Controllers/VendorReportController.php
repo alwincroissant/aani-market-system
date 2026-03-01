@@ -34,20 +34,66 @@ class VendorReportController extends Controller
             'end_date' => $endDate
         ]);
 
-        // Get vendor's sales data
-        $sales = DB::table('order_items')
+        // Get vendor's ONLINE sales data
+        $onlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count')
+            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count, 0 as physical_count')
             ->groupBy('date')
-            ->orderBy('date', 'desc')
             ->get();
+
+        // Get vendor's PHYSICAL/walk-in sales data
+        $physicalSales = DB::table('walk_in_sales')
+            ->where('vendor_id', $vendor->id)
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->selectRaw('DATE(sale_date) as date, SUM(quantity * unit_price) as total, 0 as order_count, COUNT(*) as physical_count')
+            ->groupBy('date')
+            ->get();
+
+        // Merge online and physical sales by date
+        $salesByDate = collect();
+        
+        // Add online sales
+        foreach ($onlineSales as $sale) {
+            $salesByDate->put($sale->date, [
+                'date' => $sale->date,
+                'total' => $sale->total,
+                'order_count' => $sale->order_count,
+                'physical_count' => 0
+            ]);
+        }
+        
+        // Add or merge physical sales
+        foreach ($physicalSales as $sale) {
+            if ($salesByDate->has($sale->date)) {
+                $existing = $salesByDate->get($sale->date);
+                $salesByDate->put($sale->date, [
+                    'date' => $sale->date,
+                    'total' => $existing['total'] + $sale->total,
+                    'order_count' => $existing['order_count'],
+                    'physical_count' => $sale->physical_count
+                ]);
+            } else {
+                $salesByDate->put($sale->date, [
+                    'date' => $sale->date,
+                    'total' => $sale->total,
+                    'order_count' => 0,
+                    'physical_count' => $sale->physical_count
+                ]);
+            }
+        }
+        
+        // Convert to collection of objects and sort by date descending
+        $sales = $salesByDate->sortKeysDesc()->map(function($item) {
+            return (object) $item;
+        })->values();
 
         // Debug: Log query results
         Log::info('Sales Query Results:', [
             'sales_count' => $sales->count(),
-            'sales_data' => $sales->toArray()
+            'online_sales_days' => $onlineSales->count(),
+            'physical_sales_days' => $physicalSales->count()
         ]);
 
         // Calculate totals
@@ -113,14 +159,54 @@ class VendorReportController extends Controller
         $startDate = $request->get('start_date', now()->subDays(30)->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
 
-        $sales = DB::table('order_items')
+        // Get vendor's ONLINE sales data
+        $onlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count')
+            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count, 0 as physical_count')
             ->groupBy('date')
-            ->orderBy('date', 'desc')
             ->get();
+
+        // Get vendor's PHYSICAL/walk-in sales data
+        $physicalSales = DB::table('walk_in_sales')
+            ->where('vendor_id', $vendor->id)
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->selectRaw('DATE(sale_date) as date, SUM(quantity * unit_price) as total, 0 as order_count, COUNT(*) as physical_count')
+            ->groupBy('date')
+            ->get();
+
+        // Merge online and physical sales by date
+        $salesByDate = collect();
+        foreach ($onlineSales as $sale) {
+            $salesByDate->put($sale->date, [
+                'date' => $sale->date,
+                'total' => $sale->total,
+                'order_count' => $sale->order_count,
+                'physical_count' => 0
+            ]);
+        }
+        foreach ($physicalSales as $sale) {
+            if ($salesByDate->has($sale->date)) {
+                $existing = $salesByDate->get($sale->date);
+                $salesByDate->put($sale->date, [
+                    'date' => $sale->date,
+                    'total' => $existing['total'] + $sale->total,
+                    'order_count' => $existing['order_count'],
+                    'physical_count' => $sale->physical_count
+                ]);
+            } else {
+                $salesByDate->put($sale->date, [
+                    'date' => $sale->date,
+                    'total' => $sale->total,
+                    'order_count' => 0,
+                    'physical_count' => $sale->physical_count
+                ]);
+            }
+        }
+        $sales = $salesByDate->sortKeysDesc()->map(function($item) {
+            return (object) $item;
+        })->values();
 
         $totalSales = $sales->sum('total');
         $totalOrders = $sales->count();
@@ -148,25 +234,66 @@ class VendorReportController extends Controller
         $startDate = $request->get('start_date', now()->subDays(30)->toDateString());
         $endDate = $request->get('end_date', now()->toDateString());
 
-        $sales = DB::table('order_items')
+        // Get vendor's ONLINE sales data
+        $onlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count')
+            ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count, 0 as physical_count')
             ->groupBy('date')
-            ->orderBy('date', 'desc')
             ->get();
+
+        // Get vendor's PHYSICAL/walk-in sales data
+        $physicalSales = DB::table('walk_in_sales')
+            ->where('vendor_id', $vendor->id)
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->selectRaw('DATE(sale_date) as date, SUM(quantity * unit_price) as total, 0 as order_count, COUNT(*) as physical_count')
+            ->groupBy('date')
+            ->get();
+
+        // Merge online and physical sales by date
+        $salesByDate = collect();
+        foreach ($onlineSales as $sale) {
+            $salesByDate->put($sale->date, [
+                'date' => $sale->date,
+                'total' => $sale->total,
+                'order_count' => $sale->order_count,
+                'physical_count' => 0
+            ]);
+        }
+        foreach ($physicalSales as $sale) {
+            if ($salesByDate->has($sale->date)) {
+                $existing = $salesByDate->get($sale->date);
+                $salesByDate->put($sale->date, [
+                    'date' => $sale->date,
+                    'total' => $existing['total'] + $sale->total,
+                    'order_count' => $existing['order_count'],
+                    'physical_count' => $sale->physical_count
+                ]);
+            } else {
+                $salesByDate->put($sale->date, [
+                    'date' => $sale->date,
+                    'total' => $sale->total,
+                    'order_count' => 0,
+                    'physical_count' => $sale->physical_count
+                ]);
+            }
+        }
+        $sales = $salesByDate->sortKeysDesc()->map(function($item) {
+            return (object) $item;
+        })->values();
 
         $totalSales = $sales->sum('total');
 
         return response()->streamDownload(function () use ($sales, $totalSales) {
             $output = fopen('php://output', 'w');
-            fputcsv($output, ['Date', 'Orders', 'Total Sales']);
+            fputcsv($output, ['Date', 'Online Orders', 'Physical Sales', 'Total Sales']);
 
             foreach ($sales as $record) {
                 fputcsv($output, [
                     $record->date,
                     $record->order_count,
+                    $record->physical_count,
                     number_format($record->total, 2)
                 ]);
             }

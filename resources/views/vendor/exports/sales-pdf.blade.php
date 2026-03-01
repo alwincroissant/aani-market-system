@@ -92,7 +92,8 @@
         <thead>
             <tr>
                 <th>Date</th>
-                <th style="text-align: right;">Orders</th>
+                <th style="text-align: right;">Online Orders</th>
+                <th style="text-align: right;">Physical Sales</th>
                 <th style="text-align: right;">Total Sales</th>
             </tr>
         </thead>
@@ -101,11 +102,12 @@
                 <tr>
                     <td>{{ $record->date }}</td>
                     <td style="text-align: right;">{{ $record->order_count }}</td>
-                    <td style="text-align: right;">KSH {{ number_format($record->total, 2) }}</td>
+                    <td style="text-align: right;">{{ $record->physical_count }}</td>
+                    <td style="text-align: right;">₱{{ number_format($record->total, 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" style="text-align: center; color: #95a5a6;">No sales data found for the selected period.</td>
+                    <td colspan="4" style="text-align: center; color: #95a5a6;">No sales data found for the selected period.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -114,12 +116,12 @@
     <div class="totals-section">
         <table class="totals-table">
             <tr>
-                <th>Total Orders</th>
+                <th>Total Days</th>
                 <td>{{ $totalOrders }}</td>
             </tr>
             <tr>
                 <th style="background-color: #16a085;">Total Sales</th>
-                <td style="background-color: #d5f4e6; font-weight: bold;">KSH {{ number_format($totalSales, 2) }}</td>
+                <td style="background-color: #d5f4e6; font-weight: bold;">₱{{ number_format($totalSales, 2) }}</td>
             </tr>
         </table>
     </div>

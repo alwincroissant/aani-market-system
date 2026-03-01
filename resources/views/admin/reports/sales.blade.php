@@ -65,6 +65,16 @@
         font-weight: 500;
     }
 
+    .badge-pending   { background: var(--warn-lt);  color: var(--warn); }
+    .badge-confirmed,
+    .badge-ready,
+    .badge-preparing,
+    .badge-awaiting_rider { background: #e8eef7; color: #1f4f82; }
+    .badge-out_for_delivery { background: #e8eef7; color: #1f4f82; }
+    .badge-completed { background: var(--accent-lt); color: var(--accent); }
+    .badge-delivered { background: #e1f3ed; color: #176b4b; }
+    .badge-cancelled { background: #fde8e7; color: var(--danger); }
+
     .btn-outline-primary {
         padding: 6px 12px;
         border: 1px solid var(--border);
@@ -184,19 +194,20 @@
         </div>
         <div class="stat-card">
             <div class="stat-label">Total Orders</div>
-            <div class="stat-value mono">{{ $orders->count() }}</div>
+            <div class="stat-value mono">{{ $allSales->count() }}</div>
         </div>
     </div>
 
     <!-- Orders Table -->
     <div class="card">
         <div class="card-body" style="padding: 0;">
-            @if($orders->count() > 0)
+            @if($allSales->count() > 0)
                 <table>
                     <thead>
                         <tr>
                             <th>Date</th>
                             <th>Order #</th>
+                            <th>Type</th>
                             <th>Vendor</th>
                             <th>Gross Sale</th>
                             <th>Market Fee</th>
@@ -205,10 +216,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($orders as $order)
+                        @foreach($allSales as $order)
                             <tr>
                                 <td>{{ \Carbon\Carbon::parse($order->created_at)->format('M d, Y H:i') }}</td>
                                 <td class="mono">{{ $order->order_number }}</td>
+                                <td>
+                                    @if($order->sale_type == 'physical')
+                                        <span class="badge" style="background: #e1f3ed; color: #176b4b;">Physical</span>
+                                    @else
+                                        <span class="badge" style="background: #e8eef7; color: #1f4f82;">Online</span>
+                                    @endif
+                                </td>
                                 <td>{{ $order->business_name }}</td>
                                 <td class="mono">₱{{ number_format($order->subtotal, 2) }}</td>
                                 <td class="mono">₱{{ number_format($order->market_fee, 2) }}</td>

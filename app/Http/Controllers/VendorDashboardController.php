@@ -45,17 +45,24 @@ class VendorDashboardController extends Controller
         // Get low stock products (not implemented in current schema)
         $lowStockProducts = 0;
 
-        // Get weekly sales data
+        // Get weekly sales data (including both online and physical sales)
         $weeklySales = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $daySales = DB::table('order_items')
+            
+            // Online sales
+            $onlineSales = DB::table('order_items')
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->where('order_items.vendor_id', $vendor->id)
                 ->whereDate('orders.created_at', $date->toDateString())
                 ->sum(DB::raw('order_items.quantity * order_items.unit_price'));
             
-            $weeklySales[] = $daySales;
+            // Physical/walk-in sales
+            $physicalSales = WalkInSale::where('vendor_id', $vendor->id)
+                ->whereDate('sale_date', $date->toDateString())
+                ->sum(DB::raw('quantity * unit_price'));
+            
+            $weeklySales[] = $onlineSales + $physicalSales;
         }
         $weeklySales = array_reverse($weeklySales);
 
@@ -69,9 +76,20 @@ class VendorDashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Get unpaid stall payments
+        $unpaidBills = DB::table('stall_payments')
+            ->where('vendor_id', $vendor->id)
+            ->whereIn('status', ['pending', 'overdue'])
+            ->orderBy('due_date', 'asc')
+            ->get();
+
+        $unpaidBillsCount = $unpaidBills->count();
+        $totalUnpaidAmount = $unpaidBills->sum('amount_due');
+
         return view('vendor.dashboard', compact(
             'vendor', 'todaySales', 'todayOnlineSales', 'todayPhysicalSales',
-            'pendingOrders', 'lowStockProducts', 'weeklySales', 'topProducts'
+            'pendingOrders', 'lowStockProducts', 'weeklySales', 'topProducts',
+            'unpaidBills', 'unpaidBillsCount', 'totalUnpaidAmount'
         ));
     }
 
