@@ -19,6 +19,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\StockManagementController;
 use App\Http\Controllers\VendorStallPaymentController;
+use App\Http\Controllers\VendorWalkInSaleController;
 
 // Public Routes
 Route::get('/', [MarketMapController::class, 'index'])->name('home');
@@ -143,6 +144,13 @@ Route::middleware(['auth'])->group(function () {
     
     Route::post('/vendor/remove-banner', [VendorDashboardController::class, 'removeBanner'])->name('vendor.remove-banner');
     Route::post('/vendor/remove-logo',   [VendorDashboardController::class, 'removeLogo'])->name('vendor.remove-logo');
+
+    // Vendor Walk-In / Physical Sales Routes
+    Route::get('/vendor/walk-in-sales', [VendorWalkInSaleController::class, 'index'])->name('vendor.walk-in-sales.index');
+    Route::get('/vendor/walk-in-sales/create', [VendorWalkInSaleController::class, 'create'])->name('vendor.walk-in-sales.create');
+    Route::post('/vendor/walk-in-sales', [VendorWalkInSaleController::class, 'store'])->name('vendor.walk-in-sales.store');
+    Route::delete('/vendor/walk-in-sales/{id}', [VendorWalkInSaleController::class, 'destroy'])->name('vendor.walk-in-sales.destroy');
+    Route::get('/vendor/walk-in-sales/product-info/{productId}', [VendorWalkInSaleController::class, 'productInfo'])->name('vendor.walk-in-sales.product-info');
 
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');

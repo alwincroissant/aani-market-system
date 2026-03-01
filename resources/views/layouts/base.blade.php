@@ -90,6 +90,21 @@
                                     </a></li>
                                 </ul>
                             </li>
+
+                            <!-- Physical Sales Link -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="vendorPhysicalSalesDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-shop-window"></i> Physical Sales
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{{ route('vendor.walk-in-sales.create') }}">
+                                        <i class="bi bi-plus-circle"></i> Record Sale
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('vendor.walk-in-sales.index') }}">
+                                        <i class="bi bi-list-check"></i> View Physical Sales
+                                    </a></li>
+                                </ul>
+                            </li>
                             
                             <!-- Reports & Analytics Dropdown -->
                             <li class="nav-item dropdown">
@@ -319,6 +334,97 @@
 
     <div class="container mt-4">
         @include('layouts.flash-messages')
+
+        {{-- Vendor Rent Alert Popup --}}
+        @auth
+            @if(auth()->user()->role === 'vendor')
+                @php
+                    $vendorForRent = \App\Models\Vendor::where('user_id', auth()->id())->first();
+                    $rentAlerts = collect();
+                    if ($vendorForRent) {
+                        $rentAlerts = \App\Models\StallPayment::where('vendor_id', $vendorForRent->id)
+                            ->where('status', '!=', 'paid')
+                            ->where('due_date', '<=', now()->addDays(7)->toDateString())
+                            ->orderBy('due_date')
+                            ->get();
+                    }
+                @endphp
+                @if($rentAlerts->count() > 0)
+                    <!-- Rent Alert Modal -->
+                    <div class="modal fade" id="rentAlertModal" tabindex="-1" aria-labelledby="rentAlertModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-header {{ $rentAlerts->where('status', 'overdue')->count() > 0 ? 'bg-danger' : 'bg-warning' }} text-white">
+                                    <h5 class="modal-title" id="rentAlertModalLabel">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        Stall Rent Alert
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    @foreach($rentAlerts as $alert)
+                                        <div class="d-flex align-items-start mb-3 p-3 rounded {{ $alert->status === 'overdue' ? 'bg-danger-subtle border border-danger-subtle' : 'bg-warning-subtle border border-warning-subtle' }}">
+                                            <div class="me-3 mt-1">
+                                                @if($alert->status === 'overdue')
+                                                    <i class="bi bi-x-circle-fill text-danger fs-4"></i>
+                                                @else
+                                                    <i class="bi bi-clock-fill text-warning fs-4"></i>
+                                                @endif
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold">
+                                                    @if($alert->status === 'overdue')
+                                                        <span class="text-danger">OVERDUE</span>
+                                                    @else
+                                                        <span class="text-warning">Due Soon</span>
+                                                    @endif
+                                                    — Stall #{{ $alert->stall_id }}
+                                                    @if($alert->billing_period)
+                                                        <small class="text-muted">({{ $alert->billing_period }})</small>
+                                                    @endif
+                                                </div>
+                                                <div class="mt-1">
+                                                    <span class="fw-semibold">₱{{ number_format($alert->amount_due - $alert->amount_paid, 2) }}</span>
+                                                    remaining
+                                                </div>
+                                                <div class="small text-muted mt-1">
+                                                    Due: {{ \Carbon\Carbon::parse($alert->due_date)->format('M d, Y') }}
+                                                    @if($alert->status === 'overdue')
+                                                        <span class="text-danger fw-semibold">
+                                                            ({{ \Carbon\Carbon::parse($alert->due_date)->diffForHumans() }})
+                                                        </span>
+                                                    @else
+                                                        <span class="text-warning fw-semibold">
+                                                            ({{ \Carbon\Carbon::parse($alert->due_date)->diffForHumans() }})
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Remind Me Later</button>
+                                    <a href="{{ route('vendor.stall-payments') }}" class="btn {{ $rentAlerts->where('status', 'overdue')->count() > 0 ? 'btn-danger' : 'btn-warning' }}">
+                                        <i class="bi bi-credit-card me-1"></i> Pay Now
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if(session()->pull('show_rent_alert'))
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var rentModal = new bootstrap.Modal(document.getElementById('rentAlertModal'));
+                            rentModal.show();
+                        });
+                    </script>
+                    @endif
+                @endif
+            @endif
+        @endauth
+
         @yield('content')
     </div>
 

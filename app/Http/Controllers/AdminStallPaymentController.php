@@ -12,6 +12,11 @@ class AdminStallPaymentController extends Controller
 {
     public function index()
     {
+        // Auto-mark unpaid bills past their due date as overdue
+        StallPayment::where('status', 'unpaid')
+            ->where('due_date', '<', now()->toDateString())
+            ->update(['status' => 'overdue']);
+
         // Get all vendor rent records with stall info
         $payments = StallPayment::with(['vendor', 'stall'])
             ->orderBy('due_date', 'desc')

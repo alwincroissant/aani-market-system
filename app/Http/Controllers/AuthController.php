@@ -55,6 +55,7 @@ class AuthController extends Controller
             // Redirect based on user role
             $user = Auth::user();
             if ($user->role === 'vendor') {
+                session(['show_rent_alert' => true]);
                 return redirect()->intended(route('vendor.dashboard'))->with('success', 'Login successful.');
             } elseif ($user->role === 'administrator') {
                 return redirect()->intended(route('admin.dashboard.index'))->with('success', 'Login successful.');

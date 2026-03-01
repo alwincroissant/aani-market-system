@@ -45,7 +45,7 @@
 
     {{-- Key Metrics Row --}}
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -60,7 +60,39 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-3 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Physical Sales</h6>
+                            <h3 class="mb-0 text-success">₱{{ number_format($todayPhysicalSales, 2) }}</h3>
+                            <small class="text-muted">Walk-in / Weekend</small>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-shop-window fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 border-start border-3 border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Online Sales</h6>
+                            <h3 class="mb-0 text-info">₱{{ number_format($todayOnlineSales, 2) }}</h3>
+                            <small class="text-muted">Orders / Delivery</small>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-globe fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -70,21 +102,6 @@
                         </div>
                         <div class="text-warning">
                             <i class="bi bi-clock-history fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-2">Low Stock Items</h6>
-                            <h3 class="mb-0 text-danger">{{ $lowStockProducts }}</h3>
-                        </div>
-                        <div class="text-danger">
-                            <i class="bi bi-exclamation-triangle fs-1"></i>
                         </div>
                     </div>
                 </div>
@@ -177,6 +194,16 @@
                         <div class="col-md-3 mb-3">
                             <a href="{{ route('vendor.stall-payments') }}" class="btn btn-outline-warning w-100">
                                 <i class="bi bi-cash-coin me-2"></i>Stall Payment
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('vendor.walk-in-sales.create') }}" class="btn btn-success w-100">
+                                <i class="bi bi-shop-window me-2"></i>Record Physical Sale
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ route('vendor.walk-in-sales.index') }}" class="btn btn-outline-success w-100">
+                                <i class="bi bi-list-check me-2"></i>View Physical Sales
                             </a>
                         </div>
                     </div>

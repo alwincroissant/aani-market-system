@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\WalkInSale;
 
 class VendorDashboardController extends Controller
 {
@@ -19,12 +20,20 @@ class VendorDashboardController extends Controller
             return redirect()->route('auth.login')->with('error', 'Vendor profile not found.');
         }
 
-        // Get today's sales
-        $todaySales = DB::table('order_items')
+        // Get today's ONLINE sales
+        $todayOnlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
             ->whereDate('orders.created_at', now()->toDateString())
             ->sum(DB::raw('order_items.quantity * order_items.unit_price'));
+
+        // Get today's PHYSICAL / walk-in sales
+        $todayPhysicalSales = WalkInSale::where('vendor_id', $vendor->id)
+            ->whereDate('sale_date', now()->toDateString())
+            ->sum(DB::raw('quantity * unit_price'));
+
+        // Combined total for backward-compatible variable
+        $todaySales = $todayOnlineSales + $todayPhysicalSales;
 
         // Get pending orders
         $pendingOrders = DB::table('order_items')
@@ -60,7 +69,10 @@ class VendorDashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('vendor.dashboard', compact('vendor', 'todaySales', 'pendingOrders', 'lowStockProducts', 'weeklySales', 'topProducts'));
+        return view('vendor.dashboard', compact(
+            'vendor', 'todaySales', 'todayOnlineSales', 'todayPhysicalSales',
+            'pendingOrders', 'lowStockProducts', 'weeklySales', 'topProducts'
+        ));
     }
 
     public function updateLiveStatus(Request $request)
