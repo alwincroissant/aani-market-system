@@ -85,27 +85,25 @@
             <tr>
                 <th>Order Number</th>
                 <th>Vendor Name</th>
-                <th>Subtotal</th>
-                <th>Market Fee (5%)</th>
+                <th>Type</th>
                 <th>Total</th>
                 <th>Status</th>
                 <th>Date</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($orders as $order)
+            @forelse($allSales as $sale)
                 <tr>
-                    <td>{{ $order->order_number }}</td>
-                    <td>{{ $order->business_name }}</td>
-                    <td align="right">KSH {{ number_format($order->subtotal, 2) }}</td>
-                    <td align="right">KSH {{ number_format($order->market_fee, 2) }}</td>
-                    <td align="right">KSH {{ number_format($order->total, 2) }}</td>
-                    <td>{{ ucfirst($order->status) }}</td>
-                    <td>{{ \Carbon\Carbon::parse($order->created_at)->format('Y-m-d H:i') }}</td>
+                    <td>{{ $sale->order_number }}</td>
+                    <td>{{ $sale->business_name }}</td>
+                    <td>{{ ucfirst($sale->sale_type) }}</td>
+                    <td align="right">KSH {{ number_format($sale->total, 2) }}</td>
+                    <td>{{ ucfirst($sale->status) }}</td>
+                    <td>{{ \Carbon\Carbon::parse($sale->created_at)->format('Y-m-d H:i') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; color: #95a5a6;">No orders found for the selected period.</td>
+                    <td colspan="6" style="text-align: center; color: #95a5a6;">No sales found for the selected period.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -113,14 +111,6 @@
 
     <div class="totals-section">
         <table class="totals-table">
-            <tr>
-                <th>Total Gross Sales</th>
-                <td>KSH {{ number_format($totalGrossSales, 2) }}</td>
-            </tr>
-            <tr>
-                <th>Total Market Fees</th>
-                <td>KSH {{ number_format($totalMarketFees, 2) }}</td>
-            </tr>
             <tr>
                 <th style="background-color: #16a085;">Total Revenue</th>
                 <td style="background-color: #d5f4e6; font-weight: bold;">KSH {{ number_format($totalRevenue, 2) }}</td>

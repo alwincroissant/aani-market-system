@@ -281,6 +281,9 @@ class MockDataSeeder extends Seeder
             }
 
             foreach ($vendorTotals as $vendorId => $grossAmount) {
+                // Note: vendor_transactions table removed - no transaction fees
+                // Vendors keep 100% of sales. Market revenue = stall rental fees
+                /*
                 $feeAmount = round($grossAmount * ($feePercent / 100), 2);
                 $netAmount = round($grossAmount - $feeAmount, 2);
 
@@ -296,10 +299,14 @@ class MockDataSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+                */
             }
         }
 
         foreach ($walkInSaleIds as $sale) {
+            // Note: vendor_transactions table removed - no transaction fees
+            // Vendors keep 100% of sales. Market revenue = stall rental fees
+            /*
             $feeAmount = round($sale['gross'] * ($feePercent / 100), 2);
             $netAmount = round($sale['gross'] - $feeAmount, 2);
 
@@ -315,6 +322,7 @@ class MockDataSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            */
         }
 
         foreach ($products as $product) {

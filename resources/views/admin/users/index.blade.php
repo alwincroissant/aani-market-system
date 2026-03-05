@@ -40,7 +40,6 @@
                             <select class="form-select" name="role">
                                 <option value="">All Roles</option>
                                 <option value="administrator" {{ request('role') == 'administrator' ? 'selected' : '' }}>Admin</option>
-                                <option value="pickup_manager" {{ request('role') == 'pickup_manager' ? 'selected' : '' }}>Pickup Manager</option>
                                 <option value="vendor" {{ request('role') == 'vendor' ? 'selected' : '' }}>Vendor</option>
                                 <option value="customer" {{ request('role') == 'customer' ? 'selected' : '' }}>Customer</option>
                             </select>
@@ -81,8 +80,8 @@
                                             {{ $user->email }}
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $user->role == 'administrator' ? 'danger' : ($user->role == 'pickup_manager' ? 'warning' : ($user->role == 'vendor' ? 'success' : 'primary')) }}">
-                                                {{ $user->role == 'pickup_manager' ? 'Pickup Manager' : ucfirst($user->role) }}
+                                            <span class="badge bg-{{ $user->role == 'administrator' ? 'danger' : ($user->role == 'vendor' ? 'success' : 'primary') }}">
+                                                {{ ucfirst($user->role) }}
                                             </span>
                                         </td>
                                         <td>

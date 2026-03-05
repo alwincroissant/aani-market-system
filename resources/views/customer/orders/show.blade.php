@@ -103,14 +103,6 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="table-primary">
-                                    <th colspan="4">Subtotal</th>
-                                    <th>₱{{ number_format($subtotal, 2) }}</th>
-                                </tr>
-                                <tr>
-                                    <th colspan="4">Market Fee</th>
-                                    <th>₱{{ number_format($marketFee, 2) }}</th>
-                                </tr>
                                 <tr class="table-success">
                                     <th colspan="4">Total</th>
                                     <th>₱{{ number_format($totalAmount, 2) }}</th>

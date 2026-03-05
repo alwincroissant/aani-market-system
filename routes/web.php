@@ -20,6 +20,7 @@ use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\StockManagementController;
 use App\Http\Controllers\VendorStallPaymentController;
 use App\Http\Controllers\VendorWalkInSaleController;
+use App\Http\Controllers\PickupManagerController;
 
 // Public Routes
 Route::get('/', [MarketMapController::class, 'index'])->name('home');
@@ -93,6 +94,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/sales/export-csv', [AdminReportController::class, 'exportSalesCsv'])->name('reports.sales.export-csv');
         Route::get('/reports/attendance/export-pdf', [AdminReportController::class, 'exportAttendancePdf'])->name('reports.attendance.export-pdf');
         Route::get('/reports/attendance/export-csv', [AdminReportController::class, 'exportAttendanceCsv'])->name('reports.attendance.export-csv');
+
+        // Pickup Operations (admin-owned)
+        Route::get('/pickups', [PickupManagerController::class, 'index'])->name('pickups.index');
+        Route::post('/pickups/verify-code', [PickupManagerController::class, 'verifyPickupCode'])->name('pickups.verify-code');
+        Route::post('/pickups/mark-used', [PickupManagerController::class, 'markPickupCodeUsed'])->name('pickups.mark-used');
+        Route::get('/pickups/search-orders', [PickupManagerController::class, 'searchOrders'])->name('pickups.search-orders');
     });
     
     // Vendor Order Routes

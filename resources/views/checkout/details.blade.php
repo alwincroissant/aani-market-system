@@ -183,10 +183,6 @@
                         <strong id="subtotal">₱{{ number_format($subtotal, 2) }}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Market Fee:</span>
-                        <span>₱{{ number_format($marketFee, 2) }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
                         <span>Delivery Fee:</span>
                         <span id="deliveryFee">₱0.00</span>
                     </div>

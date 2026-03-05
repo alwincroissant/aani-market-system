@@ -181,20 +181,20 @@
     <!-- Summary Stats -->
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-label">Gross Sales</div>
-            <div class="stat-value mono">₱{{ number_format($totalGrossSales, 2) }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Market Fees (5%)</div>
-            <div class="stat-value mono">₱{{ number_format($totalMarketFees, 2) }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Net Revenue</div>
+            <div class="stat-label">Total Revenue</div>
             <div class="stat-value mono">₱{{ number_format($totalRevenue, 2) }}</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Total Orders</div>
+            <div class="stat-label">Total Sales</div>
             <div class="stat-value mono">{{ $allSales->count() }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Online Sales</div>
+            <div class="stat-value mono">{{ $allSales->where('sale_type', 'online')->count() }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Physical Sales</div>
+            <div class="stat-value mono">{{ $allSales->where('sale_type', 'physical')->count() }}</div>
         </div>
     </div>
 
@@ -209,9 +209,7 @@
                             <th>Order #</th>
                             <th>Type</th>
                             <th>Vendor</th>
-                            <th>Gross Sale</th>
-                            <th>Market Fee</th>
-                            <th>Net Payout</th>
+                            <th>Total</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -228,9 +226,7 @@
                                     @endif
                                 </td>
                                 <td>{{ $order->business_name }}</td>
-                                <td class="mono">₱{{ number_format($order->subtotal, 2) }}</td>
-                                <td class="mono">₱{{ number_format($order->market_fee, 2) }}</td>
-                                <td class="mono">₱{{ number_format($order->subtotal - $order->market_fee, 2) }}</td>
+                                <td class="mono">₱{{ number_format($order->total, 2) }}</td>
                                 <td>
                                     <span class="badge badge-{{ strtolower($order->status) }}">
                                         {{ ucfirst($order->status) }}

@@ -148,49 +148,6 @@
                             </li>
                         @endif
 
-                        {{-- Pickup Manager navigation --}}
-                        @if($role === 'pickup_manager')
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('home') }}">
-                                    <i class="bi bi-house"></i> Home
-                                </a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="pickupManagerDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-qr-code"></i> Pickup Management
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('home') }}">
-                                        <i class="bi bi-house"></i> Dashboard
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('home') }}#market-map-section">
-                                        <i class="bi bi-map"></i> Market Map
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
-                                        <i class="bi bi-calendar-check"></i> Attendance Report
-                                    </a></li>
-                                </ul>
-                            </li>
-                            
-                            <!-- Account Dropdown -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="pickupManagerAccountDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-person-circle"></i> Account
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><h6 class="dropdown-header">My Account</h6></li>
-                                    <li><a class="dropdown-item" href="{{ route('profile.index') }}">
-                                        <i class="bi bi-person"></i> Profile Settings
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="{{ route('logout') }}">
-                                        <i class="bi bi-box-arrow-right"></i> Logout
-                                    </a></li>
-                                </ul>
-                            </li>
-                        @endif
-
                         {{-- Admin navigation --}}
                         @if($role === 'administrator')
                             <li class="nav-item dropdown">
@@ -213,6 +170,9 @@
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.reports.attendance') }}">
                                         <i class="bi bi-calendar-check"></i> Attendance report
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.pickups.index') }}">
+                                        <i class="bi bi-qr-code-scan"></i> Pickup operations
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('home', ['view_site' => 1]) }}">

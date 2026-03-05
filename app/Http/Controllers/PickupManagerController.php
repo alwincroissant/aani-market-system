@@ -44,7 +44,7 @@ class PickupManagerController extends Controller
             )
             ->get();
 
-        return view('pickup-manager.index', compact('stats', 'recentPickups'));
+        return view('admin.pickups.index', compact('stats', 'recentPickups'));
     }
 
     public function verifyPickupCode(Request $request)
