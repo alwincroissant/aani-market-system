@@ -13,8 +13,9 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
-                <span class="fw-bold">AANI Market</span>
-                <span class="ms-2 text-muted small d-none d-sm-inline">Wet Market Online</span>
+                <img src="{{ asset('images/logo.png') }}"
+                    alt="AANI Market"
+                    style="height: 50px; width: auto; display: block;">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -398,7 +399,7 @@
                 --admin-green-soft: #e8f3ec;
             }
             .admin-theme .navbar {
-                background-color: var(--admin-green-dark) !important;
+                background-color: #BFE6CC !important;
             }
             .admin-theme .btn-primary {
                 background-color: var(--admin-green);

@@ -148,7 +148,6 @@
         color: var(--accent);
         position: relative;
     }
-    /* Underline accent on "online" */
     .hero-title em::after {
         content: '';
         position: absolute;
@@ -242,6 +241,33 @@
         white-space: nowrap;
     }
 
+    /* ── Hero Banner Strip ── */
+    /*
+     * width: 100vw + margin-left: calc(-50vw + 50%) breaks fully out of
+     * .page's padding and max-width so the image spans true browser edge-to-edge.
+     *
+     * background-size: cover always scales the image to fill the full width.
+     * Dragging the browser window wider zooms the image in;
+     * narrower zooms it out — purely horizontal scaling.
+     *
+     * No background-attachment (defaults to scroll) — no parallax, no vertical weirdness.
+     *
+     * Change height to show more or less of the image vertically.
+     */
+    .hero-banner-strip {
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        margin-bottom: 32px;
+        height: 300px;
+
+        background-size: cover;
+        background-position: center;
+
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 4px 14px rgba(0,0,0,.07);
+    }
+
     /* ── Section header ── */
     .section-header {
         display: flex;
@@ -303,12 +329,12 @@
         transition: background .15s;
         align-self: flex-start;
     }
-    .btn-sm.green   { background: var(--accent); color: #fff; }
-    .btn-sm.green:hover { background: var(--accent-dk); }
-    .btn-sm.amber   { background: var(--warm); color: #fff; }
-    .btn-sm.amber:hover { background: #b45309; }
-    .btn-sm.outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-    .btn-sm.outline:hover { background: var(--bg); }
+    .btn-sm.green        { background: var(--accent); color: #fff; }
+    .btn-sm.green:hover  { background: var(--accent-dk); }
+    .btn-sm.amber        { background: var(--warm); color: #fff; }
+    .btn-sm.amber:hover  { background: #b45309; }
+    .btn-sm.outline      { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-sm.outline:hover{ background: var(--bg); }
 
     /* ── Vendor Grid ── */
     .vendor-grid {
@@ -391,9 +417,9 @@
     .product-vendor { font-size: 12px; color: var(--muted); }
     .product-desc   { font-size: 12px; color: var(--muted); flex: 1; }
 
-    .product-footer { margin-top: 10px; }
-    .product-price { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; color: var(--accent); }
-    .product-unit  { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
+    .product-footer  { margin-top: 10px; }
+    .product-price   { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; color: var(--accent); }
+    .product-unit    { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
     .product-actions { display: flex; gap: 6px; }
 
     /* ── Center helper ── */
@@ -437,28 +463,6 @@
     .legend-dot  { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 
     #marketMap { height: 580px; }
-
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-        .hero-title   { font-size: 32px; }
-        .hero-inner   { padding: 40px 32px 36px; }
-        .hero-stats   { flex-wrap: wrap; }
-        .vendor-grid  { grid-template-columns: repeat(2, 1fr); }
-        .product-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 640px) {
-        .page         { padding: 20px 16px; }
-        .hero-title   { font-size: 26px; }
-        .hero-inner   { padding: 32px 20px 28px; }
-        .hero-stat    { padding: 12px 18px; }
-        .hero-stat-value { font-size: 15px; }
-        .quick-grid   { grid-template-columns: 1fr; }
-        .vendor-grid  { grid-template-columns: 1fr; }
-        .product-grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 400px) {
-        .product-grid { grid-template-columns: 1fr; }
-    }
 </style>
 
 {{-- Admin Banner --}}
@@ -478,9 +482,12 @@
     👋 Welcome back, <strong>{{ $welcomeFirst }}</strong>! Ready to shop?
 </div>
 @endif
+{{-- ── Hero Banner Strip ── --}}
+<div class="hero-banner-strip"
+    style="background-image: url('{{ asset('images/banner.png') }}');"></div>
+
 
 <div class="page">
-
     {{-- ── Hero ── --}}
     <div class="hero" style="margin-bottom: 28px;">
         <div class="hero-inner">
