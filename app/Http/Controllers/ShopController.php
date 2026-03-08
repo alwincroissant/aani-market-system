@@ -170,7 +170,9 @@ class ShopController extends Controller
                 'v.delivery_available',
                 'v.weekend_pickup_enabled',
                 'v.weekday_delivery_enabled',
-                'v.weekend_delivery_enabled'
+                'v.weekend_delivery_enabled',
+                'v.contact_phone',
+                'v.contact_email'
             )
             ->first();
 
