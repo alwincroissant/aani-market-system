@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Vendor;
 use App\Models\ProductCategory;
+use App\Models\ProductImage;
 
 /**
  * @property int $id
@@ -63,6 +64,17 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(ProductCategory::class);
+    }
+
+    // Relationship to product images
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('display_order');
+    }
+
+    public function primaryImage()
+    {
+        return $this->hasOne(ProductImage::class)->where('is_primary', true);
     }
 
     // Stock management methods

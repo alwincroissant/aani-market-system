@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     @stack('styles')
 </head>
-<body class="pt-5 {{ request()->is('admin*') ? 'admin-theme' : '' }}">
+<body class="pt-5 {{ request()->is('admin*') ? 'admin-theme' : '' }} {{ auth()->check() && auth()->user()->role === 'vendor' ? 'vendor-theme' : '' }}">
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('home') }}">
@@ -70,39 +70,24 @@
                                     <li><a class="dropdown-item" href="{{ route('products.create') }}">
                                         <i class="bi bi-plus-circle"></i> Add New Product
                                     </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ route('vendor.reports.products') }}">
-                                        <i class="bi bi-graph-up"></i> Product Performance
-                                    </a></li>
                                 </ul>
                             </li>
                             
-                            <!-- Orders Management Dropdown -->
+                            <!-- Sales Management Dropdown (Orders + Physical Sales) -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="vendorOrdersDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-cart3"></i> Orders
+                                    <i class="bi bi-cart3"></i> Sales
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="{{ route('vendor.orders.index') }}">
                                         <i class="bi bi-list"></i> View Orders
                                     </a></li>
-                                    <li><a class="dropdown-item" href="{{ route('vendor.reports.orders') }}">
-                                        <i class="bi bi-graph-up"></i> Orders Report
-                                    </a></li>
-                                </ul>
-                            </li>
-
-                            <!-- Physical Sales Link -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="vendorPhysicalSalesDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-shop-window"></i> Physical Sales
-                                </a>
-                                <ul class="dropdown-menu">
+                                    <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ route('vendor.walk-in-sales.create') }}">
-                                        <i class="bi bi-plus-circle"></i> Record Sale
+                                        <i class="bi bi-plus-circle"></i> Record Physical Sale
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ route('vendor.walk-in-sales.index') }}">
-                                        <i class="bi bi-list-check"></i> View Physical Sales
+                                        <i class="bi bi-shop-window"></i> View Physical Sales
                                     </a></li>
                                 </ul>
                             </li>
@@ -434,6 +419,169 @@
             }
         </style>
     @endif
+
+    @auth
+        @if(auth()->user()->role === 'vendor')
+            <style>
+                :root {
+                    --vendor-bg: #F5F4F0;
+                    --vendor-surface: #FFFFFF;
+                    --vendor-border: #E4E2DC;
+                    --vendor-text: #1A1916;
+                    --vendor-muted: #7A7871;
+                    --vendor-accent: #1D6F42;
+                    --vendor-accent-light: #EAF4EE;
+                    --vendor-accent-dark: #155232;
+                    --vendor-warm: #D97706;
+                    --vendor-warm-light: #FEF3C7;
+                    --vendor-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
+                }
+
+                .vendor-theme {
+                    background: var(--vendor-bg);
+                    color: var(--vendor-text);
+                }
+
+                .vendor-theme .navbar {
+                    background-color: var(--vendor-surface) !important;
+                    border-bottom: 1px solid var(--vendor-border) !important;
+                }
+
+                .vendor-theme .nav-link,
+                .vendor-theme .dropdown-item,
+                .vendor-theme .dropdown-header {
+                    color: var(--vendor-text);
+                }
+
+                .vendor-theme .nav-link:hover,
+                .vendor-theme .nav-link:focus,
+                .vendor-theme .dropdown-item:hover,
+                .vendor-theme .dropdown-item:focus {
+                    color: var(--vendor-accent);
+                    background-color: var(--vendor-accent-light);
+                }
+
+                .vendor-theme .container > .card,
+                .vendor-theme .card {
+                    background: var(--vendor-surface);
+                    border: 1px solid var(--vendor-border);
+                    box-shadow: var(--vendor-shadow);
+                }
+
+                .vendor-theme .card-header {
+                    background: #F8F8F5;
+                    border-bottom: 1px solid var(--vendor-border);
+                    color: var(--vendor-text);
+                    font-weight: 600;
+                }
+
+                .vendor-theme .btn-primary,
+                .vendor-theme .bg-primary,
+                .vendor-theme .badge.bg-primary {
+                    background-color: var(--vendor-accent) !important;
+                    border-color: var(--vendor-accent) !important;
+                    color: #fff !important;
+                }
+
+                .vendor-theme .btn-primary:hover,
+                .vendor-theme .btn-primary:focus {
+                    background-color: var(--vendor-accent-dark) !important;
+                    border-color: var(--vendor-accent-dark) !important;
+                }
+
+                .vendor-theme .btn-success,
+                .vendor-theme .badge.bg-success {
+                    background-color: var(--vendor-accent) !important;
+                    border-color: var(--vendor-accent) !important;
+                }
+
+                .vendor-theme .btn-outline-primary {
+                    color: var(--vendor-accent) !important;
+                    border-color: #A9CCB8 !important;
+                }
+
+                .vendor-theme .btn-outline-primary:hover,
+                .vendor-theme .btn-outline-primary:focus {
+                    background-color: var(--vendor-accent-light) !important;
+                    color: var(--vendor-accent-dark) !important;
+                    border-color: #8FBFA5 !important;
+                }
+
+                .vendor-theme .btn-outline-success {
+                    color: var(--vendor-accent-dark) !important;
+                    border-color: #A9CCB8 !important;
+                }
+
+                .vendor-theme .btn-outline-success:hover,
+                .vendor-theme .btn-outline-success:focus {
+                    background-color: var(--vendor-accent-light) !important;
+                    color: var(--vendor-accent-dark) !important;
+                    border-color: #8FBFA5 !important;
+                }
+
+                .vendor-theme .btn-outline-warning {
+                    color: var(--vendor-warm) !important;
+                    border-color: #F2C588 !important;
+                }
+
+                .vendor-theme .btn-outline-warning:hover,
+                .vendor-theme .btn-outline-warning:focus {
+                    background-color: var(--vendor-warm-light) !important;
+                    color: #92400E !important;
+                    border-color: #F2C588 !important;
+                }
+
+                .vendor-theme .text-primary,
+                .vendor-theme .link-primary {
+                    color: var(--vendor-accent) !important;
+                }
+
+                .vendor-theme .text-muted {
+                    color: var(--vendor-muted) !important;
+                }
+
+                .vendor-theme .alert-warning {
+                    background-color: var(--vendor-warm-light);
+                    border-color: #F7D9A7;
+                    color: #7C2D12;
+                }
+
+                .vendor-theme .form-control,
+                .vendor-theme .form-select {
+                    background-color: var(--vendor-surface);
+                    border-color: var(--vendor-border);
+                    color: var(--vendor-text);
+                }
+
+                .vendor-theme .form-control:focus,
+                .vendor-theme .form-select:focus {
+                    border-color: #8FBFA5;
+                    box-shadow: 0 0 0 0.2rem rgba(29, 111, 66, 0.15);
+                }
+
+                .vendor-theme .table thead th {
+                    background-color: #F8F8F5;
+                    color: var(--vendor-text);
+                    border-bottom-color: var(--vendor-border);
+                }
+
+                .vendor-theme .table td,
+                .vendor-theme .table th {
+                    border-color: var(--vendor-border);
+                }
+
+                .vendor-theme .page-link {
+                    color: var(--vendor-accent);
+                    border-color: var(--vendor-border);
+                }
+
+                .vendor-theme .page-item.active .page-link {
+                    background-color: var(--vendor-accent);
+                    border-color: var(--vendor-accent);
+                }
+            </style>
+        @endif
+    @endauth
 </body>
 </html>
 

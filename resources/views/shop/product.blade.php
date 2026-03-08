@@ -78,22 +78,70 @@
         background: var(--bg);
         border-right: 1px solid var(--border);
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         min-height: 320px;
         padding: 32px;
     }
-    .product-image-pane img {
-        max-width: 100%;
-        max-height: 280px;
-        width: auto;
-        height: auto;
+
+    .product-image-stage {
+        width: 100%;
+        max-width: 420px;
+        height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+    }
+    
+    .product-main-image {
+        width: 100%;
+        height: 100%;
         object-fit: contain;
         border-radius: 8px;
     }
+    
     .product-image-placeholder {
         font-size: 64px;
         opacity: .4;
+    }
+
+    /* Image Carousel Thumbnails */
+    .product-image-carousel {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 100%;
+        min-height: 64px;
+        margin-top: 14px;
+    }
+    
+    .carousel-thumb {
+        width: 60px;
+        height: 60px;
+        border: 2px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        overflow: hidden;
+        transition: border-color .15s;
+        flex-shrink: 0;
+    }
+    
+    .carousel-thumb:hover,
+    .carousel-thumb.active {
+        border-color: var(--accent);
+    }
+    
+    .carousel-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     /* Info Pane */
@@ -426,6 +474,7 @@
         .product-layout  { grid-template-columns: 1fr; }
         .product-inner   { grid-template-columns: 1fr; }
         .product-image-pane { border-right: none; border-bottom: 1px solid var(--border); min-height: 220px; }
+        .product-image-stage { height: 240px; max-width: 100%; }
     }
     @media (max-width: 600px) {
         .page { padding: 16px; }
@@ -442,10 +491,22 @@
 
                 {{-- Image --}}
                 <div class="product-image-pane">
-                    @if($product->product_image_url)
-                        <img src="{{ asset($product->product_image_url) }}" alt="{{ $product->product_name }}">
-                    @else
-                        <div class="product-image-placeholder">📦</div>
+                    <div class="product-image-stage">
+                        @if($allImages->count() > 0)
+                            <img id="mainProductImage" class="product-main-image" src="{{ asset($allImages->first()->image_url) }}" alt="{{ $product->product_name }}">
+                        @else
+                            <div class="product-image-placeholder">📦</div>
+                        @endif
+                    </div>
+
+                    @if($allImages->count() > 1)
+                        <div class="product-image-carousel">
+                            @foreach($allImages as $index => $img)
+                                <div class="carousel-thumb {{ $index === 0 ? 'active' : '' }}" onclick="changeMainImage('{{ asset($img->image_url) }}', this)">
+                                    <img src="{{ asset($img->image_url) }}" alt="Product image {{ $index + 1 }}">
+                                </div>
+                            @endforeach
+                        </div>
                     @endif
                 </div>
 
@@ -626,6 +687,22 @@
     function addToCart(productId) {
         const qty = parseInt(document.getElementById('quantity').value) || 1;
         window.location.href = `/cart/add/${productId}?quantity=${qty}`;
+    }
+
+    function changeMainImage(imageUrl, thumbnailElement) {
+        // Update main image
+        const mainImage = document.getElementById('mainProductImage');
+        if (mainImage) {
+            mainImage.src = imageUrl;
+        }
+        
+        // Update active thumbnail
+        document.querySelectorAll('.carousel-thumb').forEach(thumb => {
+            thumb.classList.remove('active');
+        });
+        if (thumbnailElement) {
+            thumbnailElement.classList.add('active');
+        }
     }
 </script>
 @endpush

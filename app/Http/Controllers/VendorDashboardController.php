@@ -24,6 +24,7 @@ class VendorDashboardController extends Controller
         $todayOnlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
+            ->whereIn('orders.order_status', ['completed', 'delivered'])
             ->whereDate('orders.created_at', now()->toDateString())
             ->sum(DB::raw('order_items.quantity * order_items.unit_price'));
 
@@ -35,11 +36,11 @@ class VendorDashboardController extends Controller
         // Combined total for backward-compatible variable
         $todaySales = $todayOnlineSales + $todayPhysicalSales;
 
-        // Get pending orders
-        $pendingOrders = DB::table('order_items')
+        // Get unfulfilled orders: every status except completed and delivered.
+        $unfulfilledOrders = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
-            ->where('orders.order_status', 'pending')
+            ->whereNotIn('orders.order_status', ['completed', 'delivered'])
             ->count();
 
         // Get low stock products (not implemented in current schema)
@@ -54,6 +55,7 @@ class VendorDashboardController extends Controller
             $onlineSales = DB::table('order_items')
                 ->join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->where('order_items.vendor_id', $vendor->id)
+                ->whereIn('orders.order_status', ['completed', 'delivered'])
                 ->whereDate('orders.created_at', $date->toDateString())
                 ->sum(DB::raw('order_items.quantity * order_items.unit_price'));
             
@@ -68,8 +70,10 @@ class VendorDashboardController extends Controller
 
         // Get vendor's top products
         $topProducts = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->where('order_items.vendor_id', $vendor->id)
+            ->whereIn('orders.order_status', ['completed', 'delivered'])
             ->selectRaw('products.product_name, products.category_id, SUM(order_items.quantity) as total_sold, SUM(order_items.quantity * order_items.unit_price) as total_revenue')
             ->groupBy('products.id', 'products.product_name', 'products.category_id')
             ->orderBy('total_sold', 'desc')
@@ -88,7 +92,7 @@ class VendorDashboardController extends Controller
 
         return view('vendor.dashboard', compact(
             'vendor', 'todaySales', 'todayOnlineSales', 'todayPhysicalSales',
-            'pendingOrders', 'lowStockProducts', 'weeklySales', 'topProducts',
+            'unfulfilledOrders', 'lowStockProducts', 'weeklySales', 'topProducts',
             'unpaidBills', 'unpaidBillsCount', 'totalUnpaidAmount'
         ));
     }

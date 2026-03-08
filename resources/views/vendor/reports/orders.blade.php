@@ -33,7 +33,11 @@
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                             <option value="ready" {{ request('status') == 'ready' ? 'selected' : '' }}>Ready</option>
+                            <option value="preparing" {{ request('status') == 'preparing' ? 'selected' : '' }}>Preparing</option>
+                            <option value="awaiting_rider" {{ request('status') == 'awaiting_rider' ? 'selected' : '' }}>Awaiting Rider</option>
+                            <option value="out_for_delivery" {{ request('status') == 'out_for_delivery' ? 'selected' : '' }}>Out for Delivery</option>
                             <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="delivered" {{ request('status') == 'delivered' ? 'selected' : '' }}>Delivered</option>
                             <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                         </select>
                     </div>
@@ -52,10 +56,10 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex gap-2">
-                <a href="{{ route('vendor.reports.orders.export-pdf') }}" class="btn btn-danger" target="_blank">
+                <a href="{{ route('vendor.reports.orders.export-pdf', request()->query()) }}" class="btn btn-danger" target="_blank">
                     <i class="bi bi-file-earmark-pdf"></i> Export PDF
                 </a>
-                <a href="{{ route('vendor.reports.orders.export-csv') }}" class="btn btn-success">
+                <a href="{{ route('vendor.reports.orders.export-csv', request()->query()) }}" class="btn btn-success">
                     <i class="bi bi-file-earmark-csv"></i> Export CSV
                 </a>
             </div>
@@ -102,12 +106,8 @@
                                         </span>
                                     </td>
                                     <td>{{ ucfirst($order->fulfillment_type) }}</td>
-                                    <td>₱{{ number_format($order->total ?? 0, 2) }}</td>
-                                    <td>
-                                        {{-- We need to get item count from order_items --}}
-                                        {{-- For now, showing placeholder --}}
-                                        <span class="badge bg-info">Items</span>
-                                    </td>
+                                    <td>₱{{ number_format($order->vendor_total ?? 0, 2) }}</td>
+                                    <td><span class="badge bg-info">{{ $order->item_count }}</span></td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <a href="{{ route('vendor.orders.show', $order->id) }}" class="btn btn-outline-primary btn-sm">

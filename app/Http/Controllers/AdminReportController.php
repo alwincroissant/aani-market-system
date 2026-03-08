@@ -29,6 +29,7 @@ class AdminReportController extends Controller
             ->join('order_items as oi', 'o.id', '=', 'oi.order_id')
             ->join('vendors as v', 'oi.vendor_id', '=', 'v.id')
             ->whereBetween('o.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereIn('o.order_status', ['completed', 'delivered'])
             ->select(
                 'o.id',
                 'o.order_reference as order_number',
@@ -144,6 +145,7 @@ class AdminReportController extends Controller
             ->join('order_items as oi', 'o.id', '=', 'oi.order_id')
             ->join('vendors as v', 'oi.vendor_id', '=', 'v.id')
             ->whereBetween('o.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereIn('o.order_status', ['completed', 'delivered'])
             ->select(
                 'o.id',
                 'o.order_reference as order_number',
@@ -197,6 +199,7 @@ class AdminReportController extends Controller
             ->join('order_items as oi', 'o.id', '=', 'oi.order_id')
             ->join('vendors as v', 'oi.vendor_id', '=', 'v.id')
             ->whereBetween('o.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereIn('o.order_status', ['completed', 'delivered'])
             ->select(
                 'o.id',
                 'o.order_reference as order_number',

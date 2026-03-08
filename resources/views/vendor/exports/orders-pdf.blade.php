@@ -70,8 +70,9 @@
             <tr>
                 <th>Order Number</th>
                 <th>Order Status</th>
-                <th>Item Status</th>
+                <th>Fulfillment</th>
                 <th>Date</th>
+                <th>Items</th>
                 <th style="text-align: right;">Total Amount</th>
             </tr>
         </thead>
@@ -80,13 +81,14 @@
                 <tr>
                     <td>{{ $order->order_reference }}</td>
                     <td>{{ ucfirst($order->order_status) }}</td>
-                    <td>{{ ucfirst($order->item_status) }}</td>
+                    <td>{{ ucfirst(str_replace('_', ' ', $order->fulfillment_type)) }}</td>
                     <td>{{ \Carbon\Carbon::parse($order->created_at)->format('Y-m-d H:i') }}</td>
-                    <td style="text-align: right;">KSH {{ number_format($order->total_amount ?? 0, 2) }}</td>
+                    <td>{{ $order->item_count }}</td>
+                    <td style="text-align: right;">PHP {{ number_format($order->vendor_total ?? 0, 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; color: #95a5a6;">No orders found.</td>
+                    <td colspan="6" style="text-align: center; color: #95a5a6;">No orders found.</td>
                 </tr>
             @endforelse
         </tbody>

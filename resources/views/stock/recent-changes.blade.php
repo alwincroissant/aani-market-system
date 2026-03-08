@@ -55,13 +55,17 @@
                             <td>{{ $log->previous_stock }}</td>
                             <td>{{ $log->new_stock }}</td>
                             <td>
-                                @if($log->quantity_changed > 0)
+                                @php
+                                    // Use actual stock delta for direction to avoid bad legacy log signs.
+                                    $stockDelta = (int) $log->new_stock - (int) $log->previous_stock;
+                                @endphp
+                                @if($stockDelta > 0)
                                     <span class="text-success">
-                                        <i class="bi bi-arrow-up"></i> +{{ $log->quantity_changed }}
+                                        <i class="bi bi-arrow-up"></i> +{{ $stockDelta }}
                                     </span>
-                                @elseif($log->quantity_changed < 0)
+                                @elseif($stockDelta < 0)
                                     <span class="text-danger">
-                                        <i class="bi bi-arrow-down"></i> {{ $log->quantity_changed }}
+                                        <i class="bi bi-arrow-down"></i> {{ $stockDelta }}
                                     </span>
                                 @else
                                     <span class="text-muted">No change</span>

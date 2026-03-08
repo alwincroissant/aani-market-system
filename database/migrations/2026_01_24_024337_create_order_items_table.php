@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained();
-            $table->decimal('quantity', 10, 2);
+            $table->unsignedInteger('quantity');
             $table->decimal('unit_price', 10, 2);
             $table->enum('item_status', ['pending', 'confirmed', 'ready', 'completed', 'cancelled', 'preparing', 'awaiting_rider', 'out_for_delivery', 'delivered'])->default('pending')->index();
             $table->text('vendor_notes')->nullable();

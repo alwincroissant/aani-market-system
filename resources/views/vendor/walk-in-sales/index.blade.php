@@ -84,6 +84,14 @@
                     <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}">
                 </div>
                 <div class="col-md-3">
+                    <label class="form-label fw-semibold">View</label>
+                    <select name="view_mode" class="form-select">
+                        <option value="active" {{ ($viewMode ?? 'active') === 'active' ? 'selected' : '' }}>Current Records</option>
+                        <option value="archived" {{ ($viewMode ?? 'active') === 'archived' ? 'selected' : '' }}>Archived</option>
+                        <option value="all" {{ ($viewMode ?? 'active') === 'all' ? 'selected' : '' }}>All Records</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <button type="submit" class="btn btn-outline-primary">
                         <i class="bi bi-funnel me-1"></i> Filter
                     </button>
@@ -137,18 +145,40 @@
                                     <span class="badge bg-primary-subtle text-primary ms-1" title="Linked to inventory"><i class="bi bi-link-45deg"></i></span>
                                 @endif
                             </td>
-                            <td class="text-center">{{ number_format($sale->quantity, $sale->quantity == intval($sale->quantity) ? 0 : 2) }}</td>
+                            <td class="text-center">{{ $sale->quantity }}</td>
                             <td class="text-end">₱{{ number_format($sale->unit_price, 2) }}</td>
                             <td class="text-end fw-semibold">₱{{ number_format($sale->quantity * $sale->unit_price, 2) }}</td>
                             <td><small class="text-muted">{{ $sale->notes ?: '—' }}</small></td>
                             <td class="text-center">
-                                <form method="POST" action="{{ route('vendor.walk-in-sales.destroy', $sale->id) }}"
-                                      onsubmit="return confirm('Delete this sale record?')">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-sm btn-outline-danger" title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
+                                <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                    @if(!$sale->deleted_at)
+                                        <a href="{{ route('vendor.walk-in-sales.edit', $sale->id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="POST" action="{{ route('vendor.walk-in-sales.archive', $sale->id) }}"
+                                              onsubmit="return confirm('Archive this sale record?')">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-warning" title="Archive">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('vendor.walk-in-sales.restore', $sale->id) }}"
+                                              onsubmit="return confirm('Restore this archived sale record?')">
+                                            @csrf
+                                            <button class="btn btn-sm btn-outline-success" title="Restore">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('vendor.walk-in-sales.force-destroy', $sale->id) }}"
+                                          onsubmit="return confirm('Permanently delete this sale record? This cannot be undone.')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-sm btn-outline-danger" title="Delete Permanently">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @endforeach

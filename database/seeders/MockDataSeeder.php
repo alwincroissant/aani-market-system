@@ -267,7 +267,7 @@ class MockDataSeeder extends Seeder
                     'vendor_id' => $product->vendor_id,
                     'previous_stock' => $previousStock,
                     'new_stock' => $newStock,
-                    'quantity_changed' => $quantity,
+                    'quantity_changed' => $newStock - $previousStock,
                     'change_type' => 'sale',
                     'notes' => 'Mock order sale',
                     'created_at' => now(),

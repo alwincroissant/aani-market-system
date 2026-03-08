@@ -93,6 +93,80 @@
             </div>
         </div>
     </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-check"></i> Weekend Pickup Transactions (All Stores)</h5>
+                </div>
+                <div class="card-body">
+                    @if(!empty($pickupTransactions) && $pickupTransactions->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Date</th>
+                                        <th>Customer</th>
+                                        <th>Store</th>
+                                        <th>Product</th>
+                                        <th>Qty</th>
+                                        <th>Status</th>
+                                        <th>Pickup Code</th>
+                                        <th>Code State</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($pickupTransactions as $tx)
+                                        <tr>
+                                            <td><small class="fw-semibold">{{ $tx->order_reference }}</small></td>
+                                            <td><small>{{ \Carbon\Carbon::parse($tx->order_date)->format('M d, Y g:i A') }}</small></td>
+                                            <td><small>{{ $tx->first_name }} {{ $tx->last_name }}</small></td>
+                                            <td><small>{{ $tx->business_name }}</small></td>
+                                            <td>
+                                                <small>{{ $tx->product_name }}</small><br>
+                                                <small class="text-muted">₱{{ number_format($tx->unit_price, 2) }}</small>
+                                            </td>
+                                            <td><small>{{ $tx->quantity }}</small></td>
+                                            <td>
+                                                <span class="badge bg-{{
+                                                    $tx->order_status === 'ready' ? 'primary' :
+                                                    ($tx->order_status === 'completed' ? 'success' :
+                                                    ($tx->order_status === 'cancelled' ? 'danger' : 'secondary'))
+                                                }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $tx->order_status)) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">{{ $tx->generated_pickup_code ?? $tx->order_pickup_code ?? 'N/A' }}</span>
+                                            </td>
+                                            <td>
+                                                @if(!$tx->generated_pickup_code && !$tx->order_pickup_code)
+                                                    <span class="badge bg-secondary">No Code</span>
+                                                @elseif($tx->is_used)
+                                                    <span class="badge bg-success">Used</span>
+                                                @elseif($tx->expires_at && \Carbon\Carbon::parse($tx->expires_at)->isPast())
+                                                    <span class="badge bg-danger">Expired</span>
+                                                @else
+                                                    <span class="badge bg-warning text-dark">Active</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem; color: #ccc;"></i>
+                            <p class="text-muted mt-2 mb-0">No weekend pickup transactions found.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>

@@ -473,15 +473,6 @@
 </div>
 @endif
 
-{{-- Customer Welcome --}}
-@php
-    $welcomeFirst = optional(optional(auth()->user())->customer)->first_name;
-@endphp
-@if(auth()->check() && auth()->user()->role === 'customer' && $welcomeFirst)
-<div class="welcome-bar">
-    👋 Welcome back, <strong>{{ $welcomeFirst }}</strong>! Ready to shop?
-</div>
-@endif
 {{-- ── Hero Banner Strip ── --}}
 <div class="hero-banner-strip"
     style="background-image: url('{{ asset('images/banner.png') }}');"></div>

@@ -307,6 +307,7 @@
     @if($groupedCart && count($groupedCart) > 0)
         <form action="{{ route('checkout.process') }}" method="POST">
             @csrf
+            <input type="hidden" name="selected_items" value='@json($selectedItems ?? [])'>
 
             <div class="checkout-layout">
                 <div>

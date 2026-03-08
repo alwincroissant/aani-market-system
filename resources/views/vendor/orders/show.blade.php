@@ -2,6 +2,32 @@
 
 @section('title', 'Order Details - Vendor Dashboard')
 
+@push('styles')
+<style>
+    .status-save-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .status-save-form .form-select {
+        min-width: 180px;
+    }
+
+    .status-save-form .btn {
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .order-item-status-badge {
+        display: inline-block;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,11 +43,6 @@
         @php
             $orderData = $order->first();
         @endphp
-
-        <!-- Debug: Show order count -->
-        <div class="alert alert-info">
-            Order items found: {{ $order->count() }}
-        </div>
 
         <!-- Order Summary -->
         <div class="card mb-4">
@@ -55,8 +76,8 @@
                                 {{ ucfirst($orderData->order_status) }}
                             </span>
                         </p>
-                        @if($orderData->pickup_code)
-                            <p><strong>Pickup Code:</strong> <span class="badge bg-success">{{ $orderData->pickup_code }}</span></p>
+                        @if($orderData->fulfillment_type === 'weekend_pickup' && $orderData->pickup_code && $orderData->order_status !== 'cancelled')
+                            <p><strong>Pickup Code:</strong> <span class="badge bg-success fs-6">{{ $orderData->pickup_code }}</span></p>
                         @endif
                         @if($orderData->notes)
                             <p><strong>Customer Notes:</strong> {{ $orderData->notes }}</p>
@@ -72,6 +93,31 @@
                 <h5 class="mb-0">Order Items</h5>
             </div>
             <div class="card-body">
+                <!-- Batch Update Form -->
+                <div class="alert alert-info d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Update all items in this order at once:</span>
+                    </div>
+                    <form action="{{ route('vendor.orders.batch-update-status', $orderData->id) }}" method="POST" class="d-flex align-items-center gap-2">
+                        @csrf
+                        @method('PUT')
+                        <select class="form-select form-select-sm" name="item_status" style="min-width: 200px;">
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="ready">Ready for Pickup</option>
+                            <option value="preparing">Preparing</option>
+                            <option value="awaiting_rider">Awaiting Rider</option>
+                            <option value="out_for_delivery">Out for Delivery</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-check2-all"></i> Update All Items
+                        </button>
+                    </form>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
@@ -81,7 +127,6 @@
                                 <th>Unit Price</th>
                                 <th>Total</th>
                                 <th>Status</th>
-                                <th>Vendor Notes</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -107,25 +152,39 @@
                                     <td>₱{{ number_format($item->unit_price, 2) }}</td>
                                     <td>₱{{ number_format($item->quantity * $item->unit_price, 2) }}</td>
                                     <td>
-                                        <select class="form-select form-select-sm item-status" data-item-id="{{ $item->item_id }}">
-                                            <option value="pending" {{ $item->item_status === 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="confirmed" {{ $item->item_status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                            <option value="ready" {{ $item->item_status === 'ready' ? 'selected' : '' }}>Ready for Pickup</option>
-                                            <option value="preparing" {{ $item->item_status === 'preparing' ? 'selected' : '' }}>Preparing</option>
-                                            <option value="awaiting_rider" {{ $item->item_status === 'awaiting_rider' ? 'selected' : '' }}>Awaiting Rider</option>
-                                            <option value="out_for_delivery" {{ $item->item_status === 'out_for_delivery' ? 'selected' : '' }}>Out for Delivery</option>
-                                            <option value="delivered" {{ $item->item_status === 'delivered' ? 'selected' : '' }}>Delivered</option>
-                                            <option value="completed" {{ $item->item_status === 'completed' ? 'selected' : '' }}>Completed</option>
-                                            <option value="cancelled" {{ $item->item_status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                        </select>
+                                        <span class="badge order-item-status-badge bg-{{
+                                            $item->item_status === 'pending' ? 'warning' :
+                                            ($item->item_status === 'confirmed' ? 'info' :
+                                            ($item->item_status === 'ready' ? 'primary' :
+                                            ($item->item_status === 'preparing' ? 'secondary' :
+                                            ($item->item_status === 'awaiting_rider' ? 'warning' :
+                                            ($item->item_status === 'out_for_delivery' ? 'info' :
+                                            ($item->item_status === 'delivered' ? 'success' :
+                                            ($item->item_status === 'completed' ? 'success' :
+                                            ($item->item_status === 'cancelled' ? 'danger' : 'secondary'))))))))
+                                        }}">
+                                            {{ ucfirst(str_replace('_', ' ', $item->item_status)) }}
+                                        </span>
                                     </td>
                                     <td>
-                                        <textarea class="form-control form-control-sm vendor-notes" data-item-id="{{ $item->item_id }}" rows="2" placeholder="Add notes...">{{ $item->vendor_notes }}</textarea>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary save-item" data-item-id="{{ $item->item_id }}">
-                                            <i class="bi bi-save"></i> Save
-                                        </button>
+                                        <form action="{{ route('vendor.orders.items.update-status', $item->item_id) }}" method="POST" class="status-save-form">
+                                            @csrf
+                                            @method('PUT')
+                                            <select class="form-select form-select-sm" name="item_status">
+                                                <option value="pending" {{ $item->item_status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                <option value="confirmed" {{ $item->item_status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                                                <option value="ready" {{ $item->item_status === 'ready' ? 'selected' : '' }}>Ready for Pickup</option>
+                                                <option value="preparing" {{ $item->item_status === 'preparing' ? 'selected' : '' }}>Preparing</option>
+                                                <option value="awaiting_rider" {{ $item->item_status === 'awaiting_rider' ? 'selected' : '' }}>Awaiting Rider</option>
+                                                <option value="out_for_delivery" {{ $item->item_status === 'out_for_delivery' ? 'selected' : '' }}>Out for Delivery</option>
+                                                <option value="delivered" {{ $item->item_status === 'delivered' ? 'selected' : '' }}>Delivered</option>
+                                                <option value="completed" {{ $item->item_status === 'completed' ? 'selected' : '' }}>Completed</option>
+                                                <option value="cancelled" {{ $item->item_status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-save"></i> Save
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach
@@ -136,21 +195,26 @@
                 <!-- Order Total -->
                 <div class="row mt-4">
                     <div class="col-md-6 offset-md-6">
+                        @php
+                            $vendorSubtotal = $order->sum(function ($line) {
+                                return ((float) $line->quantity) * ((float) $line->unit_price);
+                            });
+                        @endphp
                         <table class="table">
                             <tr>
                                 <td><strong>Subtotal:</strong></td>
-                                <td>₱{{ number_format($order->sum('quantity * unit_price'), 2) }}</td>
+                                <td>₱{{ number_format($vendorSubtotal, 2) }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Total:</strong></td>
-                                <td><strong>₱{{ number_format($order->sum('quantity * unit_price'), 2) }}</strong></td>
+                                <td><strong>₱{{ number_format($vendorSubtotal, 2) }}</strong></td>
                             </tr>
                         </table>
                     </div>
                 </div>
 
                 <!-- Pickup Code Generation -->
-                @if($orderData->fulfillment_type === 'pickup' && !$orderData->pickup_code)
+                @if($orderData->fulfillment_type === 'weekend_pickup' && $orderData->order_status === 'ready' && !$orderData->pickup_code)
                     <div class="text-center mt-4">
                         <button class="btn btn-success" onclick="generatePickupCode({{ $orderData->id }})">
                             <i class="bi bi-qr-code"></i> Generate Pickup Code
@@ -163,159 +227,6 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-save status changes
-    document.querySelectorAll('.item-status').forEach(select => {
-        select.addEventListener('change', function() {
-            updateItemStatus(this.dataset.itemId, this.value);
-        });
-    });
-
-    // Save button functionality
-    document.querySelectorAll('.save-item').forEach(button => {
-        button.addEventListener('click', function() {
-            const itemId = this.dataset.itemId;
-            const notes = document.querySelector(`.vendor-notes[data-item-id="${itemId}"]`).value;
-            const status = document.querySelector(`.item-status[data-item-id="${itemId}"]`).value;
-            
-            // Update both status and notes
-            updateItemAndNotes(itemId, status, notes);
-        });
-    });
-});
-
-function updateItemAndNotes(itemId, status, notes) {
-    console.log('Updating item and notes:', itemId, status, notes);
-    
-    // First update status
-    fetch(`{{ route('vendor.orders.items.update-status', ':itemId') }}`.replace(':itemId', itemId), {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            item_status: status
-        })
-    })
-    .then(response => {
-        console.log('Status update response:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('Status update data:', data);
-        if (data.success) {
-            // Then update notes
-            fetch(`{{ route('vendor.orders.items.update-notes', ':itemId') }}`.replace(':itemId', itemId), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    vendor_notes: notes
-                })
-            })
-            .then(response => {
-                console.log('Notes update response:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Notes update data:', data);
-                if (data.success) {
-                    showToast('Status and notes updated successfully', 'success');
-                    // Update the order status badge
-                    updateOrderStatusBadge(status);
-                } else {
-                    showToast('Status updated but failed to update notes: ' + data.message, 'warning');
-                    // Update the order status badge anyway
-                    updateOrderStatusBadge(status);
-                }
-            })
-            .catch(error => {
-                console.error('Error updating notes:', error);
-                showToast('Status updated but failed to update notes', 'warning');
-                // Update the order status badge anyway
-                updateOrderStatusBadge(status);
-            });
-        } else {
-            showToast('Failed to update status: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating status:', error);
-        showToast('Error updating status', 'error');
-    });
-}
-
-function updateItemStatus(itemId, status) {
-    console.log('Updating item status:', itemId, status);
-    
-    fetch(`{{ route('vendor.orders.items.update-status', ':itemId') }}`.replace(':itemId', itemId), {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            item_status: status
-        })
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('Response data:', data);
-        if (data.success) {
-            let message = 'Status updated successfully';
-            if (data.order_status_updated) {
-                message = 'Status and order updated successfully';
-                // Update the main order status badge
-                updateOrderStatusBadge(status);
-            }
-            showToast(message, 'success');
-        } else {
-            showToast('Failed to update status: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating status:', error);
-        showToast('Error updating status', 'error');
-    });
-}
-
-function updateVendorNotes(itemId, notes) {
-    console.log('Updating vendor notes:', itemId, notes);
-    
-    fetch(`{{ route('vendor.orders.items.update-notes', ':itemId') }}`.replace(':itemId', itemId), {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            vendor_notes: notes
-        })
-    })
-    .then(response => {
-        console.log('Notes response status:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('Notes response data:', data);
-        if (data.success) {
-            showToast('Notes updated successfully', 'success');
-        } else {
-            showToast('Failed to update notes: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating notes:', error);
-        showToast('Error updating notes', 'error');
-    });
-}
-
 function generatePickupCode(orderId) {
     fetch(`{{ route('vendor.orders.pickup-code', ':orderId') }}`.replace(':orderId', orderId), {
         method: 'POST',
@@ -335,41 +246,6 @@ function generatePickupCode(orderId) {
     })
     .catch(error => {
         showToast('Error generating pickup code', 'error');
-    });
-}
-
-function updateOrderStatusBadge(status) {
-    // Find the status badge element and update its class and text
-    const statusBadges = document.querySelectorAll('span.badge');
-    statusBadges.forEach(badge => {
-        // Check if this is the order status badge (contains the status text)
-        if (badge.textContent.trim() === 'Pending' || 
-            badge.textContent.trim() === 'Confirmed' || 
-            badge.textContent.trim() === 'Ready' || 
-            badge.textContent.trim() === 'Preparing' || 
-            badge.textContent.trim() === 'Awaiting Rider' || 
-            badge.textContent.trim() === 'Out for Delivery' || 
-            badge.textContent.trim() === 'Delivered' || 
-            badge.textContent.trim() === 'Completed' || 
-            badge.textContent.trim() === 'Cancelled') {
-            
-            // Determine the new badge color based on status
-            let badgeColor = 'secondary';
-            let statusText = status.charAt(0).toUpperCase() + status.slice(1);
-            
-            if (status === 'pending') badgeColor = 'warning';
-            else if (status === 'confirmed') badgeColor = 'info';
-            else if (status === 'ready') badgeColor = 'primary';
-            else if (status === 'completed') badgeColor = 'success';
-            else if (status === 'cancelled') badgeColor = 'danger';
-            else badgeColor = 'secondary';
-            
-            // Update the badge class and text
-            badge.className = `badge bg-${badgeColor}`;
-            badge.textContent = status === 'awaiting_rider' ? 'Awaiting Rider' : 
-                               status === 'out_for_delivery' ? 'Out for Delivery' :
-                               statusText;
-        }
     });
 }
 

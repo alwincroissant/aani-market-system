@@ -43,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
     // Customer Order Routes
     Route::get('/customer/orders', [CustomerOrderController::class, 'index'])->name('customer.orders.index');
     Route::get('/customer/orders/{orderReference}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
+    Route::post('/customer/orders/{orderReference}/cancel', [CustomerOrderController::class, 'cancel'])->name('customer.orders.cancel');
     Route::post('/customer/orders/{orderReference}/complete', [CustomerOrderController::class, 'markComplete'])->name('customer.orders.mark-complete');
     
     // Cart Routes (authenticated users only)
@@ -105,6 +106,7 @@ Route::middleware(['auth'])->group(function () {
     // Vendor Order Routes
     Route::get('/vendor/orders', [VendorOrderController::class, 'index'])->name('vendor.orders.index');
     Route::get('/vendor/orders/{id}', [VendorOrderController::class, 'show'])->name('vendor.orders.show');
+    Route::put('/vendor/orders/{orderId}/batch-update-status', [VendorOrderController::class, 'batchUpdateStatus'])->name('vendor.orders.batch-update-status');
     Route::put('/vendor/orders/items/{itemId}/status', [VendorOrderController::class, 'updateItemStatus'])->name('vendor.orders.items.update-status');
     Route::put('/vendor/orders/items/{itemId}/notes', [VendorOrderController::class, 'updateVendorNotes'])->name('vendor.orders.items.update-notes');
     Route::post('/vendor/orders/{orderId}/pickup-code', [VendorOrderController::class, 'generatePickupCode'])->name('vendor.orders.pickup-code');
@@ -156,6 +158,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendor/walk-in-sales', [VendorWalkInSaleController::class, 'index'])->name('vendor.walk-in-sales.index');
     Route::get('/vendor/walk-in-sales/create', [VendorWalkInSaleController::class, 'create'])->name('vendor.walk-in-sales.create');
     Route::post('/vendor/walk-in-sales', [VendorWalkInSaleController::class, 'store'])->name('vendor.walk-in-sales.store');
+    Route::get('/vendor/walk-in-sales/{id}/edit', [VendorWalkInSaleController::class, 'edit'])->name('vendor.walk-in-sales.edit');
+    Route::put('/vendor/walk-in-sales/{id}', [VendorWalkInSaleController::class, 'update'])->name('vendor.walk-in-sales.update');
+    Route::delete('/vendor/walk-in-sales/{id}/archive', [VendorWalkInSaleController::class, 'destroy'])->name('vendor.walk-in-sales.archive');
+    Route::post('/vendor/walk-in-sales/{id}/restore', [VendorWalkInSaleController::class, 'restore'])->name('vendor.walk-in-sales.restore');
+    Route::delete('/vendor/walk-in-sales/{id}/delete', [VendorWalkInSaleController::class, 'forceDestroy'])->name('vendor.walk-in-sales.force-destroy');
     Route::delete('/vendor/walk-in-sales/{id}', [VendorWalkInSaleController::class, 'destroy'])->name('vendor.walk-in-sales.destroy');
     Route::get('/vendor/walk-in-sales/product-info/{productId}', [VendorWalkInSaleController::class, 'productInfo'])->name('vendor.walk-in-sales.product-info');
 

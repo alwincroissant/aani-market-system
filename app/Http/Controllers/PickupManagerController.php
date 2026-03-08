@@ -22,8 +22,10 @@ class PickupManagerController extends Controller
                 ->whereDate('updated_at', $today)
                 ->where('fulfillment_type', 'weekend_pickup')
                 ->count(),
-            'total_pending_pickups' => DB::table('pickup_codes')
+            'total_pending_pickups' => DB::table('pickup_codes as pc')
+                ->join('orders as o', 'pc.order_id', '=', 'o.id')
                 ->where('is_used', false)
+                ->where('o.order_status', '!=', 'cancelled')
                 ->where('expires_at', '>', now())
                 ->count(),
         ];
@@ -44,7 +46,37 @@ class PickupManagerController extends Controller
             )
             ->get();
 
-        return view('admin.pickups.index', compact('stats', 'recentPickups'));
+        // Item-level pickup transactions across all stores for admin visibility.
+        $pickupTransactions = DB::table('orders as o')
+            ->join('customers as c', 'o.customer_id', '=', 'c.id')
+            ->join('order_items as oi', 'o.id', '=', 'oi.order_id')
+            ->join('vendors as v', 'oi.vendor_id', '=', 'v.id')
+            ->join('products as p', 'oi.product_id', '=', 'p.id')
+            ->leftJoin('pickup_codes as pc', 'o.id', '=', 'pc.order_id')
+            ->where('o.fulfillment_type', 'weekend_pickup')
+            ->where('o.order_status', '!=', 'cancelled')
+            ->orderBy('o.order_date', 'desc')
+            ->select(
+                'o.id as order_id',
+                'o.order_reference',
+                'o.order_date',
+                'o.order_status',
+                'o.pickup_code as order_pickup_code',
+                'c.first_name',
+                'c.last_name',
+                'v.business_name',
+                'p.product_name',
+                'oi.quantity',
+                'oi.unit_price',
+                'pc.code as generated_pickup_code',
+                'pc.is_used',
+                'pc.expires_at',
+                'pc.used_at'
+            )
+            ->limit(200)
+            ->get();
+
+        return view('admin.pickups.index', compact('stats', 'recentPickups', 'pickupTransactions'));
     }
 
     public function verifyPickupCode(Request $request)
@@ -58,6 +90,8 @@ class PickupManagerController extends Controller
             ->join('customers as c', 'o.customer_id', '=', 'c.id')
             ->where('pc.code', $request->pickup_code)
             ->where('pc.is_used', false)
+            ->where('o.fulfillment_type', 'weekend_pickup')
+            ->where('o.order_status', '!=', 'cancelled')
             ->where('pc.expires_at', '>', now())
             ->select(
                 'pc.*',
@@ -95,9 +129,13 @@ class PickupManagerController extends Controller
             'pickup_code' => 'required|string|max:8'
         ]);
 
-        $pickupCode = DB::table('pickup_codes')
-            ->where('code', $request->pickup_code)
-            ->where('is_used', false)
+        $pickupCode = DB::table('pickup_codes as pc')
+            ->join('orders as o', 'pc.order_id', '=', 'o.id')
+            ->where('pc.code', $request->pickup_code)
+            ->where('pc.is_used', false)
+            ->where('o.fulfillment_type', 'weekend_pickup')
+            ->where('o.order_status', '!=', 'cancelled')
+            ->select('pc.*')
             ->first();
 
         if (!$pickupCode) {
@@ -138,6 +176,7 @@ class PickupManagerController extends Controller
             ->join('customers as c', 'o.customer_id', '=', 'c.id')
             ->leftJoin('pickup_codes as pc', 'o.id', '=', 'pc.order_id')
             ->where('o.fulfillment_type', 'weekend_pickup')
+            ->where('o.order_status', '!=', 'cancelled')
             ->where(function($query) use ($search) {
                 $query->where('o.order_reference', 'like', "%{$search}%")
                       ->orWhere('c.first_name', 'like', "%{$search}%")

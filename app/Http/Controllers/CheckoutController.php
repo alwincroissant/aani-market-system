@@ -26,10 +26,9 @@ class CheckoutController extends Controller
             return redirect()->route('getCart')->with('error', 'Your cart is empty');
         }
 
-        // Get selected items from request
-        $selectedItems = $request->input('selected_items');
-        if ($selectedItems) {
-            $selectedItems = json_decode($selectedItems, true);
+        // Get selected items from request and keep only those for checkout preview
+        $selectedItems = $this->normalizeSelectedItems($request->input('selected_items'));
+        if (!empty($selectedItems)) {
             // Filter cart items to only include selected ones
             $filteredItems = [];
             foreach ($selectedItems as $itemId) {
@@ -38,7 +37,7 @@ class CheckoutController extends Controller
                 }
             }
             $cart->items = $filteredItems;
-            
+
             // Recalculate totals
             $cart->totalQty = 0;
             $cart->totalPrice = 0;
@@ -137,6 +136,7 @@ class CheckoutController extends Controller
             'groupedCart' => $groupedCart,
             'vendorInfo' => $vendorInfo,
             'totalPrice' => $cart->totalPrice,
+            'selectedItems' => $selectedItems,
             'addresses' => $addresses,
             'customerName' => $customerName,
             'customerPhone' => $customerPhone,
@@ -151,7 +151,31 @@ class CheckoutController extends Controller
         }
         
         $oldCart = Session::get('cart');
+        $originalCart = new \App\Cart($oldCart);
         $cart = new \App\Cart($oldCart);
+
+        // Honor selected cart items from checkout flow.
+        $selectedItems = $this->normalizeSelectedItems($request->input('selected_items'));
+        if (!empty($selectedItems)) {
+            $filteredItems = [];
+            foreach ($selectedItems as $itemId) {
+                if (isset($cart->items[$itemId])) {
+                    $filteredItems[$itemId] = $cart->items[$itemId];
+                }
+            }
+
+            $cart->items = $filteredItems;
+            $cart->totalQty = 0;
+            $cart->totalPrice = 0;
+            foreach ($cart->items as $item) {
+                $cart->totalQty += $item['qty'];
+                $cart->totalPrice += $item['price'];
+            }
+        }
+
+        if (empty($cart->items)) {
+            return redirect()->route('getCart')->with('error', 'Please select at least one item to checkout.');
+        }
         
         $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -308,8 +332,20 @@ class CheckoutController extends Controller
             
             DB::commit();
             
-            // Clear cart
-            Session::forget('cart');
+            // Remove only purchased items from cart, keep unchecked items.
+            if (!empty($selectedItems)) {
+                foreach ($selectedItems as $itemId) {
+                    $originalCart->removeItem($itemId);
+                }
+
+                if (!empty($originalCart->items)) {
+                    Session::put('cart', $originalCart);
+                } else {
+                    Session::forget('cart');
+                }
+            } else {
+                Session::forget('cart');
+            }
             
             return redirect()->route('home')->with('success', 'Order placed successfully!');
             
@@ -327,5 +363,21 @@ class CheckoutController extends Controller
     public function success()
     {
         return view('checkout.success');
+    }
+
+    private function normalizeSelectedItems($rawSelectedItems): array
+    {
+        if (is_string($rawSelectedItems)) {
+            $decoded = json_decode($rawSelectedItems, true);
+            $rawSelectedItems = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($rawSelectedItems)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map(static function ($itemId) {
+            return (string) $itemId;
+        }, $rawSelectedItems)));
     }
 }

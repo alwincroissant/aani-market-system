@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\StockLog;
 use Illuminate\Support\Facades\Auth;
 
@@ -121,6 +122,7 @@ class VendorProductController extends Controller
             'unit_type'     => ['required', 'in:kg,g,piece,bundle,pack,dozen,liter'],
             'category_id'   => ['required', 'exists:product_categories,id'],
             'product_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'product_images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'stock_quantity'=> ['required', 'integer', 'min:0'],
             'is_available'  => ['nullable', 'boolean'],
         ];
@@ -204,6 +206,31 @@ class VendorProductController extends Controller
         $product->save();
         Log::info('Product saved - ID: ' . $product->id . ', Image: ' . ($product->product_image_url ?? 'NULL'));
 
+        // Handle multiple product images
+        if ($request->hasFile('product_images')) {
+            $displayOrder = 0;
+            foreach ($request->file('product_images') as $index => $imageFile) {
+                if ($imageFile->isValid()) {
+                    try {
+                        $name = time() . '_' . $index . '_' . $imageFile->getClientOriginalName();
+                        $destinationPath = storage_path('app/public/products');
+                        $moved = $imageFile->move($destinationPath, $name);
+                        
+                        if ($moved) {
+                            ProductImage::create([
+                                'product_id' => $product->id,
+                                'image_url' => 'storage/products/' . $name,
+                                'is_primary' => ($index === 0 && !$imagePath), // First image is primary if no main image
+                                'display_order' => $displayOrder++,
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error saving product image #' . $index . ': ' . $e->getMessage());
+                    }
+                }
+            }
+        }
+
         // Log initial stock entry
         if ($request->stock_quantity > 0) {
             StockLog::create([
@@ -238,7 +265,11 @@ class VendorProductController extends Controller
             return redirect()->route('products.index')->with('error', 'Product not found.');
         }
 
-        return view('product.show', compact('product'));
+        $additionalImages = ProductImage::where('product_id', $id)
+            ->orderBy('display_order')
+            ->get();
+
+        return view('product.show', compact('product', 'additionalImages'));
     }
 
     public function edit(string $id)
@@ -262,7 +293,11 @@ class VendorProductController extends Controller
         $categories = DB::table('product_categories')
             ->get();
 
-        return view('product.edit', compact('product', 'categories'));
+        $additionalImages = ProductImage::where('product_id', $id)
+            ->orderBy('display_order')
+            ->get();
+
+        return view('product.edit', compact('product', 'categories', 'additionalImages'));
     }
 
     public function update(Request $request, string $id)
@@ -280,6 +315,9 @@ class VendorProductController extends Controller
             'unit_type'     => ['required', 'in:kg,g,piece,bundle,pack,dozen,liter'],
             'category_id'   => ['required', 'exists:product_categories,id'],
             'product_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'product_images.*' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'delete_images' => ['nullable', 'array'],
+            'delete_images.*' => ['exists:product_images,id'],
             'stock_quantity'=> ['required', 'integer', 'min:0'],
             'is_available'  => ['nullable', 'boolean'],
         ];
@@ -365,6 +403,40 @@ class VendorProductController extends Controller
         // Verify the update
         $updatedProduct = Product::find($id);
         Log::info('After update - Product Image URL: ' . ($updatedProduct->product_image_url ?? 'NULL'));
+
+        // Handle image deletions
+        if ($request->has('delete_images') && is_array($request->delete_images)) {
+            ProductImage::where('product_id', $id)
+                ->whereIn('id', $request->delete_images)
+                ->delete();
+        }
+
+        // Handle new product images
+        if ($request->hasFile('product_images')) {
+            $maxOrder = ProductImage::where('product_id', $id)->max('display_order') ?? -1;
+            $displayOrder = $maxOrder + 1;
+            
+            foreach ($request->file('product_images') as $index => $imageFile) {
+                if ($imageFile->isValid()) {
+                    try {
+                        $name = time() . '_' . $index . '_' . $imageFile->getClientOriginalName();
+                        $destinationPath = storage_path('app/public/products');
+                        $moved = $imageFile->move($destinationPath, $name);
+                        
+                        if ($moved) {
+                            ProductImage::create([
+                                'product_id' => $id,
+                                'image_url' => 'storage/products/' . $name,
+                                'is_primary' => false,
+                                'display_order' => $displayOrder++,
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error saving product image #' . $index . ': ' . $e->getMessage());
+                    }
+                }
+            }
+        }
 
         // Log stock change if quantity changed
         if ($oldStock != $newStock) {

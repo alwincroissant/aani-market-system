@@ -18,10 +18,11 @@ return new class extends Migration
             $table->timestamp('sale_time')->useCurrent();
             $table->foreignId('product_id')->nullable()->constrained()->onDelete('set null');
             $table->string('product_name');
-            $table->decimal('quantity', 10, 2);
+            $table->unsignedInteger('quantity');
             $table->decimal('unit_price', 10, 2);
             $table->text('notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
             
             $table->index(['vendor_id', 'sale_date']);
         });

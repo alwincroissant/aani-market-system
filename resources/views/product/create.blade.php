@@ -77,13 +77,23 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="product_image" class="form-label">Product Image</label>
+                        <label for="product_image" class="form-label">Primary Product Image</label>
                         <input type="file" class="form-control @error('product_image') is-invalid @enderror" 
                                id="product_image" name="product_image" accept="image/*">
                         @error('product_image')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <small class="form-text text-muted">Max size: 2MB</small>
+                        <small class="form-text text-muted">Max size: 2MB. This will be the main image displayed.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="product_images" class="form-label">Additional Images (Optional)</label>
+                        <input type="file" class="form-control @error('product_images.*') is-invalid @enderror" 
+                               id="product_images" name="product_images[]" accept="image/*" multiple>
+                        @error('product_images.*')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="form-text text-muted">You can select multiple images. Max size: 2MB each.</small>
                     </div>
 
                     <div class="mb-3 form-check">

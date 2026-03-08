@@ -4,7 +4,99 @@
 
 @section('content')
 
-<div class="container-fluid py-4">
+<style>
+    .vendor-dashboard {
+        --bg: #F5F4F0;
+        --surface: #FFFFFF;
+        --border: #E4E2DC;
+        --text: #1A1916;
+        --muted: #7A7871;
+        --accent: #1D6F42;
+        --accent-lt: #EAF4EE;
+        --accent-dk: #155232;
+        --warm: #D97706;
+        --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
+
+        background: var(--bg);
+        color: var(--text);
+        border-radius: 12px;
+        padding: 8px;
+    }
+
+    .vendor-dashboard .card {
+        background: var(--surface);
+        border: 1px solid var(--border) !important;
+        box-shadow: var(--shadow) !important;
+    }
+
+    .vendor-dashboard h2,
+    .vendor-dashboard h3,
+    .vendor-dashboard h5,
+    .vendor-dashboard h6 {
+        color: var(--text);
+    }
+
+    .vendor-dashboard .text-muted {
+        color: var(--muted) !important;
+    }
+
+    .vendor-dashboard .bg-primary,
+    .vendor-dashboard .btn-primary,
+    .vendor-dashboard .badge.bg-primary {
+        background-color: var(--accent) !important;
+        border-color: var(--accent) !important;
+        color: #fff !important;
+    }
+
+    .vendor-dashboard .btn-primary:hover {
+        background-color: var(--accent-dk) !important;
+        border-color: var(--accent-dk) !important;
+    }
+
+    .vendor-dashboard .btn-outline-primary {
+        color: var(--accent) !important;
+        border-color: #b7d7c3 !important;
+    }
+
+    .vendor-dashboard .btn-outline-primary:hover {
+        background-color: var(--accent-lt) !important;
+        border-color: #8fbfa5 !important;
+        color: var(--accent-dk) !important;
+    }
+
+    .vendor-dashboard .text-primary {
+        color: var(--accent) !important;
+    }
+
+    .vendor-dashboard .text-info {
+        color: var(--accent-dk) !important;
+    }
+
+    .vendor-dashboard .border-info {
+        border-color: #8fbfa5 !important;
+    }
+
+    .vendor-dashboard .btn-outline-warning {
+        color: var(--warm) !important;
+        border-color: #f2c588 !important;
+    }
+
+    .vendor-dashboard .btn-outline-warning:hover {
+        background-color: #FEF3C7 !important;
+        color: #92400e !important;
+        border-color: #f2c588 !important;
+    }
+
+    .vendor-dashboard .shop-status-card,
+    .vendor-dashboard .shop-status-card h6,
+    .vendor-dashboard .shop-status-card .form-check-label,
+    .vendor-dashboard .shop-status-card #statusText,
+    .vendor-dashboard .shop-status-card i {
+        color: #fff !important;
+    }
+</style>
+
+<div class="container-fluid py-4 vendor-dashboard">
     {{-- Header Section with Shop Status --}}
     <div class="row mb-4">
         <div class="col-md-8">
@@ -14,14 +106,18 @@
                     <p class="text-muted mb-0">Welcome back, {{ auth()->user()->name }}!</p>
                 </div>
                 <div>
-                    <span class="badge bg-success fs-6" id="vendorStatus">
-                        <i class="bi bi-circle-fill me-1"></i> Store Active
+                    <span class="badge {{ $vendor->is_live ? 'bg-success' : 'bg-secondary' }} fs-6" id="vendorStatus">
+                        @if($vendor->is_live)
+                            <i class="bi bi-circle-fill me-1"></i> Store Active
+                        @else
+                            <i class="bi bi-circle me-1"></i> Store Closed
+                        @endif
                     </span>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm border-0 bg-primary text-white">
+            <div class="card shadow-sm border-0 bg-primary text-white shop-status-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -125,8 +221,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Pending Orders</h6>
-                            <h3 class="mb-0 text-warning">{{ $pendingOrders }}</h3>
+                            <h6 class="text-muted mb-2">Unfulfilled Orders</h6>
+                            <h3 class="mb-0 text-warning">{{ $unfulfilledOrders }}</h3>
                         </div>
                         <div class="text-warning">
                             <i class="bi bi-clock-history fs-1"></i>
@@ -246,8 +342,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Shop Status Toggle
     const shopStatusToggle = document.getElementById('shopStatusToggle');
-    const statusText = document.getElementById('statusText');
-    const vendorStatus = document.getElementById('vendorStatus');
     
     shopStatusToggle.addEventListener('change', function() {
         const isLive = this.checked;
@@ -273,11 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             console.log('Response data:', data); // Debug log
             if (data.success) {
-                statusText.textContent = isLive ? 'Open Now' : 'Closed';
-                vendorStatus.className = isLive ? 'badge bg-success fs-6' : 'badge bg-secondary fs-6';
-                vendorStatus.innerHTML = isLive ?
-                    '<i class="bi bi-circle-fill me-1"></i> Store Active' :
-                    '<i class="bi bi-circle me-1"></i> Store Closed';
+                window.location.reload();
             } else {
                 this.checked = !this.checked;
                 alert('Failed to update shop status: ' + data.message);
@@ -305,8 +395,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 label: 'Daily Revenue',
                 data: weeklySales,
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderColor: '#1D6F42',
+                backgroundColor: 'rgba(29, 111, 66, 0.12)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4

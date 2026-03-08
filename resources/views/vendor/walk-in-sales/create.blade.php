@@ -78,7 +78,7 @@
                             <div class="col-md-2">
                                 <label class="form-label">Quantity <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control item-qty" name="items[0][quantity]"
-                                       required min="0.01" step="0.01" placeholder="0" oninput="updateRowTotal(0)">
+                                       required min="1" step="1" placeholder="0" oninput="updateRowTotal(0)">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Unit Price (₱) <span class="text-danger">*</span></label>
@@ -211,7 +211,7 @@ document.getElementById('addItemBtn').addEventListener('click', function () {
             <div class="col-md-2">
                 <label class="form-label">Quantity <span class="text-danger">*</span></label>
                 <input type="number" class="form-control item-qty" name="items[${itemIndex}][quantity]"
-                       required min="0.01" step="0.01" placeholder="0" oninput="updateRowTotal(${itemIndex})">
+                       required min="1" step="1" placeholder="0" oninput="updateRowTotal(${itemIndex})">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Unit Price (₱) <span class="text-danger">*</span></label>

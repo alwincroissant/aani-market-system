@@ -38,6 +38,7 @@ class VendorReportController extends Controller
         $onlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
+            ->whereIn('orders.order_status', ['completed', 'delivered'])
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count, 0 as physical_count')
             ->groupBy('date')
@@ -112,12 +113,27 @@ class VendorReportController extends Controller
         }
 
         // Get vendor's products with sales data
-        $products = DB::table('products')
-            ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-            ->where('products.vendor_id', $vendor->id)
-            ->selectRaw('products.*, COALESCE(SUM(order_items.quantity), 0) as total_sold')
-            ->groupBy('products.id')
-            ->orderBy('products.created_at', 'desc')
+        $products = DB::table('products as p')
+            ->leftJoin('product_categories as pc', 'p.category_id', '=', 'pc.id')
+            ->leftJoin('order_items as oi', 'p.id', '=', 'oi.product_id')
+            ->leftJoin('orders as o', 'oi.order_id', '=', 'o.id')
+            ->where('p.vendor_id', $vendor->id)
+            ->select(
+                'p.id', 'p.vendor_id', 'p.category_id', 'p.product_name', 'p.description', 
+                'p.price_per_unit', 'p.unit_type', 'p.product_image_url', 'p.is_available', 
+                'p.stock_quantity', 'p.minimum_stock', 'p.track_stock', 'p.allow_backorder', 
+                'p.stock_notes', 'p.created_at', 'p.updated_at', 'p.deleted_at',
+                'pc.category_name',
+                DB::raw('COALESCE(SUM(CASE WHEN o.order_status IN (\'completed\', \'delivered\') THEN oi.quantity ELSE 0 END), 0) as total_sold')
+            )
+            ->groupBy(
+                'p.id', 'p.vendor_id', 'p.category_id', 'p.product_name', 'p.description',
+                'p.price_per_unit', 'p.unit_type', 'p.product_image_url', 'p.is_available',
+                'p.stock_quantity', 'p.minimum_stock', 'p.track_stock', 'p.allow_backorder',
+                'p.stock_notes', 'p.created_at', 'p.updated_at', 'p.deleted_at',
+                'pc.category_name'
+            )
+            ->orderBy('p.created_at', 'desc')
             ->get();
 
         return view('vendor.reports.products', compact('products'));
@@ -131,13 +147,44 @@ class VendorReportController extends Controller
             return redirect()->route('auth.login')->with('error', 'Vendor profile not found.');
         }
 
-        // Get vendor's orders
-        $orders = DB::table('order_items')
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $status = trim((string) $request->get('status', ''));
+
+        // Get vendor's orders with vendor-specific totals.
+        $ordersQuery = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
-            ->select('orders.*', 'order_items.item_status')
-            ->orderBy('orders.created_at', 'desc')
-            ->get();
+            ->select(
+                'orders.id',
+                'orders.order_reference',
+                'orders.order_status',
+                'orders.fulfillment_type',
+                'orders.created_at',
+                DB::raw('COUNT(order_items.id) as item_count'),
+                DB::raw('SUM(order_items.quantity * order_items.unit_price) as vendor_total')
+            )
+            ->groupBy(
+                'orders.id',
+                'orders.order_reference',
+                'orders.order_status',
+                'orders.fulfillment_type',
+                'orders.created_at'
+            )
+            ->orderBy('orders.created_at', 'desc');
+
+        if ($startDate) {
+            $ordersQuery->whereDate('orders.created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $ordersQuery->whereDate('orders.created_at', '<=', $endDate);
+        }
+
+        if ($status !== '') {
+            $ordersQuery->where('orders.order_status', $status);
+        }
+
+        $orders = $ordersQuery->get();
 
         // Convert created_at to Carbon objects for formatting
         $orders = $orders->map(function($order) {
@@ -145,7 +192,7 @@ class VendorReportController extends Controller
             return $order;
         });
 
-        return view('vendor.reports.orders', compact('orders'));
+        return view('vendor.reports.orders', compact('orders', 'status'));
     }
 
     public function exportSalesPdf(Request $request)
@@ -163,6 +210,7 @@ class VendorReportController extends Controller
         $onlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
+            ->whereIn('orders.order_status', ['completed', 'delivered'])
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count, 0 as physical_count')
             ->groupBy('date')
@@ -238,6 +286,7 @@ class VendorReportController extends Controller
         $onlineSales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
+            ->whereIn('orders.order_status', ['completed', 'delivered'])
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->selectRaw('DATE(orders.created_at) as date, SUM(order_items.quantity * order_items.unit_price) as total, COUNT(DISTINCT orders.id) as order_count, 0 as physical_count')
             ->groupBy('date')
@@ -312,12 +361,27 @@ class VendorReportController extends Controller
             return redirect()->route('auth.login')->with('error', 'Vendor profile not found.');
         }
 
-        $products = DB::table('products')
-            ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-            ->where('products.vendor_id', $vendor->id)
-            ->selectRaw('products.*, COALESCE(SUM(order_items.quantity), 0) as total_sold')
-            ->groupBy('products.id')
-            ->orderBy('products.created_at', 'desc')
+        $products = DB::table('products as p')
+            ->leftJoin('product_categories as pc', 'p.category_id', '=', 'pc.id')
+            ->leftJoin('order_items as oi', 'p.id', '=', 'oi.product_id')
+            ->leftJoin('orders as o', 'oi.order_id', '=', 'o.id')
+            ->where('p.vendor_id', $vendor->id)
+            ->select(
+                'p.id', 'p.vendor_id', 'p.category_id', 'p.product_name', 'p.description', 
+                'p.price_per_unit', 'p.unit_type', 'p.product_image_url', 'p.is_available', 
+                'p.stock_quantity', 'p.minimum_stock', 'p.track_stock', 'p.allow_backorder', 
+                'p.stock_notes', 'p.created_at', 'p.updated_at', 'p.deleted_at',
+                'pc.category_name',
+                DB::raw('COALESCE(SUM(CASE WHEN o.order_status IN (\'completed\', \'delivered\') THEN oi.quantity ELSE 0 END), 0) as total_sold')
+            )
+            ->groupBy(
+                'p.id', 'p.vendor_id', 'p.category_id', 'p.product_name', 'p.description',
+                'p.price_per_unit', 'p.unit_type', 'p.product_image_url', 'p.is_available',
+                'p.stock_quantity', 'p.minimum_stock', 'p.track_stock', 'p.allow_backorder',
+                'p.stock_notes', 'p.created_at', 'p.updated_at', 'p.deleted_at',
+                'pc.category_name'
+            )
+            ->orderBy('p.created_at', 'desc')
             ->get();
 
         $pdf = Pdf::loadView('vendor.exports.products-pdf', compact(
@@ -336,26 +400,41 @@ class VendorReportController extends Controller
             return redirect()->route('auth.login')->with('error', 'Vendor profile not found.');
         }
 
-        $products = DB::table('products')
-            ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-            ->where('products.vendor_id', $vendor->id)
-            ->selectRaw('products.*, COALESCE(SUM(order_items.quantity), 0) as total_sold')
-            ->groupBy('products.id')
-            ->orderBy('products.created_at', 'desc')
+        $products = DB::table('products as p')
+            ->leftJoin('product_categories as pc', 'p.category_id', '=', 'pc.id')
+            ->leftJoin('order_items as oi', 'p.id', '=', 'oi.product_id')
+            ->leftJoin('orders as o', 'oi.order_id', '=', 'o.id')
+            ->where('p.vendor_id', $vendor->id)
+            ->select(
+                'p.id', 'p.vendor_id', 'p.category_id', 'p.product_name', 'p.description', 
+                'p.price_per_unit', 'p.unit_type', 'p.product_image_url', 'p.is_available', 
+                'p.stock_quantity', 'p.minimum_stock', 'p.track_stock', 'p.allow_backorder', 
+                'p.stock_notes', 'p.created_at', 'p.updated_at', 'p.deleted_at',
+                'pc.category_name',
+                DB::raw('COALESCE(SUM(CASE WHEN o.order_status IN (\'completed\', \'delivered\') THEN oi.quantity ELSE 0 END), 0) as total_sold')
+            )
+            ->groupBy(
+                'p.id', 'p.vendor_id', 'p.category_id', 'p.product_name', 'p.description',
+                'p.price_per_unit', 'p.unit_type', 'p.product_image_url', 'p.is_available',
+                'p.stock_quantity', 'p.minimum_stock', 'p.track_stock', 'p.allow_backorder',
+                'p.stock_notes', 'p.created_at', 'p.updated_at', 'p.deleted_at',
+                'pc.category_name'
+            )
+            ->orderBy('p.created_at', 'desc')
             ->get();
 
         return response()->streamDownload(function () use ($products) {
             $output = fopen('php://output', 'w');
-            fputcsv($output, ['Product Name', 'SKU', 'Price', 'Stock', 'Total Sold']);
+            fputcsv($output, ['Product Name', 'Category', 'Price', 'Stock', 'Total Sold', 'Revenue']);
 
             foreach ($products as $product) {
-                // products coming from query builder use column names directly
                 fputcsv($output, [
                     $product->product_name ?? '[unnamed]',
-                    $product->sku ?? 'N/A',
-                    number_format($product->price ?? 0, 2),
+                    $product->category_name ?? 'General',
+                    number_format($product->price_per_unit ?? 0, 2),
                     $product->stock_quantity ?? 0,
-                    $product->total_sold ?? 0
+                    $product->total_sold ?? 0,
+                    number_format(($product->total_sold ?? 0) * ($product->price_per_unit ?? 0), 2)
                 ]);
             }
             fclose($output);
@@ -370,12 +449,42 @@ class VendorReportController extends Controller
             return redirect()->route('auth.login')->with('error', 'Vendor profile not found.');
         }
 
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $status = trim((string) $request->get('status', ''));
+
         $orders = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
-            ->select('orders.*', 'order_items.item_status')
-            ->orderBy('orders.created_at', 'desc')
-            ->get();
+            ->select(
+                'orders.id',
+                'orders.order_reference',
+                'orders.order_status',
+                'orders.fulfillment_type',
+                'orders.created_at',
+                DB::raw('COUNT(order_items.id) as item_count'),
+                DB::raw('SUM(order_items.quantity * order_items.unit_price) as vendor_total')
+            )
+            ->groupBy(
+                'orders.id',
+                'orders.order_reference',
+                'orders.order_status',
+                'orders.fulfillment_type',
+                'orders.created_at'
+            )
+            ->orderBy('orders.created_at', 'desc');
+
+        if ($startDate) {
+            $orders->whereDate('orders.created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $orders->whereDate('orders.created_at', '<=', $endDate);
+        }
+        if ($status !== '') {
+            $orders->where('orders.order_status', $status);
+        }
+
+        $orders = $orders->get();
 
         $pdf = Pdf::loadView('vendor.exports.orders-pdf', compact(
             'orders',
@@ -393,24 +502,55 @@ class VendorReportController extends Controller
             return redirect()->route('auth.login')->with('error', 'Vendor profile not found.');
         }
 
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $status = trim((string) $request->get('status', ''));
+
         $orders = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->where('order_items.vendor_id', $vendor->id)
-            ->select('orders.*', 'order_items.item_status')
-            ->orderBy('orders.created_at', 'desc')
-            ->get();
+            ->select(
+                'orders.id',
+                'orders.order_reference',
+                'orders.order_status',
+                'orders.fulfillment_type',
+                'orders.created_at',
+                DB::raw('COUNT(order_items.id) as item_count'),
+                DB::raw('SUM(order_items.quantity * order_items.unit_price) as vendor_total')
+            )
+            ->groupBy(
+                'orders.id',
+                'orders.order_reference',
+                'orders.order_status',
+                'orders.fulfillment_type',
+                'orders.created_at'
+            )
+            ->orderBy('orders.created_at', 'desc');
+
+        if ($startDate) {
+            $orders->whereDate('orders.created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $orders->whereDate('orders.created_at', '<=', $endDate);
+        }
+        if ($status !== '') {
+            $orders->where('orders.order_status', $status);
+        }
+
+        $orders = $orders->get();
 
         return response()->streamDownload(function () use ($orders) {
             $output = fopen('php://output', 'w');
-            fputcsv($output, ['Order Number', 'Order Status', 'Item Status', 'Date', 'Total Amount']);
+            fputcsv($output, ['Order Number', 'Order Status', 'Fulfillment', 'Date', 'Items', 'Vendor Total']);
 
             foreach ($orders as $order) {
                 fputcsv($output, [
                     $order->order_reference,
                     $order->order_status,
-                    $order->item_status,
+                    $order->fulfillment_type,
                     $order->created_at,
-                    number_format($order->total_amount ?? 0, 2)
+                    $order->item_count,
+                    number_format($order->vendor_total ?? 0, 2)
                 ]);
             }
             fclose($output);

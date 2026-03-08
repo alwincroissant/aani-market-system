@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CustomerOrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $customer = DB::table('customers')
             ->where('user_id', Auth::id())
@@ -18,7 +18,24 @@ class CustomerOrderController extends Controller
             return redirect()->route('home')->with('error', 'Customer profile not found.');
         }
 
-        $orders = DB::table('orders as o')
+        $availableStatuses = [
+            'pending' => 'Pending',
+            'confirmed' => 'Confirmed',
+            'ready' => 'Ready',
+            'preparing' => 'Preparing',
+            'awaiting_rider' => 'Awaiting Rider',
+            'out_for_delivery' => 'Out for Delivery',
+            'delivered' => 'Delivered',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+        ];
+
+        $selectedStatus = $request->input('status');
+        if (!is_string($selectedStatus) || !array_key_exists($selectedStatus, $availableStatuses)) {
+            $selectedStatus = null;
+        }
+
+        $ordersQuery = DB::table('orders as o')
             ->join('customers as c', 'o.customer_id', '=', 'c.id')
             ->where('o.customer_id', $customer->id)
             ->orderBy('o.order_date', 'desc')
@@ -26,8 +43,13 @@ class CustomerOrderController extends Controller
                 'o.*',
                 'c.first_name',
                 'c.last_name'
-            )
-            ->get();
+            );
+
+        if ($selectedStatus) {
+            $ordersQuery->where('o.order_status', $selectedStatus);
+        }
+
+        $orders = $ordersQuery->get();
 
         // Calculate total for each order
         $orders = $orders->map(function($order) {
@@ -40,7 +62,7 @@ class CustomerOrderController extends Controller
             return $order;
         });
 
-        return view('customer.orders.index', compact('orders'));
+        return view('customer.orders.index', compact('orders', 'availableStatuses', 'selectedStatus'));
     }
 
     public function show($orderReference)
@@ -134,5 +156,48 @@ class CustomerOrderController extends Controller
 
         return redirect()->route('customer.orders.show', $orderReference)
             ->with('success', 'Order marked as completed successfully!');
+    }
+
+    public function cancel($orderReference)
+    {
+        $customer = DB::table('customers')
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$customer) {
+            return redirect()->route('home')->with('error', 'Customer profile not found.');
+        }
+
+        $order = DB::table('orders')
+            ->where('customer_id', $customer->id)
+            ->where('order_reference', $orderReference)
+            ->first();
+
+        if (!$order) {
+            return redirect()->route('customer.orders.index')->with('error', 'Order not found.');
+        }
+
+        // Customers can cancel only while order is still pending.
+        if ($order->order_status !== 'pending') {
+            return redirect()->route('customer.orders.show', $orderReference)
+                ->with('error', 'This order can no longer be cancelled.');
+        }
+
+        DB::table('orders')
+            ->where('id', $order->id)
+            ->update([
+                'order_status' => 'cancelled',
+                'updated_at' => now(),
+            ]);
+
+        DB::table('order_items')
+            ->where('order_id', $order->id)
+            ->update([
+                'item_status' => 'cancelled',
+                'updated_at' => now(),
+            ]);
+
+        return redirect()->route('customer.orders.show', $orderReference)
+            ->with('success', 'Order cancelled successfully.');
     }
 }

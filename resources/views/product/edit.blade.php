@@ -78,7 +78,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="product_image" class="form-label">Product Image</label>
+                        <label for="product_image" class="form-label">Primary Product Image</label>
                         @if($product->product_image_url)
                             <div class="mb-2">
                                 <img src="{{ asset($product->product_image_url) }}" alt="Current Image" style="max-width: 200px; max-height: 200px;">
@@ -90,6 +90,35 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                         <small class="form-text text-muted">Leave empty to keep current image. Max size: 2MB</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Additional Product Images</label>
+
+                        @if($additionalImages->count() > 0)
+                            <div class="row mb-2">
+                                @foreach($additionalImages as $image)
+                                    <div class="col-md-3 mb-2 position-relative">
+                                        <img src="{{ asset($image->image_url) }}" alt="Product Image" class="img-thumbnail" style="max-height: 150px; width: 100%; object-fit: cover;">
+                                        <div class="form-check mt-1">
+                                            <input type="checkbox" class="form-check-input" name="delete_images[]" value="{{ $image->id }}" id="delete_{{ $image->id }}">
+                                            <label class="form-check-label small" for="delete_{{ $image->id }}">
+                                                Delete this image
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-muted small">No additional images uploaded yet.</p>
+                        @endif
+
+                        <input type="file" class="form-control @error('product_images.*') is-invalid @enderror" 
+                               id="product_images" name="product_images[]" accept="image/*" multiple>
+                        @error('product_images.*')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="form-text text-muted">Upload additional images. You can select multiple. Max size: 2MB each.</small>
                     </div>
 
                     <div class="mb-3 form-check">

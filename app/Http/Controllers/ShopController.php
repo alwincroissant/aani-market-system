@@ -248,6 +248,22 @@ class ShopController extends Controller
             return redirect()->route('shop.index')->with('error', 'Product not found.');
         }
 
-        return view('shop.product', compact('product'));
+        $allImages = collect();
+
+        if ($product->product_image_url) {
+            $allImages->push((object) ['image_url' => $product->product_image_url]);
+        }
+
+        $additionalImages = DB::table('product_images')
+            ->where('product_id', $product->id)
+            ->orderBy('display_order')
+            ->select('image_url')
+            ->get();
+
+        foreach ($additionalImages as $image) {
+            $allImages->push($image);
+        }
+
+        return view('shop.product', compact('product', 'allImages'));
     }
 }

@@ -141,12 +141,96 @@ class VendorOrderController extends Controller
         return view('vendor.orders.show', compact('order'));
     }
 
+    public function batchUpdateStatus(Request $request, $orderId)
+    {
+        $vendor = Vendor::where('user_id', Auth::id())->first();
+        
+        if (!$vendor) {
+            return redirect()->back()->with('error', 'Vendor not found.');
+        }
+
+        $request->validate([
+            'item_status' => 'required|in:pending,confirmed,ready,completed,cancelled,preparing,awaiting_rider,out_for_delivery,delivered'
+        ]);
+
+        try {
+            // Get all order items for this order that belong to this vendor
+            $orderItems = DB::table('order_items')
+                ->where('order_id', $orderId)
+                ->where('vendor_id', $vendor->id)
+                ->get();
+
+            if ($orderItems->isEmpty()) {
+                return redirect()->back()->with('error', 'No items found for this order.');
+            }
+
+            // Update all items to the new status
+            DB::table('order_items')
+                ->where('order_id', $orderId)
+                ->where('vendor_id', $vendor->id)
+                ->update([
+                    'item_status' => $request->item_status,
+                    'updated_at' => now()
+                ]);
+
+            // Update the main order status
+            DB::table('orders')
+                ->where('id', $orderId)
+                ->update([
+                    'order_status' => $request->item_status,
+                    'updated_at' => now()
+                ]);
+
+            // Handle pickup code generation for weekend pickups
+            if ($request->item_status === 'ready') {
+                $orderForPickup = DB::table('orders')
+                    ->where('id', $orderId)
+                    ->where('fulfillment_type', 'weekend_pickup')
+                    ->first();
+
+                if ($orderForPickup) {
+                    $existingCode = DB::table('pickup_codes')
+                        ->where('order_id', $orderId)
+                        ->first();
+
+                    if (!$existingCode) {
+                        $pickupCode = strtoupper(substr(md5(uniqid()), 0, 6));
+
+                        DB::table('pickup_codes')->insert([
+                            'order_id' => $orderId,
+                            'code' => $pickupCode,
+                            'expires_at' => now()->addDays(7),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        DB::table('orders')
+                            ->where('id', $orderId)
+                            ->update([
+                                'pickup_code' => $pickupCode,
+                                'updated_at' => now(),
+                            ]);
+                    }
+                }
+            }
+
+            $itemCount = $orderItems->count();
+            return redirect()->back()->with('success', "All {$itemCount} item(s) updated to {$request->item_status} successfully.");
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update status: ' . $e->getMessage());
+        }
+    }
+
     public function updateItemStatus(Request $request, $itemId)
     {
         $vendor = Vendor::where('user_id', Auth::id())->first();
         
         if (!$vendor) {
-            return response()->json(['success' => false, 'message' => 'Vendor not found.'], 404);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Vendor not found.'], 404);
+            }
+            return redirect()->back()->with('error', 'Vendor not found.');
         }
 
         $request->validate([
@@ -161,7 +245,10 @@ class VendorOrderController extends Controller
             ->first();
 
         if (!$orderItem) {
-            return response()->json(['success' => false, 'message' => 'Order item not found or not accessible.'], 404);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Order item not found or not accessible.'], 404);
+            }
+            return redirect()->back()->with('error', 'Order item not found or not accessible.');
         }
 
         try {
@@ -184,20 +271,61 @@ class VendorOrderController extends Controller
                     'updated_at' => now()
                 ]);
 
+            // Ensure weekend pickup orders receive a pickup code once they are marked ready.
+            if ($request->item_status === 'ready') {
+                $orderForPickup = DB::table('orders')
+                    ->where('id', $orderItem->order_id)
+                    ->where('fulfillment_type', 'weekend_pickup')
+                    ->first();
+
+                if ($orderForPickup) {
+                    $existingCode = DB::table('pickup_codes')
+                        ->where('order_id', $orderItem->order_id)
+                        ->first();
+
+                    if (!$existingCode) {
+                        $pickupCode = strtoupper(substr(md5(uniqid()), 0, 6));
+
+                        DB::table('pickup_codes')->insert([
+                            'order_id' => $orderItem->order_id,
+                            'code' => $pickupCode,
+                            'expires_at' => now()->addDays(7),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        DB::table('orders')
+                            ->where('id', $orderItem->order_id)
+                            ->update([
+                                'pickup_code' => $pickupCode,
+                                'updated_at' => now(),
+                            ]);
+                    }
+                }
+            }
+
             Log::info("Updated main order {$orderItem->order_id} status to: {$request->item_status}");
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Order item status updated successfully.',
-                'item_status' => $request->item_status,
-                'order_status_updated' => true
-            ]);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Order item status updated successfully.',
+                    'item_status' => $request->item_status,
+                    'order_status_updated' => true
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Order item status updated successfully.');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Failed to update status: ' . $e->getMessage()
-            ], 500);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Failed to update status: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to update status.');
         }
     }
 
@@ -262,6 +390,24 @@ class VendorOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'No vendor items in this order.'], 404);
         }
 
+        $order = DB::table('orders')
+            ->where('id', $orderId)
+            ->first();
+
+        if (!$order || $order->fulfillment_type !== 'weekend_pickup') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pickup code is only available for weekend pickup orders.'
+            ], 422);
+        }
+
+        if ($order->order_status !== 'ready') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order must be marked Ready before generating pickup code.'
+            ], 422);
+        }
+
         try {
             // Check if pickup code already exists
             $existingCode = DB::table('pickup_codes')
@@ -284,7 +430,10 @@ class VendorOrderController extends Controller
                 // Update order with pickup code
                 DB::table('orders')
                     ->where('id', $orderId)
-                    ->update(['pickup_code' => $pickupCode]);
+                    ->update([
+                        'pickup_code' => $pickupCode,
+                        'updated_at' => now(),
+                    ]);
             }
 
             return response()->json([

@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WalkInSale extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'walk_in_sales';
 
@@ -25,7 +26,7 @@ class WalkInSale extends Model
     protected $casts = [
         'sale_date'  => 'date',
         'sale_time'  => 'datetime',
-        'quantity'   => 'decimal:2',
+        'quantity'   => 'integer',
         'unit_price' => 'decimal:2',
     ];
 
