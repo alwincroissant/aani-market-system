@@ -103,36 +103,28 @@ class AdminReportController extends Controller
         $marketDate = $request->input('market_date', now()->toDateString());
 
         // Query vendor attendance for the specific date
-        $attendance = DB::table('vendor_attendance as va')
-            ->join('vendors as v', 'va.vendor_id', '=', 'v.id')
-            ->whereDate('va.market_date', $marketDate)
-            ->select(
-                'v.business_name',
-                'v.owner_name',
-                'va.check_in_time',
-                'va.check_out_time'
-            )
-            ->orderBy('va.check_in_time', 'asc')
-            ->get();
+        $attendance = DB::table('vendors as v')
+        ->whereNull('v.deleted_at')
+        ->select(
+            'v.id',
+            'v.business_name',
+            'v.owner_name',
+            'v.is_live'
+        )
+        ->orderBy('v.business_name', 'asc')
+        ->get();
 
-        // Get all vendors for comparison
-        $allVendors = DB::table('vendors')
-            ->whereNull('deleted_at')
-            ->select('id', 'business_name', 'owner_name')
-            ->orderBy('business_name')
-            ->get();
-
-        // Mark which vendors attended
-        $attendedVendors = $attendance->pluck('vendor_id')->toArray();
-        $absentVendors = $allVendors->whereNotIn('id', $attendedVendors);
+        $presentVendors = $attendance->where('is_live', true);
+        $absentVendors  = $attendance->where('is_live', false);
 
         return view('admin.reports.attendance', compact(
             'attendance',
             'marketDate',
-            'allVendors',
+            'presentVendors',
             'absentVendors',
             'pendingVendorsCount'
         ));
+
     }
 
     public function exportSalesPdf(Request $request)
@@ -258,16 +250,14 @@ class AdminReportController extends Controller
     {
         $marketDate = $request->input('market_date', now()->toDateString());
 
-        $attendance = DB::table('vendor_attendance as va')
-            ->join('vendors as v', 'va.vendor_id', '=', 'v.id')
-            ->whereDate('va.market_date', $marketDate)
+        $attendance = DB::table('vendors as v')
+            ->whereNull('v.deleted_at')
             ->select(
                 'v.business_name',
                 'v.owner_name',
-                'va.check_in_time',
-                'va.check_out_time'
+                'v.is_live'
             )
-            ->orderBy('va.check_in_time', 'asc')
+            ->orderBy('v.business_name', 'asc')
             ->get();
 
         $pdf = Pdf::loadView('admin.exports.attendance-pdf', compact(
@@ -282,28 +272,25 @@ class AdminReportController extends Controller
     {
         $marketDate = $request->input('market_date', now()->toDateString());
 
-        $attendance = DB::table('vendor_attendance as va')
-            ->join('vendors as v', 'va.vendor_id', '=', 'v.id')
-            ->whereDate('va.market_date', $marketDate)
+        $attendance = DB::table('vendors as v')
+            ->whereNull('v.deleted_at')
             ->select(
                 'v.business_name',
                 'v.owner_name',
-                'va.check_in_time',
-                'va.check_out_time'
+                'v.is_live'
             )
-            ->orderBy('va.check_in_time', 'asc')
+            ->orderBy('v.business_name', 'asc')
             ->get();
 
         return response()->streamDownload(function () use ($attendance) {
             $output = fopen('php://output', 'w');
-            fputcsv($output, ['Business Name', 'Owner Name', 'Check In', 'Check Out']);
+            fputcsv($output, ['Business Name', 'Owner Name', 'Status']);
 
             foreach ($attendance as $record) {
                 fputcsv($output, [
                     $record->business_name,
                     $record->owner_name,
-                    $record->check_in_time,
-                    $record->check_out_time
+                    $record->is_live ? 'Present' : 'Absent',
                 ]);
             }
             fclose($output);

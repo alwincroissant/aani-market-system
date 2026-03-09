@@ -143,7 +143,7 @@
         <div class="card">
             <div class="card-body">
                 <div style="font-size: 11.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Present</div>
-                <div style="font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text);">{{ $attendance->count() }}</div>
+                <div style="font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text);">{{ $presentVendors->count() }}</div>
             </div>
         </div>
         <div class="card">
@@ -155,7 +155,7 @@
         <div class="card">
             <div class="card-body">
                 <div style="font-size: 11.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">Total</div>
-                <div style="font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text);">{{ $allVendors->count() }}</div>
+                <div style="font-size: 28px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text);">{{ $attendance->count() }}</div>
             </div>
         </div>
     </div>
@@ -170,24 +170,16 @@
                         <tr>
                             <th>Vendor</th>
                             <th>Owner</th>
-                            <th>Check In</th>
-                            <th>Check Out</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($attendance as $record)
+                        @foreach($presentVendors as $record)
                             <tr>
                                 <td>{{ $record->business_name }}</td>
                                 <td>{{ $record->owner_name }}</td>
-                                <td>{{ \Carbon\Carbon::parse($record->check_in_time)->format('H:i') }}</td>
-                                <td>
-                                    @if($record->check_out_time)
-                                        {{ \Carbon\Carbon::parse($record->check_out_time)->format('H:i') }}
-                                    @else
-                                        <span class="badge">Still here</span>
-                                    @endif
-                                </td>
-                                    </tr>
+                                <td><span class="badge">Live</span></td>
+                            </tr>
                         @endforeach
                     </tbody>
                 </table>
