@@ -675,9 +675,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const img = new Image();
     img.onload = function() {
-        const bounds = [[0, 0], [this.height, this.width]];
+        const imgWidth  = this.naturalWidth  || this.width;
+        const imgHeight = this.naturalHeight || this.height;
+        const bounds = [[0, 0], [imgHeight, imgWidth]];
+
         L.imageOverlay(mapImageUrl, bounds).addTo(map);
-        map.fitBounds(bounds);
+        map.setView([imgHeight, imgWidth / 2], 0);
+        map.setMaxBounds(bounds);
+
         loadStalls();
     };
     img.onerror = function() {

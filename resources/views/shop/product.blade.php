@@ -97,14 +97,14 @@
         border-radius: 10px;
         padding: 10px;
     }
-    
+
     .product-main-image {
         width: 100%;
         height: 100%;
         object-fit: contain;
         border-radius: 8px;
     }
-    
+
     .product-image-placeholder {
         font-size: 64px;
         opacity: .4;
@@ -120,7 +120,7 @@
         min-height: 64px;
         margin-top: 14px;
     }
-    
+
     .carousel-thumb {
         width: 60px;
         height: 60px;
@@ -131,12 +131,12 @@
         transition: border-color .15s;
         flex-shrink: 0;
     }
-    
+
     .carousel-thumb:hover,
     .carousel-thumb.active {
         border-color: var(--accent);
     }
-    
+
     .carousel-thumb img {
         width: 100%;
         height: 100%;
@@ -275,7 +275,10 @@
         border-radius: 8px;
         overflow: hidden;
         background: var(--surface);
+        transition: border-color .15s;
     }
+    .qty-control.over-stock { border-color: #DC2626; }
+
     .qty-btn {
         width: 36px; height: 36px;
         background: var(--bg);
@@ -289,7 +292,9 @@
         transition: background .15s;
         font-family: inherit;
     }
-    .qty-btn:hover { background: var(--border); }
+    .qty-btn:hover:not(:disabled) { background: var(--border); }
+    .qty-btn:disabled { color: #bbb; cursor: not-allowed; }
+
     .qty-input {
         width: 48px;
         height: 36px;
@@ -307,6 +312,18 @@
     }
     .qty-input::-webkit-outer-spin-button,
     .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    /* Stock error */
+    .stock-error {
+        display: none;
+        align-items: center;
+        gap: 5px;
+        font-size: 12.5px;
+        color: #DC2626;
+        margin-top: 2px;
+    }
+    .stock-error.visible { display: flex; }
+    .stock-error svg { flex-shrink: 0; }
 
     .btn-add-cart {
         display: flex;
@@ -326,9 +343,9 @@
         text-decoration: none;
         width: 100%;
     }
-    .btn-add-cart:hover { background: var(--accent-dk); }
+    .btn-add-cart:hover:not(:disabled) { background: var(--accent-dk); }
     .btn-add-cart.backorder { background: #4F46E5; }
-    .btn-add-cart.backorder:hover { background: #3730A3; }
+    .btn-add-cart.backorder:hover:not(:disabled) { background: #3730A3; }
     .btn-add-cart:disabled,
     .btn-add-cart.disabled {
         background: var(--border);
@@ -549,6 +566,14 @@
                     @endif
 
                     {{-- Cart --}}
+                    @php
+                        $cartObj = session('cart');
+                        $cartQty = ($cartObj && isset($cartObj->items[$product->id]))
+                                   ? $cartObj->items[$product->id]['qty']
+                                   : 0;
+                        $maxQty  = $product->stock_quantity ?: 99;
+                    @endphp
+
                     <div class="cart-area">
                         @if(!$product->vendor_is_live)
                             <div class="store-closed-banner">
@@ -566,20 +591,35 @@
                                     $isAvailable = !$product->track_stock || ($product->stock_quantity > 0 || $product->allow_backorder);
                                 @endphp
                                 @if($isAvailable)
-                                    <div class="qty-row">
-                                        <span class="qty-label">Quantity</span>
-                                        <div class="qty-control">
-                                            <button class="qty-btn" type="button" onclick="changeQty(-1)">−</button>
-                                            <input class="qty-input" type="number" id="quantity" value="1" min="1" max="{{ $product->stock_quantity ?: 99 }}">
-                                            <button class="qty-btn" type="button" onclick="changeQty(1)">+</button>
+                                    <div>
+                                        <div class="qty-row">
+                                            <span class="qty-label">Quantity</span>
+                                            <div class="qty-control" id="qtyControl">
+                                                <button class="qty-btn" type="button" id="qtyMinus"
+                                                        onclick="changeQty(-1)" disabled>−</button>
+                                                <input class="qty-input" type="number" id="quantity"
+                                                       value="1" min="1" max="{{ $maxQty }}"
+                                                       oninput="validateQty()">
+                                                <button class="qty-btn" type="button" id="qtyPlus"
+                                                        onclick="changeQty(1)"
+                                                        {{ ($maxQty - $cartQty) <= 1 ? 'disabled' : '' }}>+</button>
+                                            </div>
+                                        </div>
+                                        <div class="stock-error" id="stockError">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                            </svg>
+                                            <span id="stockErrorMsg"></span>
                                         </div>
                                     </div>
                                     @if($product->track_stock && $product->stock_quantity == 0 && $product->allow_backorder)
-                                        <button class="btn-add-cart backorder" onclick="addToCart({{ $product->id }})">
+                                        <button class="btn-add-cart backorder" id="addToCartBtn"
+                                                onclick="addToCart({{ $product->id }})">
                                             🕐 Place Backorder
                                         </button>
                                     @else
-                                        <button class="btn-add-cart" onclick="addToCart({{ $product->id }})">
+                                        <button class="btn-add-cart" id="addToCartBtn"
+                                                onclick="addToCart({{ $product->id }})">
                                             🛒 Add to Cart
                                         </button>
                                     @endif
@@ -675,35 +715,72 @@
 
 @push('scripts')
 <script>
-    const maxQty = {{ $product->stock_quantity ?: 99 }};
+    const maxQty  = {{ $maxQty }};
+    const cartQty = {{ $cartQty }};
+
+    const qtyInput      = document.getElementById('quantity');
+    const qtyControl    = document.getElementById('qtyControl');
+    const qtyMinus      = document.getElementById('qtyMinus');
+    const qtyPlus       = document.getElementById('qtyPlus');
+    const stockError    = document.getElementById('stockError');
+    const stockErrorMsg = document.getElementById('stockErrorMsg');
+    const addToCartBtn  = document.getElementById('addToCartBtn');
+
+    function validateQty() {
+        if (!qtyInput) return true;
+
+        let val = parseInt(qtyInput.value, 10);
+        if (isNaN(val) || val < 1) { val = 1; qtyInput.value = val; }
+
+        const remaining = maxQty - cartQty;
+        const overStock = remaining <= 0 || val > remaining;
+
+        qtyControl?.classList.toggle('over-stock', overStock);
+
+        if (remaining <= 0) {
+            stockErrorMsg.textContent = `You already have the maximum ${maxQty} unit${maxQty !== 1 ? 's' : ''} in your cart.`;
+            stockError.classList.add('visible');
+            if (addToCartBtn) addToCartBtn.disabled = true;
+            if (qtyPlus)      qtyPlus.disabled      = true;
+        } else if (val > remaining) {
+            stockErrorMsg.textContent = `You have ${cartQty} in your cart. Only ${remaining} more unit${remaining !== 1 ? 's' : ''} can be added.`;
+            stockError.classList.add('visible');
+            if (addToCartBtn) addToCartBtn.disabled = true;
+            if (qtyPlus)      qtyPlus.disabled      = true;
+        } else {
+            stockError.classList.remove('visible');
+            if (addToCartBtn) addToCartBtn.disabled = false;
+            if (qtyPlus)      qtyPlus.disabled      = val >= remaining;
+        }
+
+        if (qtyMinus) qtyMinus.disabled = val <= 1;
+
+        return !overStock;
+    }
 
     function changeQty(delta) {
-        const input = document.getElementById('quantity');
-        if (!input) return;
-        let val = parseInt(input.value) + delta;
-        input.value = Math.max(1, Math.min(maxQty, val));
+        if (!qtyInput) return;
+        const remaining = maxQty - cartQty;
+        qtyInput.value = Math.max(1, Math.min(remaining, parseInt(qtyInput.value, 10) + delta));
+        validateQty();
     }
 
     function addToCart(productId) {
-        const qty = parseInt(document.getElementById('quantity').value) || 1;
+        if (!validateQty()) return;
+        const qty = qtyInput ? parseInt(qtyInput.value) : 1;
         window.location.href = `/cart/add/${productId}?quantity=${qty}`;
     }
 
     function changeMainImage(imageUrl, thumbnailElement) {
-        // Update main image
         const mainImage = document.getElementById('mainProductImage');
-        if (mainImage) {
-            mainImage.src = imageUrl;
-        }
-        
-        // Update active thumbnail
-        document.querySelectorAll('.carousel-thumb').forEach(thumb => {
-            thumb.classList.remove('active');
-        });
-        if (thumbnailElement) {
-            thumbnailElement.classList.add('active');
-        }
+        if (mainImage) mainImage.src = imageUrl;
+        document.querySelectorAll('.carousel-thumb').forEach(t => t.classList.remove('active'));
+        if (thumbnailElement) thumbnailElement.classList.add('active');
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (qtyInput) validateQty();
+    });
 </script>
 @endpush
 

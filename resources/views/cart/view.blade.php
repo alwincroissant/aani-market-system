@@ -488,6 +488,36 @@
 
 </div>
 
+{{-- ── Stock Toast ── --}}
+<div id="stockToast" style="
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: #1A1916;
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 9px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+    white-space: nowrap;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+         style="width:15px;height:15px;color:#FBBF24;flex-shrink:0">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    </svg>
+    <span id="stockToastMsg"></span>
+</div>
+
 @push('scripts')
 <script>
 // ── Seed item data from Blade ──────────────────────────────────────────────
@@ -495,7 +525,8 @@ const itemData = {
     @foreach($products as $itemId => $item)
     '{{ $itemId }}': {
         unitPrice: {{ $item['item']->price_per_unit }},
-        qty: {{ $item['qty'] }}
+        qty: {{ $item['qty'] }},
+        stock: {{ $item['item']->stock_quantity }}
     },
     @endforeach
 };
@@ -514,6 +545,21 @@ function syncQtyToBackend(itemId, qty) {
     return fetch('/cart/add/' + itemId + '?quantity=' + qty).catch(() => {});
 }
 
+// ── Stock toast ────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(message) {
+    const toast = document.getElementById('stockToast');
+    const msg   = document.getElementById('stockToastMsg');
+    msg.textContent = message;
+    toast.style.opacity   = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toast.style.opacity   = '0';
+        toast.style.transform = 'translateX(-50%) translateY(12px)';
+    }, 3000);
+}
+
 // ── Change qty ─────────────────────────────────────────────────────────────
 function changeQty(itemId, delta) {
     const d = itemData[itemId];
@@ -529,6 +575,12 @@ function changeQty(itemId, delta) {
         ).then(() => {
             window.location.href = '/cart/remove/' + itemId;
         });
+        return;
+    }
+
+    // ── Stock check ────────────────────────────────────────────────────────
+    if (newQty > d.stock) {
+        showToast(`Only ${d.stock} unit${d.stock !== 1 ? 's' : ''} available in stock.`);
         return;
     }
 

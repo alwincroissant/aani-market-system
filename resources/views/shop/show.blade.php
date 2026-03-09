@@ -266,25 +266,10 @@
         width: fit-content;
     }
 
-    .stock-badge.in-stock {
-        background: var(--accent-lt);
-        color: var(--accent-dk);
-    }
-
-    .stock-badge.low-stock {
-        background: var(--warm-lt);
-        color: #92400e;
-    }
-
-    .stock-badge.backorder {
-        background: #E0E7FF;
-        color: #3730A3;
-    }
-
-    .stock-badge.out-stock {
-        background: #FEE2E2;
-        color: #7F1D1D;
-    }
+    .stock-badge.in-stock   { background: var(--accent-lt); color: var(--accent-dk); }
+    .stock-badge.low-stock  { background: var(--warm-lt); color: #92400e; }
+    .stock-badge.backorder  { background: #E0E7FF; color: #3730A3; }
+    .stock-badge.out-stock  { background: #FEE2E2; color: #7F1D1D; }
 
     .product-actions {
         display: flex;
@@ -299,7 +284,23 @@
         border-radius: 6px;
         font-size: 13px;
         text-align: center;
+        transition: border-color .15s;
+        outline: none;
     }
+    .quantity-input:focus { border-color: var(--accent); }
+    .quantity-input.over-stock { border-color: #DC2626; }
+
+    /* Stock error */
+    .stock-error {
+        display: none;
+        align-items: center;
+        gap: 5px;
+        font-size: 11.5px;
+        color: #DC2626;
+        margin-top: 6px;
+    }
+    .stock-error.visible { display: flex; }
+    .stock-error svg { flex-shrink: 0; }
 
     .btn-add-cart {
         flex: 1;
@@ -319,10 +320,8 @@
         text-decoration: none;
     }
 
-    .btn-add-cart:hover {
-        background: var(--accent-dk);
-    }
-
+    .btn-add-cart:hover:not(:disabled) { background: var(--accent-dk); }
+    .btn-add-cart:disabled,
     .btn-add-cart.disabled {
         background: var(--muted);
         opacity: 0.5;
@@ -345,10 +344,8 @@
         cursor: pointer;
         transition: background .15s;
     }
-
-    .btn-backorder:hover {
-        background: #DBEAFE;
-    }
+    .btn-backorder:hover:not(:disabled) { background: #DBEAFE; }
+    .btn-backorder:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ── Empty State ── */
     .empty-state {
@@ -359,10 +356,7 @@
         border: 1px dashed var(--border);
     }
 
-    .empty-state-icon {
-        font-size: 48px;
-        margin-bottom: 16px;
-    }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
 
     .empty-state h3 {
         color: var(--text);
@@ -371,10 +365,7 @@
         margin-bottom: 8px;
     }
 
-    .empty-state p {
-        color: var(--muted);
-        font-size: 14px;
-    }
+    .empty-state p { color: var(--muted); font-size: 14px; }
 
     /* ── Store Closed Banner ── */
     .store-closed-banner {
@@ -387,46 +378,25 @@
         align-items: center;
         gap: 16px;
     }
-    .store-closed-banner .closed-icon {
-        font-size: 40px;
-        flex-shrink: 0;
-    }
+    .store-closed-banner .closed-icon { font-size: 40px; flex-shrink: 0; }
     .store-closed-banner .closed-text h3 {
-        font-size: 18px;
-        font-weight: 600;
-        color: #991B1B;
-        margin-bottom: 4px;
+        font-size: 18px; font-weight: 600; color: #991B1B; margin-bottom: 4px;
     }
     .store-closed-banner .closed-text p {
-        font-size: 14px;
-        color: #B91C1C;
-        margin: 0;
+        font-size: 14px; color: #B91C1C; margin: 0;
     }
-    .product-card.store-closed {
-        opacity: 0.6;
-        pointer-events: none;
-    }
+    .product-card.store-closed { opacity: 0.6; pointer-events: none; }
 
     @media (max-width: 768px) {
-        .vendor-info-block {
-            grid-template-columns: 1fr;
-        }
-
-        .vendor-logo {
-            margin-top: 0;
-            width: 100px;
-            height: 100px;
-        }
-
-        .products-grid {
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 16px;
-        }
+        .vendor-info-block { grid-template-columns: 1fr; }
+        .vendor-logo { margin-top: 0; width: 100px; height: 100px; }
+        .products-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
     }
 </style>
 
 <div class="shop-wrapper">
     <div class="shop-container">
+
         <!-- Vendor Header -->
         <div class="vendor-header">
             <div class="vendor-banner">
@@ -498,86 +468,117 @@
 
                     <div class="products-grid">
                         @foreach($products as $product)
-                            <div class="product-card">
-                                <div class="product-image">
-                                    @if($product->product_image_url)
-                                        <img src="{{ asset($product->product_image_url) }}" alt="{{ $product->product_name }}">
-                                    @else
-                                        📦
-                                    @endif
-                                </div>
+                        @php
+                            $maxQty  = ($product->track_stock && $product->stock_quantity > 0)
+                                       ? $product->stock_quantity
+                                       : 99;
+                            $cartObj = session('cart');
+                            $cartQty = ($cartObj && isset($cartObj->items[$product->id]))
+                                       ? $cartObj->items[$product->id]['qty']
+                                       : 0;
+                        @endphp
+                        <div class="product-card">
+                            <div class="product-image">
+                                @if($product->product_image_url)
+                                    <img src="{{ asset($product->product_image_url) }}" alt="{{ $product->product_name }}">
+                                @else
+                                    📦
+                                @endif
+                            </div>
 
-                                <div class="product-body">
-                                    <h4 class="product-name">{{ $product->product_name }}</h4>
+                            <div class="product-body">
+                                <h4 class="product-name">{{ $product->product_name }}</h4>
 
-                                    @if($product->description)
-                                        <p class="product-desc">{{ Str::limit($product->description, 70) }}</p>
-                                    @endif
+                                @if($product->description)
+                                    <p class="product-desc">{{ Str::limit($product->description, 70) }}</p>
+                                @endif
 
-                                    @if($product->track_stock)
-                                        @php
-                                            $inStock = $product->stock_quantity > 0;
-                                            $isLow = $inStock && $product->stock_quantity <= $product->minimum_stock;
-                                            $isBackorder = !$inStock && $product->allow_backorder;
-                                        @endphp
-                                        <div class="stock-badge @if(!$inStock && !$isBackorder) out-stock @elseif($isBackorder) backorder @elseif($isLow) low-stock @else in-stock @endif">
-                                            @if($inStock)
-                                                @if($isLow)
-                                                    ⚠️ Low stock — {{ $product->stock_quantity }} left
-                                                @else
-                                                    ✓ In stock — {{ $product->stock_quantity }} available
-                                                @endif
-                                            @elseif($isBackorder)
-                                                🕐 Backorder available
+                                @if($product->track_stock)
+                                    @php
+                                        $inStock     = $product->stock_quantity > 0;
+                                        $isLow       = $inStock && $product->stock_quantity <= $product->minimum_stock;
+                                        $isBackorder = !$inStock && $product->allow_backorder;
+                                    @endphp
+                                    <div class="stock-badge @if(!$inStock && !$isBackorder) out-stock @elseif($isBackorder) backorder @elseif($isLow) low-stock @else in-stock @endif">
+                                        @if($inStock)
+                                            @if($isLow)
+                                                ⚠️ Low stock — {{ $product->stock_quantity }} left
                                             @else
-                                                ✕ Out of stock
+                                                ✓ In stock — {{ $product->stock_quantity }} available
                                             @endif
-                                        </div>
-                                    @endif
-
-                                    <div class="product-price">₱{{ number_format($product->price_per_unit, 2) }}</div>
-                                    <div class="product-unit">/ {{ $product->unit_type }}</div>
-
-                                    <div class="product-actions">
-                                        @if(!$vendor->is_live)
-                                            <button class="btn-add-cart disabled" disabled>🔒 Store Closed</button>
+                                        @elseif($isBackorder)
+                                            🕐 Backorder available
                                         @else
-                                        @auth
-                                            @if(auth()->user()->role === 'customer')
-                                                @if($product->track_stock && $product->stock_quantity > 0)
-                                                    <input type="number" class="quantity-input" value="1" min="1" max="{{ $product->stock_quantity }}" id="qty_{{ $product->id }}">
-                                                    <button class="btn-add-cart" onclick="addToCart({{ $product->id }})">
-                                                        🛒 Add
-                                                    </button>
-                                                @elseif($product->track_stock && $product->stock_quantity == 0)
-                                                    @if($product->allow_backorder)
-                                                        <input type="number" class="quantity-input" value="1" min="1" max="99" id="qty_{{ $product->id }}">
-                                                        <button class="btn-backorder" onclick="addToCart({{ $product->id }})">
-                                                            🕐 Backorder
-                                                        </button>
-                                                    @else
-                                                        <button class="btn-add-cart disabled" disabled>
-                                                            Out of Stock
-                                                        </button>
-                                                    @endif
-                                                @else
-                                                    <input type="number" class="quantity-input" value="1" min="1" max="99" id="qty_{{ $product->id }}">
-                                                    <button class="btn-add-cart" onclick="addToCart({{ $product->id }})">
-                                                        🛒 Add
-                                                    </button>
-                                                @endif
-                                            @else
-                                                <button class="btn-add-cart disabled" disabled>Sign up to order</button>
-                                            @endif
-                                        @else
-                                            <button class="btn-add-cart" onclick="window.location.href='{{ route('auth.login') }}'">
-                                                🔐 Login
-                                            </button>
-                                        @endauth
+                                            ✕ Out of stock
                                         @endif
                                     </div>
+                                @endif
+
+                                <div class="product-price">₱{{ number_format($product->price_per_unit, 2) }}</div>
+                                <div class="product-unit">/ {{ $product->unit_type }}</div>
+
+                                <div class="product-actions">
+                                    @if(!$vendor->is_live)
+                                        <button class="btn-add-cart disabled" disabled>🔒 Store Closed</button>
+                                    @else
+                                    @auth
+                                        @if(auth()->user()->role === 'customer')
+                                            @if($product->track_stock && $product->stock_quantity > 0)
+                                                <input type="number" class="quantity-input"
+                                                       value="1" min="1" max="{{ $maxQty }}"
+                                                       id="qty_{{ $product->id }}"
+                                                       oninput="validateQty({{ $product->id }}, {{ $maxQty }}, {{ $cartQty }})">
+                                                <button class="btn-add-cart"
+                                                        id="cartBtn_{{ $product->id }}"
+                                                        onclick="addToCart({{ $product->id }}, {{ $maxQty }}, {{ $cartQty }})">
+                                                    🛒 Add
+                                                </button>
+                                            @elseif($product->track_stock && $product->stock_quantity == 0)
+                                                @if($product->allow_backorder)
+                                                    <input type="number" class="quantity-input"
+                                                           value="1" min="1" max="99"
+                                                           id="qty_{{ $product->id }}"
+                                                           oninput="validateQty({{ $product->id }}, 99, 0)">
+                                                    <button class="btn-backorder"
+                                                            id="cartBtn_{{ $product->id }}"
+                                                            onclick="addToCart({{ $product->id }}, 99, 0)">
+                                                        🕐 Backorder
+                                                    </button>
+                                                @else
+                                                    <button class="btn-add-cart disabled" disabled>Out of Stock</button>
+                                                @endif
+                                            @else
+                                                <input type="number" class="quantity-input"
+                                                       value="1" min="1" max="99"
+                                                       id="qty_{{ $product->id }}"
+                                                       oninput="validateQty({{ $product->id }}, 99, 0)">
+                                                <button class="btn-add-cart"
+                                                        id="cartBtn_{{ $product->id }}"
+                                                        onclick="addToCart({{ $product->id }}, 99, 0)">
+                                                    🛒 Add
+                                                </button>
+                                            @endif
+                                        @else
+                                            <button class="btn-add-cart disabled" disabled>Sign up to order</button>
+                                        @endif
+                                    @else
+                                        <button class="btn-add-cart" onclick="window.location.href='{{ route('auth.login') }}'">
+                                            🔐 Login
+                                        </button>
+                                    @endauth
+                                    @endif
                                 </div>
+
+                                {{-- Stock error shown below the actions row --}}
+                                <div class="stock-error" id="stockError_{{ $product->id }}">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                    </svg>
+                                    <span id="stockErrorMsg_{{ $product->id }}"></span>
+                                </div>
+
                             </div>
+                        </div>
                         @endforeach
                     </div>
                 </div>
@@ -589,6 +590,7 @@
                 <p>This vendor hasn't added any products yet. Please check back later.</p>
             </div>
         @endif
+
     </div>
 </div>
 
@@ -596,15 +598,43 @@
 
 @push('scripts')
 <script>
-function addToCart(productId) {
-    const quantityInput = document.getElementById(`qty_${productId}`);
-    if (!quantityInput) {
-        console.error('Quantity input not found');
-        return;
+    function validateQty(id, max, cartQty) {
+        const input    = document.getElementById('qty_' + id);
+        const errorEl  = document.getElementById('stockError_' + id);
+        const errorMsg = document.getElementById('stockErrorMsg_' + id);
+        const cartBtn  = document.getElementById('cartBtn_' + id);
+
+        if (!input) return true;
+
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 1) { val = 1; input.value = val; }
+
+        const remaining = max - cartQty;
+        const overStock = remaining <= 0 || val > remaining;
+
+        input.classList.toggle('over-stock', overStock);
+
+        if (remaining <= 0) {
+            errorMsg.textContent = `You already have the maximum ${max} unit${max !== 1 ? 's' : ''} in your cart.`;
+            errorEl.classList.add('visible');
+            if (cartBtn) cartBtn.disabled = true;
+        } else if (val > remaining) {
+            errorMsg.textContent = `You have ${cartQty} in your cart. Only ${remaining} more unit${remaining !== 1 ? 's' : ''} can be added.`;
+            errorEl.classList.add('visible');
+            if (cartBtn) cartBtn.disabled = true;
+        } else {
+            errorEl.classList.remove('visible');
+            if (cartBtn) cartBtn.disabled = false;
+        }
+
+        return !overStock;
     }
 
-    const quantity = parseInt(quantityInput.value) || 1;
-    window.location.href = `/cart/add/${productId}?quantity=${quantity}`;
-}
+    function addToCart(productId, max, cartQty) {
+        if (!validateQty(productId, max, cartQty)) return;
+        const input = document.getElementById('qty_' + productId);
+        const quantity = input ? parseInt(input.value) : 1;
+        window.location.href = `/cart/add/${productId}?quantity=${quantity}`;
+    }
 </script>
 @endpush
